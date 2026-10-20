@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}ربط أوراكل{% endblock %}
+{% block page_class %}oc-page{% endblock %}
+
+{% block content %}
+<style>
+  .oc-page .oc-status { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .6rem; }
+  .oc-page .oc-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .65rem; border-radius: 999px; font-size: .82rem; font-weight: 600; background: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; }
+  .oc-page .oc-chip.is-on { background: #ECFDF5; color: #065F46; border-color: rgba(16,185,129,.3); }
+  .oc-page .oc-chip.is-off { background: #FFF1F2; color: #9F1239; border-color: rgba(244,63,94,.3); }
+  .oc-page .oc-form { background: #fff; border: 1px solid rgba(226,232,240,.85); border-radius: 14px; padding: 1.25rem 1.4rem; margin-block: 1rem; max-width: 900px; }
+  .oc-page .oc-form fieldset { border: 0; padding: 0; margin: 0 0 1.2rem; }
+  .oc-page .oc-form legend { font-weight: 700; color: #0F172A; margin-block-end: .6rem; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
+  .oc-page .oc-step { display: inline-grid; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; background: #0F172A; color: #fff; font-size: .8rem; }
+  .oc-page .oc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .8rem 1rem; }
+  .oc-page .field { display: flex; flex-direction: column; gap: .3rem; }
+  .oc-page .field input[type="text"], .oc-page .field input[type="number"], .oc-page .field input[type="password"], .oc-page .field input[type="search"], .oc-page .field select { width: 100%; }
+  .oc-page .oc-connect { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-block-start: .9rem; }
+  .oc-page .oc-sub { font-weight: 700; color: #334155; font-size: .88rem; margin: 1rem 0 .5rem; }
+  .oc-page .oc-manual { margin-block-start: .7rem; max-width: 420px; }
+  .oc-page .oc-manual summary { cursor: pointer; color: #475569; font-size: .85rem; margin-block-end: .5rem; }
+  .oc-page .oc-live:empty { display: none; }
+  .oc-page .oc-live--inline { margin-block-start: .8rem; }
+  .oc-page .oc-live--inline .alert { margin: 0; }
+  .oc-page .oc-help { color: #64748B; font-size: .8rem; }
+  .oc-page .oc-found { color: #065F46; font-size: .8rem; font-weight: 600; }
+  .oc-page .oc-err { color: #9F1239; font-size: .8rem; font-weight: 600; margin: 0; padding: 0; list-style: none; }
+  .oc-page .oc-toggle { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+  .oc-page .oc-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; border-block-start: 1px solid #E2E8F0; padding-block-start: 1rem; }
+  .oc-page .oc-actions .oc-help { margin-inline-start: auto; }
+  .oc-page .oc-notes { max-width: 900px; color: #475569; font-size: .88rem; line-height: 1.8; padding-inline-start: 1.1rem; }
+  .oc-page button[disabled] { opacity: .65; cursor: progress; }
+  .oc-page .oc-wh-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-block-end: .5rem; }
+  .oc-page .oc-wh-tools input[type="search"] { max-width: 260px; }
+  .oc-page .oc-wh-list { border: 1px solid #E2E8F0; border-radius: 10px; max-block-size: 280px; overflow-y: auto; padding: .35rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .15rem .5rem; }
+  .oc-page .oc-wh-item { display: flex; align-items: flex-start; gap: .45rem; padding: .3rem .4rem; border-radius: 6px; cursor: pointer; font-size: .86rem; line-height: 1.4; }
+  .oc-page .oc-wh-item:hover { background: #F8FAFC; }
+  .oc-page .oc-wh-item input { margin-block-start: .2rem; }
+  .oc-page .oc-wh-item bdi { font-weight: 700; color: #0F172A; }
+  .oc-page .oc-wh-item small { display: block; color: #64748B; font-size: .75rem; }
+  .oc-page [hidden] { display: none !important; }
+</style>
+
+<section class="dash-head" aria-label="ربط أوراكل">
+  <div class="dash-head-copy">
+    <h2>ربط قاعدة بيانات العميل</h2>
+    <p>أدخل بيانات الاتصال مرة واحدة واضغط «اتصال وجلب البيانات» — يجلب البرنامج من قاعدة العميل السنوات والوحدات والمخازن، ويكتشف خدمة أونكس تلقائياً.</p>
+    <div class="oc-status">
+      <span class="oc-chip {% if oracle_enabled_now %}is-on{% else %}is-off{% endif %}">
+        {% if oracle_enabled_now %}القراءة من أوراكل مفعّلة{% else %}القراءة من أوراكل متوقفة{% endif %}
+      </span>
+      <span class="oc-chip">
+        {% if source == 'screen' %}الربط محفوظ من هذه الشاشة{% else %}لم يُضبط الربط بعد{% endif %}
+      </span>
+      {% if row %}
+        <span class="oc-chip">آخر تعديل: {{ row.updated_at|date:"Y-m-d H:i" }}{% if row.updated_by %} · {{ row.updated_by.get_full_name|default:row.updated_by.username }}{% endif %}</span>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+{% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" role="status">
+    <span>{{ message }}</span>
+  </div>
+{% endfor %}
+
+{% if password_unreadable %}
+  <div class="alert alert-error" role="alert">
+    <span>كلمة المرور المحفوظة لا يمكن فك تشفيرها (تغيّر مفتاح التشفير على السيرفر). أعد إدخالها واحفظ.</span>
+  </div>
+{% endif %}
+
+<div class="oc-live" id="oc-live" aria-live="polite">{% if test_result %}<div class="alert {% if test_result.ok %}alert-success{% else %}alert-error{% endif %}" role="status"><span>{{ test_result.message }}</span></div>{% endif %}</div>
+
+{% if form.non_field_errors %}
+  {% for err in form.non_field_errors %}
+    <div class="alert alert-error" role="alert"><span>{{ err }}</span></div>
+  {% endfor %}
+{% endif %}
+
+<form method="post" class="oc-form" id="oc-form" novalidate{% if source == 'screen' and not test_result and not form.errors %} data-auto-discover="1"{% endif %}>
+  {% csrf_token %}
+
+  <fieldset>
+    <legend><span class="oc-step" aria-hidden="true">1</span> بيانات الاتصال</legend>
+    <div class="oc-grid">
+      {% for field in form %}{% if field.name == 'host' or field.name == 'port' or field.name == 'service_name' or field.name == 'sid' or field.name == 'username' or field.name == 'password' %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.name == 'sid' %}<span class="oc-help">اتركه فارغاً عند استخدام اسم الخدمة.</span>{% endif %}
+          {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+      {% endif %}{% endfor %}
+    </div>
+    <div class="oc-connect">
+      <button type="submit" name="action" value="discover" class="btn-primary" id="oc-discover" data-busy-label="جارٍ الاتصال والجلب…">اتصال وجلب البيانات</button>
+      <span class="oc-help">يتصل بالقاعدة ويجلب السنوات والوحدات والمخازن، ويبحث عن خدمة أونكس على نفس الخادم.</span>
+    </div>
+    <div class="oc-live oc-live--inline" id="oc-live-discover" aria-live="polite"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="oc-step" aria-hidden="true">2</span> ما جُلب من القاعدة — راجِعه</legend>
+
+    <p class="oc-sub">السنة والوحدة المحاسبية</p>
+    {{ form.known_schemas }}
+    <div class="oc-grid">
+      {% for field in form %}{% if field.name == 'year' or field.name == 'unit' %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+      {% endif %}{% endfor %}
+      <div class="field" style="justify-content:flex-end">
+        <span class="oc-help" id="oc-schema-preview">{% if form.year.value and form.unit.value %}المخطط: <bdi dir="ltr">IAS{{ form.year.value }}{{ form.unit.value }}</bdi>{% else %}&nbsp;{% endif %}</span>
+      </div>
+    </div>
+    <p class="oc-help">تُختار أحدث سنة تلقائياً. السنة المختارة تُطبَّق أيضاً على خدمة أونكس.</p>
+    <details class="oc-manual" {% if form.schema.value or form.schema.errors %}open{% endif %}>
+      <summary>مخطط لا يتبع صيغة IAS + السنة + الوحدة</summary>
+      <div class="field">
+        <label for="{{ form.schema.id_for_label }}">{{ form.schema.label }}</label>
+        {{ form.schema }}
+        {% if form.schema.errors %}<ul class="oc-err">{% for e in form.schema.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </details>
+
+    <p class="oc-sub">خدمة أونكس (Web Service)</p>
+    <div class="field">
+      <label for="{{ form.onyx_base_url.id_for_label }}">{{ form.onyx_base_url.label }}</label>
+      {{ form.onyx_base_url }}
+      <span class="oc-help" id="oc-onyx-note">تُكتشف تلقائياً عند «اتصال وجلب» إن كانت على نفس الخادم (المنفذ 8090)، ويمكن تعديلها يدوياً. تُختبر قبل الحفظ.</span>
+      {% if form.onyx_base_url.errors %}<ul class="oc-err">{% for e in form.onyx_base_url.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <p class="oc-sub">المخازن</p>
+    <div class="oc-grid">
+      <div class="field">
+        <label for="oc-wh-default">{{ form.default_warehouse.label }}</label>
+        <select id="oc-wh-default" hidden></select>
+        {{ form.default_warehouse }}
+        <span class="oc-help">المخزن الذي تفتح عليه شاشات البحث والأرصدة.</span>
+        {% if form.default_warehouse.errors %}<ul class="oc-err">{% for e in form.default_warehouse.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </div>
+    </div>
+    <div class="field" style="margin-block-start:.8rem">
+      <label for="{{ form.compare_warehouses.id_for_label }}">{{ form.compare_warehouses.label }} <span class="oc-help" id="oc-wh-count"></span></label>
+      <div id="oc-wh-picker" hidden>
+        <div class="oc-wh-tools">
+          <input type="search" id="oc-wh-filter" placeholder="ابحث برقم المخزن أو اسمه أو الفرع" aria-label="بحث في المخازن">
+          <button type="button" class="btn-ghost" id="oc-wh-clear">إلغاء التحديد</button>
+        </div>
+        <div class="oc-wh-list" id="oc-wh-list" role="group" aria-label="مخازن المقارنة"></div>
+      </div>
+      {{ form.compare_warehouses }}
+      <span class="oc-help" id="oc-wh-help">المخازن التي تُقارن أسعارها ومبيعاتها. اضغط «اتصال وجلب» لعرض مخازن القاعدة واختيارها.</span>
+      {% if form.compare_warehouses.errors %}<ul class="oc-err">{% for e in form.compare_warehouses.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend><span class="oc-step" aria-hidden="true">3</span> التفعيل والحفظ</legend>
+    <label class="oc-toggle" for="{{ form.enabled.id_for_label }}">
+      {{ form.enabled }} {{ form.enabled.label }}
+    </label>
+    <span class="oc-help">عند التفعيل تُقرأ الكميات والتقارير من أوراكل. إيقافه يحفظ البيانات دون اختبار أوراكل، وتُقرأ الكميات من خدمة أونكس بدلاً منه.</span>
+  </fieldset>
+
+  <div class="oc-actions">
+    <button type="submit" name="action" value="test" class="btn-ghost" data-busy-label="جارٍ الاختبار…">اختبار الاتصال</button>
+    <button type="submit" name="action" value="save" class="btn-primary" data-busy-label="جارٍ الاختبار والحفظ…">حفظ وتفعيل</button>
+    <button type="button" class="btn-ghost" id="oc-save-disabled" hidden>حفظ مع إيقاف أوراكل مؤقتاً</button>
+    <span class="oc-help">الحفظ يختبر الاتصال أولاً ولا يُطبَّق إلا عند نجاحه.</span>
+  </div>
+  <div class="oc-live oc-live--inline" id="oc-live-inline" aria-live="polite"></div>
+</form>
+
+<ul class="oc-notes">
+  <li>كل بيانات العميل تُحفظ هنا في قاعدة بيانات البرنامج — لا تُقرأ من ملفات الإعداد، فالنسخة الجديدة لأي عميل تحتاج إدخال هذه الشاشة فقط.</li>
+  <li>تغيير الخادم أو المخطط أو المستخدم يعزل كاش التقارير السابق تلقائياً، فلا تظهر أرقام العميل القديم.</li>
+  <li>كلمة المرور تُحفظ مشفّرة ولا تُعرض مرة أخرى.</li>
+  <li>الاتصال للقراءة فقط (SELECT) — لا يكتب البرنامج شيئاً في قاعدة العميل.</li>
+</ul>
+
+{{ form.schema_options|json_script:"oc-schema-options" }}
+{{ warehouse_options|json_script:"oc-warehouses" }}
+<script>
+  (function () {
+    var form = document.getElementById("oc-form");
+    if (!form) return;
+    var live = document.getElementById("oc-live");
+    var liveInline = document.getElementById("oc-live-inline");
+    var liveDiscover = document.getElementById("oc-live-discover");
+    var discoverBtn = document.getElementById("oc-discover");
+    var saveDisabledBtn = document.getElementById("oc-save-disabled");
+    var enabledBox = form.querySelector("input[name=enabled]");
+    var yearSel = form.querySelector("select[name=year]");
+    var unitSel = form.querySelector("select[name=unit]");
+    var known = form.querySelector("input[name=known_schemas]");
+    var preview = document.getElementById("oc-schema-preview");
+    var onyxInput = form.querySelector("input[name=onyx_base_url]");
+    var onyxNote = document.getElementById("oc-onyx-note");
+    var defaultInput = form.querySelector("input[name=default_warehouse]");
+    var defaultSel = document.getElementById("oc-wh-default");
+    var compareInput = form.querySelector("input[name=compare_warehouses]");
+    var picker = document.getElementById("oc-wh-picker");
+    var whList = document.getElementById("oc-wh-list");
+    var whFilter = document.getElementById("oc-wh-filter");
+    var whCount = document.getElementById("oc-wh-count");
+    var whHelp = document.getElementById("oc-wh-help");
+    var options = JSON.parse(document.getElementById("oc-schema-options").textContent || "[]");
+    var warehouses = JSON.parse(document.getElementById("oc-warehouses").textContent || "[]");
+
+    function alertBox(ok, message) {
+      var box = document.createElement("div");
+      box.className = "alert " + (ok ? "alert-success" : "alert-error");
+      box.setAttribute("role", ok ? "status" : "alert");
+      var span = document.createElement("span");
+      span.textContent = message;
+      box.appendChild(span);
+      return box;
+    }
+
+    function showResult(ok, message, target) {
+      // النتيجة تظهر بجوار الزر المضغوط وتُمسح الرسائل القديمة
+      live.innerHTML = "";
+      liveInline.innerHTML = "";
+      liveDiscover.innerHTML = "";
+      var box = alertBox(ok, message);
+      (target || liveInline).appendChild(box);
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function fillSelect(sel, values, label, keep) {
+      var placeholder = sel.options[0] ? sel.options[0].textContent : "";
+      sel.innerHTML = "";
+      sel.appendChild(new Option(placeholder, ""));
+      values.forEach(function (v) { sel.appendChild(new Option(label(v), v)); });
+      if (values.indexOf(keep) !== -1) sel.value = keep;
+      else if (values.length) sel.value = values[0];
+    }
+
+    function unitsForYear(year) {
+      var units = options.filter(function (o) { return String(o.year) === year; })
+        .map(function (o) { return o.unit; });
+      return units.sort(function (a, b) { return Number(a) - Number(b); });
+    }
+
+    function refreshPreview() {
+      var y = yearSel.value, u = unitSel.value;
+      preview.innerHTML = "&nbsp;";
+      if (y && u) {
+        preview.textContent = "المخطط: ";
+        var b = document.createElement("bdi");
+        b.dir = "ltr";
+        b.textContent = "IAS" + y + u;
+        preview.appendChild(b);
+      }
+    }
+
+    function applyOptions(keepYear, keepUnit) {
+      var years = [];
+      options.forEach(function (o) { var y = String(o.year); if (years.indexOf(y) === -1) years.push(y); });
+      years.sort(function (a, b) { return Number(b) - Number(a); });
+      fillSelect(yearSel, years, function (v) { return v; }, keepYear);
+      fillSelect(unitSel, unitsForYear(yearSel.value), function (v) { return "الوحدة " + v; }, keepUnit);
+      refreshPreview();
+    }
+
+    function splitCodes(raw) {
+      var out = [];
+      String(raw || "").replace(/،/g, ",").split(",").forEach(function (p) {
+        var c = p.trim();
+        if (c && out.indexOf(c) === -1) out.push(c);
+      });
+      return out;
+    }
+
+    function whLabel(w) {
+      return w.code + " — " + (w.name || w.code);
+    }
+
+    function guessMainWarehouse(list) {
+      for (var i = 0; i < list.length; i++) {
+        if (/رئيس/.test(list[i].name || "")) return list[i].code;
+      }
+      return list.length ? list[0].code : "";
+    }
+
+    function updateCount() {
+      var n = splitCodes(compareInput.value).length;
+      whCount.textContent = n ? "(" + n + " محدد)" : "(لا شيء محدد — تُستخدم المقارنة على المخزن الافتراضي)";
+    }
+
+    function renderWarehouses(list) {
+      warehouses = list || [];
+      var has = warehouses.length > 0;
+      defaultSel.hidden = !has;
+      defaultInput.hidden = has;
+      picker.hidden = !has;
+      compareInput.hidden = has;
+      whCount.textContent = "";
+      if (!has) return;
+      whHelp.textContent = "المخازن التي تُقارن أسعارها ومبيعاتها — " + warehouses.length + " مخزناً نشطاً في القاعدة.";
+
+      var codes = warehouses.map(function (w) { return w.code; });
+      var current = defaultInput.value.trim();
+      if (codes.indexOf(current) === -1) current = guessMainWarehouse(warehouses);
+      defaultSel.innerHTML = "";
+      warehouses.forEach(function (w) {
+        defaultSel.appendChild(new Option(whLabel(w) + (w.branch_name ? " · " + w.branch_name : ""), w.code));
+      });
+      defaultSel.value = current;
+      defaultInput.value = current;
+
+      var selected = splitCodes(compareInput.value).filter(function (c) { return codes.indexOf(c) !== -1; });
+      compareInput.value = selected.join(",");
+      whList.innerHTML = "";
+      warehouses.forEach(function (w) {
+        var label = document.createElement("label");
+        label.className = "oc-wh-item";
+        label.dataset.search = (w.code + " " + (w.name || "") + " " + (w.branch_name || "")).toLowerCase();
+        var box = document.createElement("input");
+        box.type = "checkbox";
+        box.value = w.code;
+        box.checked = selected.indexOf(w.code) !== -1;
+        var text = document.createElement("span");
+        var code = document.createElement("bdi");
+        code.dir = "ltr";
+        code.textContent = w.code;
+        text.appendChild(code);
+        text.appendChild(document.createTextNode(" — " + (w.name || w.code)));
+        if (w.branch_name) {
+          var small = document.createElement("small");
+          small.textContent = w.branch_name;
+          text.appendChild(small);
+        }
+        label.appendChild(box);
+        label.appendChild(text);
+        whList.appendChild(label);
+      });
+      applyFilter();
+      updateCount();
+    }
+
+    function syncCompare() {
+      var picked = [];
+      whList.querySelectorAll("input[type=checkbox]").forEach(function (b) { if (b.checked) picked.push(b.value); });
+      compareInput.value = picked.join(",");
+      updateCount();
+    }
+
+    function applyFilter() {
+      var q = whFilter.value.trim().toLowerCase();
+      whList.querySelectorAll(".oc-wh-item").forEach(function (item) {
+        item.hidden = q !== "" && item.dataset.search.indexOf(q) === -1;
+      });
+    }
+
+    whList.addEventListener("change", syncCompare);
+    whFilter.addEventListener("input", applyFilter);
+    document.getElementById("oc-wh-clear").addEventListener("click", function () {
+      whList.querySelectorAll("input[type=checkbox]").forEach(function (b) { b.checked = false; });
+      syncCompare();
+    });
+    defaultSel.addEventListener("change", function () { defaultInput.value = defaultSel.value; });
+
+    yearSel.addEventListener("change", function () {
+      if (options.length) {
+        fillSelect(unitSel, unitsForYear(yearSel.value), function (v) { return "الوحدة " + v; }, unitSel.value);
+      }
+      refreshPreview();
+      refetchForSchema();
+    });
+    unitSel.addEventListener("change", function () { refreshPreview(); refetchForSchema(); });
+
+    // مخازن كل سنة/وحدة قد تختلف — نعيد جلبها عند تغيير الاختيار بعد الجلب الأول
+    function refetchForSchema() {
+      if (options.length && yearSel.value && unitSel.value && form.dataset.busy !== "1") {
+        send(discoverBtn, "discover");
+      }
+    }
+
+    function setBusy(btn, busy) {
+      form.dataset.busy = busy ? "1" : "";
+      form.querySelectorAll("button[type=submit]").forEach(function (b) { b.disabled = busy; });
+      if (busy) {
+        btn.dataset.idleLabel = btn.textContent;
+        if (btn.dataset.busyLabel) btn.textContent = btn.dataset.busyLabel;
+      } else if (btn.dataset.idleLabel) {
+        btn.textContent = btn.dataset.idleLabel;
+      }
+    }
+
+    function applyDiscovery(res) {
+      options = res.schemas || [];
+      known.value = options.map(function (o) { return o.schema; }).join(",");
+      var sel = res.selected || {};
+      applyOptions(sel.year || yearSel.value, sel.unit || unitSel.value);
+      if (res.onyx_detected && res.onyx_base_url && !onyxInput.value.trim()) {
+        onyxInput.value = res.onyx_base_url;
+        onyxNote.className = "oc-found";
+        onyxNote.textContent = "اكتُشفت الخدمة تلقائياً على نفس الخادم وتستجيب.";
+      } else if (!onyxInput.value.trim()) {
+        onyxNote.className = "oc-help";
+        onyxNote.textContent = "لم تُكتشف خدمة أونكس على المنفذ 8090 لهذا الخادم — أدخل رابطها يدوياً إن وُجدت، أو اتركه فارغاً.";
+      }
+      if (res.warehouses && res.warehouses.length) renderWarehouses(res.warehouses);
+    }
+
+    function send(btn, action) {
+      var data = new FormData(form);
+      data.set("action", action);
+      setBusy(btn, true);
+      if (action === "save") saveDisabledBtn.hidden = true;
+      // لا نستخدم form.action: الأزرار اسمها action فتحجب الخاصية وتُرجع عنصر الزر
+      fetch(window.location.pathname, {
+        method: "POST",
+        body: data,
+        headers: { "X-Requested-With": "fetch" },
+        credentials: "same-origin",
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (res) {
+          if (action === "save") {
+            if (res.ok && res.redirect) {
+              window.location.assign(res.redirect);
+              return;
+            }
+            showResult(false, res.message || "لم يُحفظ الربط.");
+            saveDisabledBtn.hidden = !res.can_save_disabled;
+          } else if (action === "discover") {
+            if (res.ok) applyDiscovery(res);
+            showResult(!!res.ok, res.message || res.error || "تعذّر جلب البيانات.", liveDiscover);
+          } else {
+            showResult(!!res.ok, res.message || "");
+          }
+        })
+        .catch(function (err) {
+          showResult(false, "تعذّر إكمال الطلب (" + err.message + "). حدّث الصفحة وحاول مرة أخرى.",
+            action === "discover" ? liveDiscover : liveInline);
+        })
+        .finally(function () { setBusy(btn, false); });
+    }
+
+    // كل الإجراءات بلا إعادة تحميل حتى لا تُمسح الخانات وكلمة المرور عند الفشل
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      var btn = ev.submitter;
+      if (form.dataset.busy === "1" || !btn) return;
+      send(btn, btn.value);
+    });
+
+    saveDisabledBtn.addEventListener("click", function () {
+      if (form.dataset.busy === "1") return;
+      if (enabledBox) enabledBox.checked = false;
+      send(saveDisabledBtn, "save");
+    });
+
+    renderWarehouses(warehouses);
+    // ربط محفوظ بلا مخازن في الكاش: نجلبها بعد فتح الصفحة دون تعليقها
+    if (form.dataset.autoDiscover === "1" && !warehouses.length) {
+      send(discoverBtn, "discover");
+    }
+  })();
+</script>
+{% endblock %}

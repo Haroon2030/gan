@@ -1,0 +1,42 @@
+# البيئة
+.env
+.secret_key
+
+# بايثون
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Django
+db.sqlite3
+data/
+*.log
+staticfiles/
+.cache/
+
+# نظام / أدوات محلية
+.DS_Store
+Thumbs.db
+*.swp
+.cursor/
+.vscode/
+.client-version
+
+# نسخ احتياطية محلية (قد تحتوي بيانات عميل)
+_backup_*/
+
+# تجارب مؤقتة
+_shot_*.png
+_probe_*.py
+_oracle_*.py
+_diag_*.py
+_verify_*.py
+debug-*.log
+
+# إعدادات محلية للأدوات
+.claude/
+.devin/
+*.bak
+welcome-slider-new-assets.png

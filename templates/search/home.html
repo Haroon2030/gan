@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if dash.any %}لوحة المؤشرات التنفيذية{% else %}مرحباً — غرفة القرار{% endif %}{% endblock %}
+{% block page_class %}{% if dash.any %}hx-page{% else %}sales-dash welcome-dash{% endif %}{% endblock %}
+{% block body_class %}{% if dash.any %}hx-body{% else %}sales-dash-body welcome-body{% endif %}{% endblock %}
+
+{% block extra_css %}
+{% if dash.any %}
+<link rel="stylesheet" href="{% static 'css/home-dashboard.css' %}?v={{ app_client_version }}">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if dash.any %}
+{% with w=dash_widgets %}
+<div
+  class="hx"
+  data-hx
+  data-api="{% url 'home_widget_api' 'WIDGET' %}"
+  data-date-from="{{ date_from }}"
+  data-date-to="{{ date_to }}"
+  data-months="{{ trend_months|join:',' }}"
+  data-widgets="{% for name, ok in w.items %}{% if ok %}{{ name }} {% endif %}{% endfor %}"
+>
+  <header class="hx-head">
+    <div class="hx-head-copy">
+      <p class="hx-greet"><span data-hx-greeting>أهلاً</span>، {{ display_name }}{% if role_name %} <span class="hx-role">{{ role_name }}</span>{% endif %} <span class="hx-greet-sep" aria-hidden="true">·</span> <time data-hx-today></time></p>
+      <h1 class="hx-title">لوحة المؤشرات التنفيذية</h1>
+      <p class="hx-sub">
+        الفترة <bdi class="hx-num">{{ date_from }}</bdi> إلى <bdi class="hx-num">{{ date_to }}</bdi>
+        <span aria-hidden="true">·</span>
+        المقارنة مع <bdi class="hx-num">{{ prev_from }}</bdi> إلى <bdi class="hx-num">{{ prev_to }}</bdi>
+      </p>
+    </div>
+    <div class="hx-head-tools">
+      <form class="hx-period" method="get" action="{% url 'home' %}" aria-label="فترة اللوحة">
+        <svg class="hx-ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+        <label class="hx-sr" for="hx-from">من</label>
+        <input id="hx-from" type="date" name="date_from" value="{{ date_from }}" required>
+        <span class="hx-period-sep" aria-hidden="true">←</span>
+        <label class="hx-sr" for="hx-to">إلى</label>
+        <input id="hx-to" type="date" name="date_to" value="{{ date_to }}" required>
+        <button type="submit" class="hx-period-go">عرض</button>
+      </form>
+      <button type="button" class="hx-btn hx-btn-primary" data-hx-print>
+        <svg class="hx-ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>
+        تصدير التقرير
+      </button>
+      {% if w.shortage or w.stagnant %}
+      <a class="hx-bell" href="#hx-alerts" aria-label="تنبيهات المخزون" title="تنبيهات المخزون">
+        <svg class="hx-ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></svg>
+        <span class="hx-bell-dot" data-hx-bell-dot hidden></span>
+      </a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if period_error %}
+  <p class="hx-alert" role="alert">{{ period_error }} — تم عرض الشهر الحالي.</p>
+  {% endif %}
+
+  <section class="hx-kpis" aria-label="المؤشرات الرئيسية">
+    {% if w.sales %}
+    <article class="hx-kpi hx-kpi-featured hx-card is-loading" data-hx-card="sales" data-hx-render="kpiSales">
+      <div class="hx-kpi-top">
+        <span class="hx-kpi-label">صافي المبيعات</span>
+        <a class="hx-kpi-link" href="{{ dash_links.browse_sales }}" aria-label="فتح تحليل المبيعات">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+      <strong class="hx-kpi-value" data-slot="value">—</strong>
+      <div class="hx-kpi-foot">
+        <span class="hx-pill" data-slot="pill"></span>
+        <span class="hx-kpi-hint" data-slot="hint">شامل الضريبة · كل القنوات</span>
+      </div>
+      <div class="hx-spark" data-spark="sales" aria-hidden="true"></div>
+    </article>
+    {% endif %}
+    {% if w.purchases %}
+    <article class="hx-kpi hx-card is-loading" data-hx-card="purchases" data-hx-render="kpiPurchases">
+      <div class="hx-kpi-top">
+        <span class="hx-kpi-label">إجمالي المشتريات</span>
+        <a class="hx-kpi-link" href="{{ dash_links.browse_purchases }}" aria-label="فتح تحليل المشتريات">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+      <strong class="hx-kpi-value" data-slot="value">—</strong>
+      <div class="hx-kpi-foot">
+        <span class="hx-pill" data-slot="pill"></span>
+        <span class="hx-kpi-hint" data-slot="hint">بعد المرتجع · شامل الضريبة</span>
+      </div>
+      <div class="hx-spark" data-spark="purchases" aria-hidden="true"></div>
+    </article>
+    {% endif %}
+    {% if w.inventory %}
+    <article class="hx-kpi hx-card is-loading" data-hx-card="inventory" data-hx-render="kpiInventory">
+      <div class="hx-kpi-top">
+        <span class="hx-kpi-label">قيمة المخزون</span>
+        <a class="hx-kpi-link" href="{{ dash_links.browse_inventory }}" aria-label="فتح تحليل المخزون">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+      <strong class="hx-kpi-value" data-slot="value">—</strong>
+      <div class="hx-kpi-foot">
+        <span class="hx-pill hx-pill-neutral" data-slot="pill"></span>
+        <span class="hx-kpi-hint" data-slot="hint">بالتكلفة · الرصيد الحالي</span>
+      </div>
+      <div class="hx-kpi-mini" data-slot="mini" aria-hidden="true"></div>
+    </article>
+    {% endif %}
+    {% if w.profit %}
+    <article class="hx-kpi hx-card is-loading" data-hx-card="profit" data-hx-render="kpiProfit">
+      <div class="hx-kpi-top">
+        <span class="hx-kpi-label">هامش الربح الإجمالي</span>
+        <a class="hx-kpi-link" href="{{ dash_links.browse_performance }}" aria-label="فتح تحليل الأداء">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+        </a>
+      </div>
+      <strong class="hx-kpi-value" data-slot="value">—</strong>
+      <div class="hx-kpi-foot">
+        <span class="hx-pill" data-slot="pill"></span>
+        <span class="hx-kpi-hint" data-slot="hint">نقاط البيع</span>
+      </div>
+      <div class="hx-kpi-mini" data-slot="mini" aria-hidden="true"></div>
+    </article>
+    {% endif %}
+  </section>
+
+  {% if w.profit or w.trend %}
+  <section class="hx-grid hx-grid-a">
+    {% if w.profit %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="profit" data-hx-render="profitPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>الربحية</h2>
+          <p class="hx-panel-sub">مجمل الربح · نقاط البيع قبل الضريبة</p>
+        </div>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+    </article>
+    {% endif %}
+    {% if w.trend %}
+    <article class="hx-panel hx-panel-wide hx-card" data-hx-card="trend">
+      <header class="hx-panel-head">
+        <div>
+          <h2>{% if 'sales' in dash.trend_series and 'purchases' in dash.trend_series %}اتجاه المبيعات والمشتريات{% elif 'sales' in dash.trend_series %}اتجاه المبيعات{% else %}اتجاه المشتريات{% endif %}</h2>
+          <p class="hx-panel-sub">آخر 6 أشهر · الشهر الحالي حتى اليوم</p>
+        </div>
+        <ul class="hx-legend" aria-label="مفتاح الرسم">
+          {% if 'sales' in dash.trend_series %}<li><i class="hx-dot hx-dot-teal"></i>صافي المبيعات</li>{% endif %}
+          {% if 'purchases' in dash.trend_series %}<li><i class="hx-dot hx-dot-amber"></i>إجمالي المشتريات</li>{% endif %}
+        </ul>
+      </header>
+      <div class="hx-panel-body">
+        <div class="hx-trend" data-hx-trend data-series="{{ dash.trend_series|join:',' }}" role="img" aria-label="رسم خطي شهري">
+          <p class="hx-state">جارٍ تحميل الأشهر…</p>
+        </div>
+      </div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if w.sales or w.groups or w.purchases %}
+  <section class="hx-grid hx-grid-b">
+    {% if w.sales %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="sales" data-hx-render="channelsPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>المبيعات حسب القناة</h2>
+          <p class="hx-panel-sub">بلا تكرار فواتير نقاط البيع المنعكسة</p>
+        </div>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+    </article>
+    {% endif %}
+    {% if w.groups %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="groups" data-hx-render="groupsPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>المبيعات حسب المجموعة</h2>
+          <p class="hx-panel-sub">أعلى 5 · نقاط البيع · الحالية مقابل السابقة</p>
+        </div>
+        <a class="hx-panel-link" href="{{ dash_links.browse_sales }}">التفاصيل</a>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+    </article>
+    {% endif %}
+    {% if w.purchases %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="purchases" data-hx-render="vendorsPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>أعلى الموردين</h2>
+          <p class="hx-panel-sub">حسب قيمة المشتريات في الفترة</p>
+        </div>
+        <a class="hx-panel-link" href="{{ dash_links.browse_purchases }}">التفاصيل</a>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if w.inventory or w.shortage or w.stagnant %}
+  <section class="hx-grid hx-grid-c">
+    {% if w.inventory %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="inventory" data-hx-render="inventoryPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>قيمة ودوران المخزون</h2>
+          <p class="hx-panel-sub">أعمار الرصيد حسب آخر فاتورة شراء للصنف</p>
+        </div>
+        <a class="hx-panel-link" href="{{ dash_links.browse_inventory }}">التفاصيل</a>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+      {% if w.turnover %}
+      <div class="hx-turnover is-loading" data-hx-card="turnover" data-hx-render="turnoverStrip" data-slot="body"></div>
+      {% endif %}
+    </article>
+    {% endif %}
+    {% if w.shortage or w.stagnant %}
+    <article class="hx-panel hx-card" id="hx-alerts" tabindex="-1">
+      <header class="hx-panel-head">
+        <div>
+          <h2>تنبيهات المخزون</h2>
+          <p class="hx-panel-sub">ما يحتاج قراراً الآن</p>
+        </div>
+      </header>
+      <div class="hx-panel-body hx-alerts">
+        {% if w.shortage %}
+        <section class="hx-alert-block is-loading" data-hx-card="shortage" data-hx-render="shortageBlock" data-slot="body"></section>
+        {% endif %}
+        {% if w.stagnant %}
+        <section class="hx-alert-block is-loading" data-hx-card="stagnant" data-hx-render="stagnantBlock" data-slot="body" data-href="{{ dash_links.browse_unsold }}?date_from={{ date_from }}&amp;date_to={{ date_to }}"></section>
+        {% endif %}
+      </div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if w.recent or w.top_items %}
+  <section class="hx-grid hx-grid-d">
+    {% if w.recent %}
+    <article class="hx-panel hx-panel-wide hx-card is-loading" data-hx-card="recent" data-hx-render="recentPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>العمليات الحديثة</h2>
+          <p class="hx-panel-sub">أحدث المستندات المُدخلة · يتجدد كل دقيقة</p>
+        </div>
+      </header>
+      <div class="hx-panel-body hx-panel-flush" data-slot="body"></div>
+    </article>
+    {% endif %}
+    {% if w.top_items %}
+    <article class="hx-panel hx-card is-loading" data-hx-card="top_items" data-hx-render="topItemsPanel">
+      <header class="hx-panel-head">
+        <div>
+          <h2>أفضل المنتجات</h2>
+          <p class="hx-panel-sub">حسب المبيعات · نقاط البيع</p>
+        </div>
+      </header>
+      <div class="hx-panel-body" data-slot="body"></div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}
+</div>
+{% endwith %}
+{% else %}
+<section class="welcome-hero" aria-label="شاشة الترحيب">
+  <div class="welcome-hero-copy">
+    <p class="welcome-kicker">{{ welcome_kicker|default:"حسب صلاحياتك" }}</p>
+    <h1 class="welcome-title">غرفة القرار</h1>
+    <p class="welcome-greeting">
+      أهلاً بك{% if role_name %}، <span class="welcome-name">{{ role_name }}</span>{% endif %}
+    </p>
+    <p class="welcome-role-line">
+      <span class="welcome-role-label">الصلاحية</span>
+      <span class="welcome-role{% if is_staff_user %} is-staff{% endif %}">{{ role_name }}</span>
+    </p>
+    <p class="welcome-sub">{{ welcome_subtitle }}</p>
+  </div>
+
+  {% if welcome_cards %}
+  <nav class="welcome-shortcuts" aria-label="أقسام المنصة المتاحة">
+    {% for card in welcome_cards %}
+    <a class="welcome-card {{ card.css }}" href="{{ card.href }}">
+      <span class="welcome-card-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="{{ card.path_d }}"/></svg>
+      </span>
+      <strong>{{ card.title }}</strong>
+      <span>{{ card.hint }}</span>
+    </a>
+    {% endfor %}
+  </nav>
+  {% else %}
+    <p class="welcome-empty" role="status">لا توجد شاشات متاحة لدورك حالياً. راجع مدير النظام.</p>
+  {% endif %}
+</section>
+
+<section class="welcome-slider" aria-roledescription="carousel" aria-label="مشاهد غرفة القرار" data-welcome-slider data-autoplay="true">
+  <div class="welcome-slider-viewport">
+    <div class="welcome-slider-track" data-welcome-track>
+      <figure class="welcome-slide is-active" data-welcome-slide aria-hidden="false">
+        <img src="{% static 'slide-decision.svg' %}?v={{ app_client_version }}" alt="" width="1600" height="900" decoding="async">
+        <figcaption>
+          <strong>نظرة تنفيذية واحدة</strong>
+          <span>قائمة الدخل والمؤشرات في صورة قرار واضحة</span>
+        </figcaption>
+      </figure>
+      <figure class="welcome-slide" data-welcome-slide aria-hidden="true">
+        <img src="{% static 'slide-sales.svg' %}?v={{ app_client_version }}" alt="" width="1600" height="900" decoding="async">
+        <figcaption>
+          <strong>المبيعات والأداء</strong>
+          <span>صافي الفروع والقنوات ومقارنة الفترات</span>
+        </figcaption>
+      </figure>
+      <figure class="welcome-slide" data-welcome-slide aria-hidden="true">
+        <img src="{% static 'slide-ops.svg' %}?v={{ app_client_version }}" alt="" width="1600" height="900" decoding="async">
+        <figcaption>
+          <strong>المخزون والتوريد والأصول</strong>
+          <span>حركة التشغيل من الرصيد حتى دورة المورد</span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="welcome-slider-bar">
+    <button type="button" class="welcome-slider-btn" data-welcome-prev aria-label="الشريحة السابقة">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="welcome-slider-dots" role="tablist" aria-label="شرائح العرض" data-welcome-dots>
+      <button type="button" role="tab" aria-selected="true" class="is-active" aria-label="الشريحة 1" data-welcome-dot="0"></button>
+      <button type="button" role="tab" aria-selected="false" aria-label="الشريحة 2" data-welcome-dot="1"></button>
+      <button type="button" role="tab" aria-selected="false" aria-label="الشريحة 3" data-welcome-dot="2"></button>
+    </div>
+    <button type="button" class="welcome-slider-btn" data-welcome-next aria-label="الشريحة التالية">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+{% if dash.any %}
+<script src="{% static 'js/home-dashboard.js' %}?v={{ app_client_version }}" defer></script>
+{% else %}
+<script src="/static/js/welcome-slider.js?v={{ app_client_version }}" defer></script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block title %}حد الربح من تسعير الصنف{% endblock %}
+{% block page_class %}sales-dash purchase-dash low-margin-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="حد الربح من تسعير الصنف">
+  <div class="dash-head-copy">
+    <h2>حد الربح من تسعير الصنف</h2>
+    <p>أصناف برصيد كمية وحركة مخزون (شراء/تحويل/تسوية) ومسعّرة — اعرض ما نسبة ربحه ضمن النطاق الذي تحدده (مثال: من 0% إلى 15%). يُستثنى الافتتاحي فقط.</p>
+  </div>
+</section>
+
+{% if error %}
+  <div class="alert alert-error" role="status">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <span>{{ error }}</span>
+  </div>
+{% elif hint and not report %}
+  <div class="alert alert-info" role="status">
+    <span>{{ hint }}</span>
+  </div>
+{% endif %}
+
+{% if report %}
+  <section class="lm-kpi-grid" aria-label="ملخص النتائج">
+    <article class="lm-kpi is-match">
+      <span class="lm-kpi-label">
+        <span class="lm-kpi-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="17" r="3"/></svg>
+        </span>
+        المطابق
+      </span>
+      <strong class="lm-kpi-value mono">{{ report.kpis.total_matching|default:0 }}</strong>
+      <small class="lm-kpi-hint">
+        {% if report.kpis.truncated %}
+          تجاوز حد العرض — صدّر Excel
+        {% else %}
+          كمية وحركة · {% if min_profit_input %}{{ min_profit_input }}–{% endif %}{{ max_profit_input }}%
+        {% endif %}
+      </small>
+    </article>
+    <article class="lm-kpi is-shown">
+      <span class="lm-kpi-label">
+        <span class="lm-kpi-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 13h3"/><path d="M8 16h5"/></svg>
+        </span>
+        المعروض
+      </span>
+      <strong class="lm-kpi-value mono" id="lm-loaded-count">{{ report.rows|length }}</strong>
+      <small class="lm-kpi-hint">
+        {% if report.kpis.has_more %}
+          اسحب للأسفل لباقي {{ report.kpis.total_matching }}
+        {% elif report.kpis.truncated %}
+          معروض حتى الحد — Excel للباقي
+        {% elif report.rows %}
+          كل النتائج محمّلة
+        {% else %}
+          لا أصناف مطابقة
+        {% endif %}
+      </small>
+    </article>
+    <article class="lm-kpi is-limit">
+      <span class="lm-kpi-label">
+        <span class="lm-kpi-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M17 8l-5-3-5 3"/><path d="M7 16l5 3 5-3"/><path d="M8 12h8"/></svg>
+        </span>
+        حد الربح
+      </span>
+      <strong class="lm-kpi-value mono">{% if min_profit_input %}{{ min_profit_input }}–{% endif %}{{ max_profit_input }}%</strong>
+      <small class="lm-kpi-hint">من → إلى</small>
+    </article>
+  </section>
+{% endif %}
+
+<form method="get" action="{% url 'browse_low_margin_prices' %}" class="dash-panel-glass low-margin-filter" role="search" aria-label="فلاتر الأسعار منخفضة الربح" id="lm-filter-form">
+  <input type="hidden" name="run" value="1">
+
+  <div class="field lm-field-branch">
+    <label for="lm-branch">الفرع</label>
+    <select id="lm-branch" name="branch">
+      <option value="" {% if not selected_branch %}selected{% endif %}>كل الفروع</option>
+      {% for b in branches %}
+        <option value="{{ b.code }}" title="{{ b.code }} — {{ b.name }}" {% if b.code == selected_branch %}selected{% endif %}>{{ b.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field lm-field-wh">
+    <label for="lm-wh">المخزن</label>
+    <select id="lm-wh" name="warehouses">
+      <option value="">{% if selected_branch %}كل مخازن الفرع{% else %}كل المخازن{% endif %}</option>
+      {% for w in branch_warehouses %}
+        <option value="{{ w.code }}" title="{{ w.name }}" {% if w.code == selected_warehouse %}selected{% endif %}>{{ w.code }} — {{ w.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field lm-field-group">
+    <label for="lm-group">المجموعة</label>
+    <select id="lm-group" name="group">
+      <option value="" {% if not selected_group %}selected{% endif %}>كل المجموعات</option>
+      {% for g in groups %}
+        <option value="{{ g.code }}" {% if g.code == selected_group %}selected{% endif %}>{{ g.code }}- {{ g.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="field lm-field-min">
+    <label for="lm-min">من % <span class="lm-opt">(اختياري)</span></label>
+    <input id="lm-min" type="number" step="0.01" name="min_profit" value="{{ min_profit_input }}" placeholder="—" inputmode="decimal">
+  </div>
+
+  <div class="field lm-field-max">
+    <label for="lm-max">إلى % <span class="lm-req" aria-hidden="true">*</span></label>
+    <input id="lm-max" type="number" step="0.01" min="0" name="max_profit" value="{{ max_profit_input }}" placeholder="15" required inputmode="decimal" aria-required="true">
+  </div>
+
+  <div class="field lm-field-lev">
+    <label for="lm-lev">المستوى</label>
+    <input id="lm-lev" type="number" step="1" min="1" name="lev" value="{{ lev_no }}">
+  </div>
+
+  <div class="field lm-field-neg">
+    <label for="lm-neg">الخسارة</label>
+    <select id="lm-neg" name="include_neg">
+      <option value="1" {% if include_negative %}selected{% endif %}>تشمل السالب</option>
+      <option value="0" {% if not include_negative %}selected{% endif %}>أكبر من 0 فقط</option>
+    </select>
+  </div>
+
+  <div class="field lm-field-q">
+    <label for="lm-q">صنف <span class="lm-opt">(اختياري)</span></label>
+    <input id="lm-q" type="text" name="q" value="{{ item_q }}" placeholder="كود أو اسم" autocomplete="off">
+  </div>
+
+  <div class="field lm-field-actions">
+    <button type="submit" class="btn-primary">عرض الأصناف</button>
+  </div>
+</form>
+
+{% if report and report.rows %}
+  <section class="lm-sheet" aria-label="نتائج الأسعار منخفضة الربح">
+    <div class="lm-sheet-head">
+      <div class="lm-sheet-title">
+        <h3>الأصناف المسعّرة</h3>
+        <span class="lm-sheet-count">{{ report.rows|length }} / {{ report.kpis.total_matching }} صنف</span>
+      </div>
+      <div class="lm-sheet-actions">
+        <a class="btn-ghost lm-excel-btn" href="?{{ request.GET.urlencode }}&amp;export=excel" title="تصدير إلى Excel">Excel</a>
+        <button type="button" class="btn-ghost lm-pdf-btn js-fit-print" title="طباعة PDF">PDF</button>
+      </div>
+    </div>
+
+    <div class="table-wrap lm-scroll" id="lm-wrap" tabindex="0" aria-label="جدول الأسعار — اسحب أفقياً وعمودياً">
+      <table
+        class="lm-table"
+        id="lm-table"
+        aria-label="قائمة أسعار بنسبة ربح منخفضة"
+        data-api="{{ api_url }}"
+        data-page-size="{{ page_size|default:200 }}"
+        data-total="{{ report.kpis.total_matching|default:0 }}"
+        data-scroll-max="{{ scroll_max|default:500000 }}"
+        data-full-scope="{% if report.kpis.full_scroll %}1{% else %}0{% endif %}"
+        data-has-more="{% if report.kpis.has_more %}1{% else %}0{% endif %}"
+        data-branch="{{ selected_branch }}"
+        data-warehouses="{{ warehouses_raw }}"
+        data-group="{{ selected_group }}"
+        data-q="{{ item_q }}"
+        data-min-profit="{{ min_profit_input }}"
+        data-max-profit="{{ max_profit_input }}"
+        data-lev="{{ lev_no }}"
+        data-include-neg="{% if include_negative %}1{% else %}0{% endif %}"
+      >
+        <colgroup>
+          <col class="col-idx">
+          <col class="col-code">
+          <col class="col-item">
+          <col class="col-barcode">
+          <col class="col-unit">
+          <col class="col-wh">
+          <col class="col-group">
+          <col class="col-cost">
+          <col class="col-price">
+          <col class="col-prft">
+          <col class="col-onixprft">
+          <col class="col-lev">
+          <col class="col-levn">
+        </colgroup>
+        <thead>
+          <tr>
+            <th class="lm-th-idx">#</th>
+            <th class="lm-th-code">الرقم</th>
+            <th class="lm-th-item">اسم الصنف</th>
+            <th class="lm-th-barcode">الباركود</th>
+            <th class="lm-th-unit">الوحدة</th>
+            <th class="lm-th-wh">المخزن</th>
+            <th class="lm-th-group">المجموعة</th>
+            <th class="lm-th-cost">متوسط التكلفة</th>
+            <th class="lm-th-price">السعر شامل الضريبة</th>
+            <th class="lm-th-prft" title="صافي ÷ I_CWTAVG">نسبة الربح</th>
+            <th class="lm-th-onixprft" title="صافي ÷ آخر سعر توريد (وحدة)">ربح أونكس</th>
+            <th class="lm-th-lev">المستوى</th>
+            <th class="lm-th-levn">اسم المستوى</th>
+          </tr>
+        </thead>
+        <tbody id="lm-body">
+          {% for r in report.rows %}
+            <tr class="{% if r.profit_pct < 0 %}is-loss{% elif r.profit_pct < 5 %}is-warn{% elif r.profit_pct < 10 %}is-mid{% else %}is-ok{% endif %}">
+              <td class="mono lm-td-idx">{{ forloop.counter }}</td>
+              <td class="mono lm-td-code">{{ r.item_code }}</td>
+              <td class="lm-td-item" title="{{ r.item_name }}">{{ r.item_name }}</td>
+              <td class="mono lm-td-barcode" dir="ltr">{% if r.barcode %}{{ r.barcode }}{% endif %}</td>
+              <td class="lm-td-unit">{{ r.unit }}</td>
+              <td class="mono lm-td-wh" title="{{ r.wh_name }}">{{ r.wh_code }}</td>
+              <td class="lm-td-group" title="{{ r.g_code }}">{{ r.g_name }}</td>
+              <td class="mono lm-td-cost">{{ r.avg_cost_display }}</td>
+              <td class="mono lm-td-price">{{ r.price_display }}</td>
+              <td class="mono lm-td-prft" title="I_CWTAVG {{ r.unit_cost_display }}">{{ r.profit_pct_display }}%</td>
+              <td class="mono lm-td-onixprft" title="{{ r.onyx_cost_src_label }} {{ r.primary_cost_display }}">{{ r.onyx_profit_pct_display }}%</td>
+              <td class="mono lm-td-lev">{{ r.lev_no }}</td>
+              <td class="lm-td-levn">{{ r.lev_name }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div id="lm-loader" class="lm-loader" hidden>جاري تحميل المزيد…</div>
+    </div>
+  </section>
+{% elif report %}
+  <p class="sales-empty">لا أصناف مسعّرة تحت الحد المحدد.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{{ all_warehouses|json_script:"lm-wh-data" }}
+<script src="/static/js/low-margin-filter.js?v={{ app_client_version }}"></script>
+{% if report and report.rows %}
+<script src="/static/js/low-margin-scroll.js?v={{ app_client_version }}" defer></script>
+{% if report.kpis.has_more %}
+<script src="/static/js/low-margin-loader.js?v={{ app_client_version }}" defer></script>
+{% endif %}
+{% endif %}
+{% endblock %}

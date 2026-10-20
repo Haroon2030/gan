@@ -1,0 +1,138 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path('', views.home, name='home'),
+    path(
+        'home/api/widget/<slug:name>/',
+        views.home_widget_api,
+        name='home_widget_api',
+    ),
+    path('items/', views.item_search, name='item_search'),
+    path(
+        'items/vendor-item-count/',
+        views.item_vendor_item_count,
+        name='item_vendor_item_count',
+    ),
+    path('browse/', views.browse_groups, name='browse_groups'),
+    path('inventory/', views.browse_inventory, name='browse_inventory'),
+    path('inventory/unsold/', views.browse_unsold, name='browse_unsold'),
+    path(
+        'inventory/turnover/',
+        views.browse_stock_turnover,
+        name='browse_stock_turnover',
+    ),
+    path(
+        'inventory/unsold/api/rows/',
+        views.browse_unsold_api,
+        name='browse_unsold_api',
+    ),
+    path('inventory/transfers/', views.browse_tr_compare, name='browse_tr_compare'),
+    path(
+        'inventory/pack-errors/',
+        views.browse_inventory_pack_errors,
+        name='browse_inventory_pack_errors',
+    ),
+    path(
+        'inventory/pack-errors/detail/',
+        views.browse_inventory_pack_errors_detail,
+        name='browse_inventory_pack_errors_detail',
+    ),
+    path(
+        'inventory/transfers/request/',
+        views.browse_tr_compare_detail,
+        name='browse_tr_compare_detail',
+    ),
+    path('purchases/', views.browse_purchases, name='browse_purchases'),
+    path(
+        'purchases/turnover/',
+        views.browse_vendor_turnover,
+        name='browse_vendor_turnover',
+    ),
+    path(
+        'purchases/price-compare/',
+        views.browse_vendor_price_compare,
+        name='browse_vendor_price_compare',
+    ),
+    path('purchases/compare/', views.browse_pr_compare, name='browse_pr_compare'),
+    path(
+        'purchases/compare/request/',
+        views.browse_pr_compare_detail,
+        name='browse_pr_compare_detail',
+    ),
+    path(
+        'purchases/low-margin/',
+        views.browse_low_margin_prices,
+        name='browse_low_margin_prices',
+    ),
+    path(
+        'purchases/low-margin/api/rows/',
+        views.browse_low_margin_prices_api,
+        name='browse_low_margin_prices_api',
+    ),
+    path(
+        'purchases/unpriced/',
+        views.browse_unpriced_items,
+        name='browse_unpriced_items',
+    ),
+    path(
+        'purchases/below-cost/',
+        views.browse_below_cost_prices,
+        name='browse_below_cost_prices',
+    ),
+    path(
+        'purchases/price-changes/',
+        views.browse_price_changes,
+        name='browse_price_changes',
+    ),
+    path(
+        'purchases/cost-adjustments/',
+        views.browse_cost_adjustments,
+        name='browse_cost_adjustments',
+    ),
+    path(
+        'purchases/name-barcode/',
+        views.browse_name_barcode_conflicts,
+        name='browse_name_barcode_conflicts',
+    ),
+    path('sales/', views.browse_sales, name='browse_sales'),
+    path(
+        'sales/api/groups/',
+        views.browse_sales_groups_api,
+        name='browse_sales_groups_api',
+    ),
+    path(
+        'sales/api/groups-month/',
+        views.browse_sales_groups_month_api,
+        name='browse_sales_groups_month_api',
+    ),
+    path(
+        'sales/api/top-items/',
+        views.browse_sales_top_items_api,
+        name='browse_sales_top_items_api',
+    ),
+    path(
+        'sales/api/top-users/',
+        views.browse_sales_top_users_api,
+        name='browse_sales_top_users_api',
+    ),
+    path('sales/search/', views.sales_search, name='sales_search'),
+    path('sales/performance/', views.browse_performance, name='browse_performance'),
+    path(
+        'sales/no-supply/',
+        views.browse_sold_no_supply,
+        name='browse_sold_no_supply',
+    ),
+    path(
+        'sales/no-supply/api/rows/',
+        views.browse_sold_no_supply_api,
+        name='browse_sold_no_supply_api',
+    ),
+    path('sync-barcodes/', views.sync_barcodes, name='sync_barcodes'),
+    path(
+        'settings/oracle/',
+        views.oracle_connection_settings,
+        name='oracle_connection_settings',
+    ),
+]

@@ -1,0 +1,13 @@
+# App + optional MySQL (set DB_* in Dokploy Environment)
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - item-data:/app/data
+    env_file:
+      - .env
+
+volumes:
+  item-data:

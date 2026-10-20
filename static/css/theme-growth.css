@@ -1,0 +1,1770 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME GROWTH — ثيم النمو والأداء التنفيذي الحديث
+   مستوحى من تصميم لوحات مؤشرات الأداء العالمية (SaaS 3D Performance Analytics)
+   يتضمن قاعدة طباعة وخطوط قوية وموحدة (Cairo + Plus Jakarta Sans + IBM Plex)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Fonts are loaded once from base.html to keep the UI consistent and avoid duplicate requests. */
+
+/* ── 1. متغيرات النظام واللوحة اللونية ────────────────────────────────────────── */
+:root,
+body,
+body.theme-growth,
+body.theme-navy {
+  /* الخطوط */
+  --font-main: 'IBM Plex Sans Arabic', 'Plus Jakarta Sans', 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* درجات الأوزان */
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-bold: 600;
+  --fw-heavy: 700;
+  --fw-black: 800;
+
+  /* خلفيات السطح والصفحة */
+  --bg-main: #F5F7FB;
+  --bg-canvas: #F5F7FB;
+  --bg: #F5F7FB;
+  --bg-soft: #F8FAFC;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #FFFFFF;
+  --panel: #FFFFFF;
+  --panel-glass: rgba(255, 255, 255, 0.92);
+
+  /* ألوان النصوص وعناصر القراءة */
+  --text-primary: #172033;
+  --text-secondary: #596579;
+  --text-muted: #8490A3;
+  --ink: #172033;
+  --ink-soft: #3D4A60;
+  --muted: #596579;
+  --navy-text: #172033;
+  --navy-muted: #596579;
+  --navy-head: #365FCB;
+
+  /* التدرجات الرئيسية وألوان العلامة التجارية */
+  --brand: #365FCB;
+  --brand-mid: #5277DD;
+  --brand-dark: #2448A5;
+  --brand-soft: #EEF3FF;
+  --accent: #7654D6;
+  --accent-soft: #F3F0FF;
+  --primary: #365FCB;
+
+  /* التدرجات الخاصة بالبطاقات الخمس والأيقونات */
+  --grad-purple: linear-gradient(135deg, #365FCB 0%, #7654D6 100%);
+  --grad-pink: linear-gradient(135deg, #F43F5E 0%, #FB7185 100%);
+  --grad-orange: linear-gradient(135deg, #F59E0B 0%, #FB923C 100%);
+  --grad-teal: linear-gradient(135deg, #0D9488 0%, #10B981 100%);
+  --grad-blue: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
+  --grad-banner: linear-gradient(135deg, #17264A 0%, #304F9D 55%, #5277DD 100%);
+  --grad-text: linear-gradient(135deg, #365FCB 0%, #7654D6 100%);
+
+  /* الحالات */
+  --success: #10B981;
+  --ok: #10B981;
+  --ok-bg: #ECFDF5;
+  --warning: #F59E0B;
+  --warn: #F59E0B;
+  --warn-bg: #FFFBEB;
+  --danger: #F43F5E;
+  --danger-bg: #FFF1F2;
+
+  /* الحدود والظلال */
+  --border: #E1E6EF;
+  --line: #E1E6EF;
+  --line-strong: #C8D0DE;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 8px 24px -7px rgba(36, 58, 104, 0.12), 0 2px 6px rgba(15, 23, 42, 0.025);
+  --shadow-card-hover: 0 14px 30px -10px rgba(36, 58, 104, 0.18), 0 5px 12px rgba(15, 23, 42, 0.04);
+  --shadow-glow-purple: 0 6px 18px rgba(54, 95, 203, 0.24);
+  --shadow-glow-pink: 0 8px 24px rgba(244, 63, 94, 0.35);
+  --shadow-glow-orange: 0 8px 24px rgba(245, 158, 11, 0.35);
+  --shadow-glow-teal: 0 8px 24px rgba(13, 148, 136, 0.35);
+  --shadow-glow-blue: 0 8px 24px rgba(37, 99, 235, 0.35);
+}
+
+/* ── 2. القاعدة القوية للخط لكل عنصر (Universal Typography Rule) ─────────────── */
+*,
+*::before,
+*::after {
+  font-family: var(--font-main) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-canvas);
+}
+
+body,
+body.theme-growth,
+body.theme-navy {
+  color: var(--text-primary) !important;
+  background:
+    radial-gradient(ellipse 65% 45% at 90% 0%, rgba(99, 102, 241, 0.08), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 10% 80%, rgba(139, 92, 246, 0.06), transparent 50%),
+    radial-gradient(ellipse 40% 35% at 50% 100%, rgba(244, 63, 94, 0.04), transparent 50%),
+    var(--bg-canvas) !important;
+  font-weight: var(--fw-medium) !important;
+  letter-spacing: -0.01em;
+  min-height: 100vh;
+}
+
+/* الأرقام والبيانات المالية والرموز Tabular Monospace */
+.mono,
+.money,
+.tabular-nums,
+code,
+pre,
+kbd,
+samp,
+[data-num],
+table td.mono,
+table td.money,
+.dash-kpi-value.mono,
+.lm-kpi-value,
+.up-kpi-value,
+.vpc-kpi strong,
+.ss-turn-card strong,
+.sales-grand-row td {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums lining-nums !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* الهرمية الطباعية للعناوين */
+h1, .welcome-title, .login-brand {
+  font-weight: var(--fw-black) !important;
+  font-size: 2.2rem !important;
+  letter-spacing: -0.03em !important;
+  color: #0F172A !important;
+  line-height: 1.2 !important;
+}
+
+h2, .dash-head-copy h2, .ss-page .ss-head h2, .login-panel-title {
+  font-weight: var(--fw-heavy) !important;
+  font-size: 1.65rem !important;
+  letter-spacing: -0.025em !important;
+  color: #0F172A !important;
+  line-height: 1.25 !important;
+}
+
+h3, .dash-panel-head h3, .panel-title {
+  font-weight: var(--fw-heavy) !important;
+  font-size: 1.25rem !important;
+  letter-spacing: -0.02em !important;
+  color: #0F172A !important;
+}
+
+h4, h5, h6, strong, b {
+  font-weight: var(--fw-bold) !important;
+  color: #1E293B !important;
+}
+
+p, .page p, .dash-head-copy p, .sales-ov-sub, .welcome-sub {
+  font-weight: var(--fw-medium) !important;
+  font-size: 0.96rem !important;
+  line-height: 1.6 !important;
+  color: #64748B !important;
+}
+
+label, .field label, .sidebar-section-label {
+  font-weight: var(--fw-bold) !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.03em !important;
+  color: #64748B !important;
+  text-transform: uppercase !important;
+}
+
+/* الكلمات المميزة بالتدرج اللوني (Gradient Highlight Text) */
+.text-gradient,
+.gradient-text,
+.growth-highlight {
+  background: var(--grad-text) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  display: inline-block;
+}
+
+/* ── 3. خلفيات وشبكة التطبيق (App Canvas & Ambient Backdrop) ─────────────────── */
+.app-backdrop {
+  opacity: 0.85 !important;
+}
+.app-orb {
+  opacity: 0.25 !important;
+  filter: blur(55px) !important;
+}
+.app-orb-a {
+  background: radial-gradient(circle at 35% 35%, rgba(99, 102, 241, 0.28), transparent 70%) !important;
+}
+.app-orb-b {
+  background: radial-gradient(circle at 60% 40%, rgba(244, 63, 94, 0.2), transparent 70%) !important;
+}
+.app-grid {
+  background-image:
+    linear-gradient(rgba(203, 213, 225, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 213, 225, 0.3) 1px, transparent 1px) !important;
+}
+
+/* ── 4. الشريط الجانبي الفخم (Sleek Contrast Sidebar) ───────────────────────── */
+body.theme-growth .sidebar,
+body.theme-navy .sidebar,
+.sidebar {
+  background: linear-gradient(180deg, #0F172A 0%, #1E1B4B 60%, #0F172A 100%) !important;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 6px 0 30px rgba(15, 23, 42, 0.12) !important;
+  color: #F1F5F9 !important;
+  z-index: 60 !important;
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 1.25rem 1rem !important;
+}
+
+.sidebar-brand .brand-sub {
+  color: #A78BFA !important;
+  font-weight: var(--fw-bold) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.sidebar-brand .brand {
+  color: #FFFFFF !important;
+  font-weight: var(--fw-black) !important;
+  font-size: 1.2rem !important;
+  letter-spacing: -0.02em !important;
+}
+
+.sidebar-brand .brand-mark {
+  background: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 50%, #EC4899 100%) !important;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.45) !important;
+  border-radius: 12px !important;
+  border: none !important;
+}
+
+.sidebar-section-label {
+  color: #94A3B8 !important;
+  font-weight: var(--fw-heavy) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  padding-inline: 1rem !important;
+  margin-top: 1.2rem !important;
+}
+
+.sidebar-nav .sidebar-link,
+.sidebar-nav .sidebar-group-toggle {
+  color: #CBD5E1 !important;
+  font-weight: var(--fw-bold) !important;
+  font-size: 0.9rem !important;
+  padding: 0.65rem 0.9rem !important;
+  border-radius: 12px !important;
+  margin: 0.15rem 0.6rem !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* Keep the link's outer width inside the sidebar after adding horizontal margins. */
+.sidebar-nav .sidebar-link {
+  width: calc(100% - 1.2rem) !important;
+}
+
+.sidebar-nav .sidebar-link:hover,
+.sidebar-nav .sidebar-group-toggle:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #FFFFFF !important;
+  transform: translateX(-3px);
+}
+
+.sidebar-nav .sidebar-link.is-active,
+.sidebar-nav .sidebar-link[aria-current="page"] {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.25) 100%) !important;
+  color: #FFFFFF !important;
+  border-inline-start: 3px solid #6366F1 !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
+  font-weight: var(--fw-heavy) !important;
+}
+
+.sidebar-nav .sidebar-sublink {
+  color: #94A3B8 !important;
+  font-weight: var(--fw-medium) !important;
+  font-size: 0.85rem !important;
+}
+
+.sidebar-nav .sidebar-sublink:hover,
+.sidebar-nav .sidebar-sublink.is-active {
+  color: #FFFFFF !important;
+  font-weight: var(--fw-bold) !important;
+}
+
+.sidebar-user {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 1rem !important;
+}
+
+.sidebar-user .user-name {
+  color: #FFFFFF !important;
+  font-weight: var(--fw-bold) !important;
+}
+
+.sidebar-user .user-role {
+  color: #A78BFA !important;
+  font-weight: var(--fw-medium) !important;
+  font-size: 0.78rem !important;
+}
+
+/* Sidebar polish: balanced header, contained navigation, and a clear account area. */
+.sidebar {
+  padding: 0.8rem 0.7rem 0.9rem;
+  gap: 0.25rem;
+}
+
+.sidebar-brand {
+  display: block;
+  flex: 0 0 auto;
+  margin: 0 0 0.25rem;
+  padding: 0.65rem 0.35rem 1rem !important;
+}
+
+.sidebar-brand-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-brand-lockup {
+  gap: 0.65rem;
+}
+
+.sidebar-brand .brand-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 15px !important;
+}
+
+.sidebar-brand .brand-sub {
+  margin: 0 0 0.2rem;
+}
+
+.sidebar-brand .brand {
+  margin: 0;
+  font-size: 1.05rem !important;
+  line-height: 1.35;
+}
+
+.sidebar-brand-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.sidebar-brand-tools .app-hard-refresh,
+.sidebar-brand-tools .sidebar-collapse,
+.sidebar-brand-tools .sidebar-close {
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #E2E8F0;
+  box-shadow: none;
+}
+
+.sidebar-brand-tools .app-hard-refresh:hover,
+.sidebar-brand-tools .sidebar-collapse:hover,
+.sidebar-brand-tools .sidebar-close:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  color: #FFFFFF !important;
+}
+
+.sidebar-nav {
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar-zone {
+  width: 100%;
+  min-width: 0;
+}
+
+.sidebar-section-label {
+  margin: 0.85rem 0.7rem 0.35rem !important;
+  padding-inline: 0.35rem !important;
+  color: #94A3B8 !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.12em !important;
+}
+
+.sidebar-nav .sidebar-link,
+.sidebar-nav .sidebar-group-toggle {
+  min-height: 2.75rem;
+  border: 1px solid transparent;
+  border-radius: 13px !important;
+}
+
+.sidebar-nav .sidebar-link.is-active,
+.sidebar-nav .sidebar-link[aria-current="page"] {
+  border-color: rgba(167, 139, 250, 0.36) !important;
+  border-inline-start: 3px solid #A78BFA !important;
+  background: linear-gradient(110deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.12)) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05), 0 8px 20px rgba(5, 8, 25, 0.12) !important;
+}
+
+.sidebar-group-items {
+  border-inline-start-color: rgba(148, 163, 184, 0.24);
+}
+
+.sidebar-foot {
+  flex: 0 0 auto;
+  padding-top: 0.75rem;
+  border-top-color: rgba(255, 255, 255, 0.09);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.055) !important;
+  padding: 0.75rem !important;
+}
+
+.sidebar-user-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  border-radius: 13px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #C4B5FD;
+}
+
+.sidebar-user-avatar-ico {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.sidebar-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.sidebar-user-name {
+  overflow: hidden;
+  color: #F8FAFC;
+  font-size: 0.88rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-user-role {
+  color: #A5B4FC;
+  font-size: 0.72rem;
+}
+
+.sidebar-foot .btn-logout {
+  min-height: 2.7rem;
+  margin-top: 0.15rem;
+  border: 1px solid rgba(251, 113, 133, 0.2);
+  border-radius: 13px;
+  background: rgba(244, 63, 94, 0.09);
+  color: #FDA4AF;
+}
+
+.sidebar-foot .btn-logout:hover {
+  border-color: rgba(251, 113, 133, 0.36);
+  background: rgba(244, 63, 94, 0.16);
+  color: #FFE4E6;
+}
+
+@media (min-width: 901px) {
+  html.sidebar-collapsed .sidebar-brand-top {
+    flex-direction: column;
+    gap: 0.55rem;
+  }
+
+  html.sidebar-collapsed .sidebar-brand-tools {
+    gap: 0;
+  }
+
+  html.sidebar-collapsed .sidebar-brand-tools .app-hard-refresh {
+    display: none !important;
+  }
+
+  html.sidebar-collapsed .sidebar-user-meta,
+  html.sidebar-collapsed .sidebar-user-name,
+  html.sidebar-collapsed .sidebar-user-role {
+    display: none;
+  }
+
+  html.sidebar-collapsed .sidebar-user {
+    justify-content: center;
+    padding: 0.5rem !important;
+  }
+}
+
+/* ── 5. بطاقات المؤشرات (5 KPI Card Themes Directly From Image) ─────────────── */
+.dash-kpi-card,
+.dash-kpi-glass,
+.lm-kpi,
+.up-kpi,
+.vpc-kpi,
+.income-kpi,
+.ss-turn-card,
+.growth-kpi-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 1.6rem 1.4rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease !important;
+}
+
+.dash-kpi-card:hover,
+.growth-kpi-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+/* الأيقونة الدائرية المجسمة 3D Icon Badge */
+.dash-kpi-ico,
+.lm-kpi-ico,
+.up-kpi-ico,
+.growth-kpi-ico {
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 1rem !important;
+  color: #FFFFFF !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.25s ease !important;
+}
+
+.dash-kpi-card:hover .dash-kpi-ico,
+.growth-kpi-card:hover .growth-kpi-ico {
+  transform: scale(1.08) rotate(3deg);
+}
+
+.dash-kpi-ico svg,
+.growth-kpi-ico svg {
+  width: 26px !important;
+  height: 26px !important;
+  stroke-width: 2.2 !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+/* مسمى المؤشر */
+.dash-kpi-label,
+.lm-kpi-label,
+.up-kpi-label,
+.ss-turn-label,
+.growth-kpi-label {
+  font-weight: var(--fw-heavy) !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: #64748B !important;
+  margin-bottom: 0.4rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+}
+
+/* الرقم / القيمة الكبيرة للمؤشر */
+.dash-kpi-value,
+.dash-kpi-value.mono,
+.lm-kpi-value,
+.up-kpi-value,
+.growth-kpi-val {
+  font-size: 2.3rem !important;
+  font-weight: var(--fw-black) !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.15 !important;
+  margin-bottom: 0.75rem !important;
+  font-variant-numeric: tabular-nums lining-nums !important;
+}
+
+/* كبسولة المقارنة والنمو في أسفل البطاقة (Pill Badge) */
+.dash-kpi-hint,
+.dash-kpi-hint.mono,
+.growth-kpi-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.35rem !important;
+  padding: 0.4rem 0.85rem !important;
+  border-radius: var(--radius-full) !important;
+  font-size: 0.78rem !important;
+  font-weight: var(--fw-bold) !important;
+  letter-spacing: 0.01em !important;
+  line-height: 1.2 !important;
+  max-width: 100% !important;
+}
+
+/* ── تخصيص ألوان البطاقات الخمس بدقة طبق الأصل من الصورة المرفقة ── */
+
+/* 1. النمط البنفسجي / Purple (مثل بطاقة IMPRESSIONS 12.8M) */
+.dash-kpi-glass-pos,
+.kpi-purple,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+1),
+.growth-kpis .growth-kpi-card:nth-child(5n+1) {
+  border-color: rgba(99, 102, 241, 0.2) !important;
+}
+.dash-kpi-glass-pos .dash-kpi-ico,
+.kpi-purple .dash-kpi-ico,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+1) .dash-kpi-ico,
+.growth-kpis .growth-kpi-card:nth-child(5n+1) .growth-kpi-ico {
+  background: var(--grad-purple) !important;
+  box-shadow: var(--shadow-glow-purple) !important;
+}
+.dash-kpi-glass-pos .dash-kpi-value,
+.kpi-purple .dash-kpi-value,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+1) .dash-kpi-value,
+.growth-kpis .growth-kpi-card:nth-child(5n+1) .growth-kpi-val {
+  color: #3730A3 !important;
+}
+.dash-kpi-glass-pos .dash-kpi-hint,
+.kpi-purple .dash-kpi-hint,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+1) .dash-kpi-hint,
+.growth-kpis .growth-kpi-card:nth-child(5n+1) .growth-kpi-pill {
+  background: #EDE9FE !important;
+  color: #5B21B6 !important;
+}
+
+/* 2. النمط الوردي / Pink (مثل بطاقة CLICKS 320K) */
+.dash-kpi-glass-returns,
+.kpi-pink,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+2),
+.growth-kpis .growth-kpi-card:nth-child(5n+2) {
+  border-color: rgba(244, 63, 94, 0.2) !important;
+}
+.dash-kpi-glass-returns .dash-kpi-ico,
+.kpi-pink .dash-kpi-ico,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+2) .dash-kpi-ico,
+.growth-kpis .growth-kpi-card:nth-child(5n+2) .growth-kpi-ico {
+  background: var(--grad-pink) !important;
+  box-shadow: var(--shadow-glow-pink) !important;
+}
+.dash-kpi-glass-returns .dash-kpi-value,
+.kpi-pink .dash-kpi-value,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+2) .dash-kpi-value,
+.growth-kpis .growth-kpi-card:nth-child(5n+2) .growth-kpi-val {
+  color: #E11D48 !important;
+}
+.dash-kpi-glass-returns .dash-kpi-hint,
+.kpi-pink .dash-kpi-hint,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+2) .dash-kpi-hint,
+.growth-kpis .growth-kpi-card:nth-child(5n+2) .growth-kpi-pill {
+  background: #FFE4E6 !important;
+  color: #BE123C !important;
+}
+
+/* 3. النمط البرتقالي / Amber (مثل بطاقة CONVERSIONS 18.6K) */
+.dash-kpi-glass-wholesale,
+.kpi-orange,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+3),
+.growth-kpis .growth-kpi-card:nth-child(5n+3) {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+.dash-kpi-glass-wholesale .dash-kpi-ico,
+.kpi-orange .dash-kpi-ico,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+3) .dash-kpi-ico,
+.growth-kpis .growth-kpi-card:nth-child(5n+3) .growth-kpi-ico {
+  background: var(--grad-orange) !important;
+  box-shadow: var(--shadow-glow-orange) !important;
+}
+.dash-kpi-glass-wholesale .dash-kpi-value,
+.kpi-orange .dash-kpi-value,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+3) .dash-kpi-value,
+.growth-kpis .growth-kpi-card:nth-child(5n+3) .growth-kpi-val {
+  color: #D97706 !important;
+}
+.dash-kpi-glass-wholesale .dash-kpi-hint,
+.kpi-orange .dash-kpi-hint,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+3) .dash-kpi-hint,
+.growth-kpis .growth-kpi-card:nth-child(5n+3) .growth-kpi-pill {
+  background: #FEF3C7 !important;
+  color: #B45309 !important;
+}
+
+/* 4. النمط الزمردي / Teal (مثل بطاقة COST PER CONVERSION $24.5) */
+.dash-kpi-glass-total,
+.kpi-teal,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+4),
+.growth-kpis .growth-kpi-card:nth-child(5n+4) {
+  border-color: rgba(13, 148, 136, 0.25) !important;
+}
+.dash-kpi-glass-total .dash-kpi-ico,
+.kpi-teal .dash-kpi-ico,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+4) .dash-kpi-ico,
+.growth-kpis .growth-kpi-card:nth-child(5n+4) .growth-kpi-ico {
+  background: var(--grad-teal) !important;
+  box-shadow: var(--shadow-glow-teal) !important;
+}
+.dash-kpi-glass-total .dash-kpi-value,
+.kpi-teal .dash-kpi-value,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+4) .dash-kpi-value,
+.growth-kpis .growth-kpi-card:nth-child(5n+4) .growth-kpi-val {
+  color: #0D9488 !important;
+}
+.dash-kpi-glass-total .dash-kpi-hint,
+.kpi-teal .dash-kpi-hint,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+4) .dash-kpi-hint,
+.growth-kpis .growth-kpi-card:nth-child(5n+4) .growth-kpi-pill {
+  background: #CCFBF1 !important;
+  color: #0F766E !important;
+}
+
+/* 5. النمط الأزرق الملكي / Royal Blue (مثل بطاقة ROI 4.3X) */
+.dash-kpi-glass-visit,
+.dash-kpi-glass-branches,
+.kpi-blue,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+5),
+.growth-kpis .growth-kpi-card:nth-child(5n+5) {
+  border-color: rgba(37, 99, 235, 0.25) !important;
+}
+.dash-kpi-glass-visit .dash-kpi-ico,
+.dash-kpi-glass-branches .dash-kpi-ico,
+.kpi-blue .dash-kpi-ico,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+5) .dash-kpi-ico,
+.growth-kpis .growth-kpi-card:nth-child(5n+5) .growth-kpi-ico {
+  background: var(--grad-blue) !important;
+  box-shadow: var(--shadow-glow-blue) !important;
+}
+.dash-kpi-glass-visit .dash-kpi-value,
+.dash-kpi-glass-branches .dash-kpi-value,
+.kpi-blue .dash-kpi-value,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+5) .dash-kpi-value,
+.growth-kpis .growth-kpi-card:nth-child(5n+5) .growth-kpi-val {
+  color: #2563EB !important;
+}
+.dash-kpi-glass-visit .dash-kpi-hint,
+.dash-kpi-glass-branches .dash-kpi-hint,
+.kpi-blue .dash-kpi-hint,
+.sales-ov-kpis .dash-kpi-card:nth-child(5n+5) .dash-kpi-hint,
+.growth-kpis .growth-kpi-card:nth-child(5n+5) .growth-kpi-pill {
+  background: #DBEAFE !important;
+  color: #1D4ED8 !important;
+}
+
+/* ── 6. شريط الرؤية والنمو في الأسفل (Insights Today · Growth Tomorrow Banner) ─ */
+.growth-banner,
+.insights-growth-card {
+  background: var(--grad-banner) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1.4rem 2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 16px 36px rgba(46, 55, 164, 0.35) !important;
+  margin-top: 1.8rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.growth-banner::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.25), transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.growth-banner-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.25rem !important;
+}
+
+.growth-banner-badge {
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  backdrop-filter: blur(10px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25), 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+  flex-shrink: 0 !important;
+}
+
+.growth-banner-badge svg {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.growth-banner-copy h3,
+.growth-banner-copy .banner-title {
+  color: #FFFFFF !important;
+  font-size: 1.35rem !important;
+  font-weight: var(--fw-heavy) !important;
+  letter-spacing: -0.02em !important;
+  margin: 0 0 0.2rem 0 !important;
+}
+
+.growth-banner-copy .banner-sub {
+  background: linear-gradient(90deg, #F43F5E 0%, #FB923C 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  font-size: 1.15rem !important;
+  font-weight: var(--fw-black) !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 !important;
+}
+
+.growth-banner-chart {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.growth-banner-chart svg {
+  width: 220px;
+  height: 48px;
+  overflow: visible;
+}
+
+/* ── 7. الكبسولة العلوية (Top Pill Badge) ────────────────────────────────────── */
+.growth-pill-badge,
+.welcome-kicker {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.6rem !important;
+  padding: 0.45rem 1.1rem !important;
+  border-radius: var(--radius-full) !important;
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #8B5CF6 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: var(--fw-heavy) !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35) !important;
+  margin-bottom: 1rem !important;
+}
+
+.growth-pill-badge svg,
+.welcome-kicker svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* ── 8. الجداول وقوائم البيانات (High-Contrast Clean Tables) ──────────────────── */
+table,
+.data-table,
+.sales-table,
+.lm-table,
+.up-table,
+.vt-table,
+.ss-sheet,
+.wqc-table,
+.assets-table,
+.table-wrap table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  font-size: 0.92rem !important;
+  background: #FFFFFF !important;
+}
+
+.table-wrap {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  overflow: hidden !important;
+}
+
+thead th,
+.table-wrap thead th,
+.sales-table thead th,
+.data-table thead th {
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  font-weight: var(--fw-heavy) !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.03em !important;
+  text-transform: uppercase !important;
+  padding: 0.95rem 1rem !important;
+  border-bottom: 2px solid #E2E8F0 !important;
+  border-top: none !important;
+}
+
+tbody td,
+.table-wrap tbody td,
+.sales-table tbody td,
+.data-table tbody td {
+  padding: 0.85rem 1rem !important;
+  color: #1E293B !important;
+  font-weight: var(--fw-medium) !important;
+  border-bottom: 1px solid #F1F5F9 !important;
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover td {
+  background: #F8FAFD !important;
+}
+
+tbody tr.is-selected td,
+tbody tr.active td {
+  background: #EEF2FF !important;
+  color: #3730A3 !important;
+  font-weight: var(--fw-bold) !important;
+}
+
+tfoot td,
+.sales-grand-row td {
+  background: #F1F5F9 !important;
+  color: #0F172A !important;
+  font-weight: var(--fw-black) !important;
+  font-size: 0.96rem !important;
+  border-top: 2px solid #CBD5E1 !important;
+  padding: 1rem !important;
+}
+
+/* ── 9. المدخلات، الحقول، وأزرار الإجراءات (Forms, Inputs & Buttons) ─────────── */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+select,
+textarea {
+  background: #FFFFFF !important;
+  border: 1.5px solid #E2E8F0 !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 0.75rem 1rem !important;
+  font-size: 0.94rem !important;
+  font-weight: var(--fw-bold) !important;
+  color: #0F172A !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #6366F1 !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+  outline: none !important;
+}
+
+/* أزرار الإجراء الأساسية */
+button.btn-primary,
+.btn-primary,
+.dash-pdf-btn,
+.login-submit,
+.income-filter-submit,
+.welcome-card {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #8B5CF6 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: var(--fw-heavy) !important;
+  letter-spacing: 0.01em !important;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35) !important;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  cursor: pointer !important;
+}
+
+button.btn-primary:hover,
+.btn-primary:hover,
+.dash-pdf-btn:hover,
+.login-submit:hover,
+.income-filter-submit:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.45) !important;
+  filter: brightness(1.05) !important;
+}
+
+button.btn-primary:active,
+.btn-primary:active {
+  transform: translateY(0) !important;
+}
+
+/* أزرار الإجراء الثانوية */
+button.btn-secondary,
+.btn-secondary {
+  background: #FFFFFF !important;
+  border: 1.5px solid #E2E8F0 !important;
+  color: #334155 !important;
+  font-weight: var(--fw-bold) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+
+button.btn-secondary:hover,
+.btn-secondary:hover {
+  background: #F8FAFC !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+}
+
+/* ── 10. شاشة الترحيب الرئيسية (Welcome Dashboard Screen) ────────────────────── */
+.welcome-hero {
+  padding: 2.2rem 1rem 1.5rem !important;
+  text-align: center !important;
+}
+
+.welcome-hero-copy {
+  max-width: 800px !important;
+  margin: 0 auto 2.5rem !important;
+}
+
+.welcome-shortcuts {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  gap: 1.4rem !important;
+  margin-top: 2rem !important;
+}
+
+.welcome-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 1.8rem 1.5rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  color: #0F172A !important;
+  text-decoration: none !important;
+}
+
+.welcome-card strong {
+  font-size: 1.25rem !important;
+  font-weight: var(--fw-heavy) !important;
+  color: #0F172A !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.welcome-card span {
+  font-size: 0.88rem !important;
+  color: #64748B !important;
+  font-weight: var(--fw-medium) !important;
+}
+
+.welcome-card .welcome-card-ico {
+  width: 60px !important;
+  height: 60px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #8B5CF6 100%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--shadow-glow-purple) !important;
+  margin-bottom: 1.2rem !important;
+  transition: transform 0.25s ease !important;
+}
+
+.welcome-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+.welcome-card:hover .welcome-card-ico {
+  transform: scale(1.1) rotate(5deg) !important;
+}
+
+/* ── 11. شاشة تسجيل الدخول (Modern SaaS Login) ────────────────────────────────── */
+.login-shell {
+  background:
+    radial-gradient(ellipse 70% 50% at 85% 15%, rgba(99, 102, 241, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 15% 85%, rgba(244, 63, 94, 0.08), transparent 50%),
+    #F4F7FE !important;
+  min-height: 100vh !important;
+}
+
+.login-card {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  border-radius: 26px !important;
+  box-shadow: 0 20px 45px -10px rgba(99, 102, 241, 0.12), 0 10px 20px -5px rgba(15, 23, 42, 0.04) !important;
+  padding: 2.5rem !important;
+}
+
+.login-panel-kicker {
+  color: #6366F1 !important;
+  font-weight: var(--fw-heavy) !important;
+  letter-spacing: 0.08em !important;
+}
+
+.login-panel-title {
+  color: #0F172A !important;
+  font-weight: var(--fw-black) !important;
+}
+
+.login-submit {
+  width: 100% !important;
+  padding: 0.95rem !important;
+  font-size: 1.05rem !important;
+  border-radius: 14px !important;
+}
+
+/* ── 12. مواءمة شاشات التحليل والبحث والتقارير الأخرى ───────────────────────── */
+.sales-ov-scope {
+  background: #EEF2FF !important;
+  color: #3730A3 !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  font-weight: var(--fw-bold) !important;
+  border-radius: var(--radius-full) !important;
+  padding: 0.4rem 1rem !important;
+  display: inline-block !important;
+}
+
+.search-box,
+.filter-bar,
+.dash-filter,
+.income-filter {
+  background: #FFFFFF !important;
+  border: 1px solid rgba(226, 232, 240, 0.85) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 1.2rem 1.4rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.alert-error,
+.login-error {
+  background: #FFF1F2 !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+  color: #9F1239 !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: var(--fw-bold) !important;
+}
+
+.alert-success {
+  background: #ECFDF5 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+  color: #065F46 !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: var(--fw-bold) !important;
+}
+
+/* أزرار التحديث الإجباري والطي */
+.app-hard-refresh,
+.sidebar-collapse,
+.sidebar-open {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #475569 !important;
+  border-radius: 10px !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: all 0.2s ease !important;
+}
+
+.app-hard-refresh:hover,
+.sidebar-collapse:hover,
+.sidebar-open:hover {
+  background: #F8FAFC !important;
+  color: #4F46E5 !important;
+  border-color: #CBD5E1 !important;
+}
+
+/* تجاوب الشاشات الصغيرة */
+@media (max-width: 768px) {
+  .growth-banner {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 1.2rem !important;
+  }
+  .growth-banner-left {
+    flex-direction: column !important;
+  }
+  .dash-kpi-value,
+  .growth-kpi-val {
+    font-size: 1.85rem !important;
+  }
+}
+
+/* ── 13. نظام موحّد للخطوط والألوان والأزرار ───────────────────────────────── */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-main) !important;
+}
+
+body,
+body.theme-growth,
+body.theme-navy {
+  color: var(--text-primary) !important;
+  font-size: 0.95rem;
+  font-weight: var(--fw-normal) !important;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+h1,
+.welcome-title,
+.login-brand {
+  color: var(--text-primary) !important;
+  font-size: clamp(1.75rem, 3vw, 2.15rem) !important;
+  font-weight: var(--fw-black) !important;
+  letter-spacing: -0.035em !important;
+  line-height: 1.3 !important;
+}
+
+h2,
+.dash-head-copy h2,
+.ss-page .ss-head h2,
+.login-panel-title {
+  color: var(--text-primary) !important;
+  font-size: clamp(1.35rem, 2.3vw, 1.65rem) !important;
+  font-weight: var(--fw-heavy) !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1.4 !important;
+}
+
+h3,
+.dash-panel-head h3,
+.panel-title {
+  color: var(--text-primary) !important;
+  font-size: 1.12rem !important;
+  font-weight: var(--fw-heavy) !important;
+  letter-spacing: -0.015em !important;
+  line-height: 1.45 !important;
+}
+
+p,
+.page p,
+.dash-head-copy p,
+.sales-ov-sub,
+.welcome-sub {
+  color: var(--text-secondary) !important;
+  font-size: 0.92rem !important;
+  font-weight: var(--fw-normal) !important;
+  line-height: 1.7 !important;
+}
+
+label,
+.field label,
+.sidebar-section-label {
+  color: var(--text-secondary) !important;
+  font-size: 0.83rem !important;
+  font-weight: var(--fw-bold) !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="time"],
+input[type="month"],
+select,
+textarea {
+  border: 1px solid #D6DDE8 !important;
+  border-radius: 10px !important;
+  background-color: #FFFFFF !important;
+  color: var(--text-primary) !important;
+  font-size: 0.92rem !important;
+  font-weight: var(--fw-medium) !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8792A4 !important;
+  font-weight: var(--fw-normal) !important;
+  opacity: 1;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #6484DB !important;
+  box-shadow: 0 0 0 3px rgba(54, 95, 203, 0.14) !important;
+  outline: none !important;
+}
+
+button,
+.btn-primary,
+.btn-ghost,
+.btn-secondary,
+.btn-new-search,
+.btn-scan,
+.dash-pdf-btn,
+.login-submit,
+.income-filter-submit,
+.pr-compare-submit,
+.btn-refresh,
+.btn-logout {
+  font-family: var(--font-main) !important;
+  font-size: 0.9rem;
+  font-weight: var(--fw-bold) !important;
+  letter-spacing: 0 !important;
+  transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease,
+    box-shadow 0.16s ease, transform 0.16s ease, filter 0.16s ease !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary,
+button.btn-primary,
+.login-submit,
+.income-filter-submit,
+.pr-compare-submit {
+  min-height: 2.65rem;
+  border: 1px solid #365FCB !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #365FCB 0%, #4E70D2 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: var(--fw-bold) !important;
+  box-shadow: 0 3px 8px rgba(42, 77, 164, 0.17) !important;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+.login-submit:hover,
+.income-filter-submit:hover,
+.pr-compare-submit:hover {
+  border-color: #294EAE !important;
+  background: linear-gradient(135deg, #2F55B8 0%, #4568C9 100%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 5px 12px rgba(42, 77, 164, 0.22) !important;
+  filter: none !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-primary:active,
+button.btn-primary:active,
+.login-submit:active,
+.income-filter-submit:active,
+.pr-compare-submit:active {
+  box-shadow: 0 1px 3px rgba(42, 77, 164, 0.18) !important;
+  transform: translateY(0) !important;
+}
+
+.btn-ghost,
+.btn-secondary,
+.dash-pdf-btn,
+.btn-new-search,
+.btn-scan {
+  min-height: 2.5rem;
+  border: 1px solid #D6DDE8 !important;
+  border-radius: 10px !important;
+  background: #FFFFFF !important;
+  color: #3D4A60 !important;
+  font-weight: var(--fw-medium) !important;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.035) !important;
+}
+
+.btn-ghost:hover,
+.btn-secondary:hover,
+.dash-pdf-btn:hover,
+.btn-new-search:hover,
+.btn-scan:hover {
+  border-color: #AEBFE2 !important;
+  background: #F5F8FF !important;
+  color: #2448A5 !important;
+  box-shadow: 0 3px 8px rgba(36, 72, 165, 0.08) !important;
+  transform: translateY(-1px);
+}
+
+.btn-refresh,
+.app-hard-refresh {
+  border: 1px solid #D6DDE8 !important;
+  border-radius: 10px !important;
+  background: #FFFFFF !important;
+  color: #3D4A60 !important;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.07) !important;
+}
+
+.btn-refresh:hover,
+.app-hard-refresh:hover {
+  border-color: #AEBFE2 !important;
+  background: #F5F8FF !important;
+  color: #2448A5 !important;
+  filter: none !important;
+  box-shadow: 0 3px 8px rgba(36, 72, 165, 0.1) !important;
+}
+
+.btn-logout,
+.sidebar-foot .btn-logout {
+  border: 1px solid #F0C7CC !important;
+  border-radius: 10px !important;
+  background: #FFF7F7 !important;
+  color: #A13B48 !important;
+  font-weight: var(--fw-bold) !important;
+  box-shadow: none !important;
+}
+
+.btn-logout:hover,
+.sidebar-foot .btn-logout:hover {
+  border-color: #E5AAB2 !important;
+  background: #FFF0F1 !important;
+  color: #8E2937 !important;
+}
+
+.dash-pdf-btn-sm {
+  min-height: 2.15rem;
+  padding-block: 0.4rem !important;
+  font-size: 0.82rem !important;
+}
+
+button:focus-visible,
+a.btn-primary:focus-visible,
+a.btn-ghost:focus-visible,
+a.btn-new-search:focus-visible,
+input[type="submit"]:focus-visible {
+  outline: 3px solid rgba(82, 119, 221, 0.45) !important;
+  outline-offset: 2px !important;
+}
+
+button:disabled,
+button[aria-disabled="true"],
+input[type="submit"]:disabled {
+  cursor: not-allowed !important;
+  filter: grayscale(0.15);
+  opacity: 0.55 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.scroll-edge-btn {
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background: linear-gradient(145deg, #365FCB, #5277DD) !important;
+  box-shadow: 0 6px 16px rgba(42, 77, 164, 0.24) !important;
+}
+
+.sidebar-user-name {
+  color: #F8FAFC !important;
+}
+
+.sidebar-user-role {
+  color: #B8C5E6 !important;
+}
+
+.welcome-dash .welcome-kicker {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 2rem;
+  margin: 0 0 0.75rem !important;
+  padding: 0.38rem 0.85rem !important;
+  border: 1px solid #D9E3FA !important;
+  border-radius: 999px !important;
+  background: #EEF3FF !important;
+  color: #294EAE !important;
+  font-family: var(--font-main) !important;
+  font-size: 0.8rem !important;
+  font-weight: var(--fw-bold) !important;
+  letter-spacing: 0 !important;
+  line-height: 1.35 !important;
+  text-transform: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-brand-lockup {
+  min-height: 3.9rem;
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 15px;
+  padding: 0.45rem 0.6rem;
+  background: linear-gradient(115deg, rgba(99, 102, 241, 0.16), rgba(255, 255, 255, 0.035));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.045);
+  transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.sidebar-brand-lockup:hover {
+  border-color: rgba(167, 139, 250, 0.42);
+  background: linear-gradient(115deg, rgba(99, 102, 241, 0.24), rgba(255, 255, 255, 0.065));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.08), 0 5px 15px rgba(5, 8, 25, 0.14);
+  transform: translateY(-1px);
+}
+
+.sidebar-brand-lockup:focus-visible {
+  outline: 3px solid rgba(129, 156, 238, 0.72);
+  outline-offset: 2px;
+}
+
+.sidebar-brand .brand-sub {
+  color: #B8C5F2 !important;
+  letter-spacing: 0 !important;
+}
+
+.sidebar-brand .brand {
+  color: #FFFFFF !important;
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 900px) {
+  .sidebar-brand-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .sidebar-brand-lockup {
+    width: 100%;
+    min-height: 3.9rem;
+    padding: 0.4rem 0.55rem;
+  }
+
+  .sidebar-brand .brand-copy {
+    white-space: nowrap;
+  }
+
+  .sidebar-brand .brand {
+    white-space: nowrap;
+    font-size: 1rem !important;
+  }
+
+  .sidebar-brand-tools {
+    align-self: flex-start;
+    padding-inline-start: 0.45rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Glow accents for the welcome shortcut cards. */
+.welcome-dash .welcome-card {
+  border-color: color-mix(in srgb, var(--card-accent, #5277DD) 26%, #E1E6EF) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--card-accent, #5277DD) 10%, transparent),
+    0 8px 22px rgba(31, 48, 84, 0.08) !important;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.welcome-dash .welcome-card::before {
+  height: 4px !important;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--card-accent, #5277DD) 28%, white),
+    var(--card-accent, #5277DD) 48%,
+    color-mix(in srgb, var(--card-accent, #5277DD) 28%, white)) !important;
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--card-accent, #5277DD) 48%, transparent);
+}
+
+.welcome-dash .welcome-card:hover,
+.welcome-dash .welcome-card:focus-visible {
+  border-color: color-mix(in srgb, var(--card-accent, #5277DD) 58%, white) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--card-accent, #5277DD) 25%, transparent),
+    0 0 22px 2px color-mix(in srgb, var(--card-accent, #5277DD) 24%, transparent),
+    0 16px 32px rgba(31, 48, 84, 0.12) !important;
+  transform: translateY(-3px) !important;
+}
+
+.welcome-dash .welcome-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--card-accent, #5277DD) 48%, white) !important;
+  outline-offset: 3px !important;
+}
+
+.welcome-dash .welcome-hero-copy {
+  position: relative;
+  isolation: isolate;
+  padding: 0.65rem 1rem 0.8rem;
+  border-radius: 20px;
+}
+
+.welcome-dash .welcome-hero-copy::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -0.8rem 5% -0.25rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 28% 35%, rgba(82, 119, 221, 0.2), transparent 64%),
+    radial-gradient(ellipse at 72% 55%, rgba(118, 84, 214, 0.16), transparent 62%);
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.welcome-dash .welcome-title {
+  background: linear-gradient(115deg, #2448A5 8%, #426BCB 54%, #7654D6 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcome-dash .welcome-kicker {
+  border-color: rgba(82, 119, 221, 0.24) !important;
+  box-shadow: 0 4px 16px rgba(82, 119, 221, 0.12) !important;
+}
+
+.welcome-dash .welcome-slider {
+  border: 1px solid transparent !important;
+  background:
+    #FFFFFF padding-box,
+    linear-gradient(120deg, #FFFFFF 0%, #DCE7FA 52%, #FFFFFF 100%) border-box !important;
+  box-shadow:
+    0 0 0 1px rgba(82, 119, 221, 0.16),
+    0 0 20px rgba(82, 119, 221, 0.1),
+    0 12px 28px rgba(23, 32, 51, 0.1) !important;
+}
+
+.welcome-dash .welcome-slider-viewport {
+  border-radius: 12px 12px 0 0;
+}
+
+.welcome-dash .welcome-slider-viewport::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: inherit;
+  box-shadow: inset 0 0 14px rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+}
+
+.welcome-dash .welcome-slider-bar {
+  border-top-color: #E5EAF2 !important;
+  background: #FFFFFF !important;
+}
+
+.welcome-dash .welcome-slider-btn {
+  border-color: #D6DDE8 !important;
+  background: #FFFFFF !important;
+  color: #365FCB !important;
+}
+
+.welcome-dash .welcome-slider-btn:hover,
+.welcome-dash .welcome-slider-btn:focus-visible {
+  border-color: #5277DD !important;
+  background: #365FCB !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 0 12px rgba(82, 119, 221, 0.28) !important;
+}
+
+.welcome-dash .welcome-slider-dots button {
+  background: #CBD3E1 !important;
+}
+
+.welcome-dash .welcome-slider-dots button.is-active,
+.welcome-dash .welcome-slider-dots button[aria-selected="true"] {
+  background: #365FCB !important;
+  box-shadow: 0 0 9px rgba(82, 119, 221, 0.4) !important;
+}
+
+/* Preserve each 16:9 illustration in full and give its copy a high-contrast surface. */
+.welcome-dash .welcome-slide img {
+  object-fit: contain !important;
+  object-position: center !important;
+  background: linear-gradient(135deg, #F8FBFF, #EEF5FF) !important;
+}
+
+.welcome-dash .welcome-slide figcaption {
+  inset-inline: auto 1.1rem !important;
+  bottom: 1.1rem !important;
+  width: min(25rem, calc(100% - 2.2rem));
+  padding: 0.8rem 0.95rem !important;
+  border: 1px solid rgba(82, 119, 221, 0.2);
+  border-inline-start: 4px solid #26C4DF;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 8px 20px rgba(32, 62, 119, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.welcome-dash .welcome-slide figcaption strong {
+  color: #1D356D !important;
+  font-size: 0.98rem !important;
+  font-weight: 700 !important;
+}
+
+.welcome-dash .welcome-slide figcaption span {
+  color: #52637E !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+}
+
+@media (max-width: 600px) {
+  .welcome-dash .welcome-slide figcaption {
+    inset-inline: 0.7rem !important;
+    bottom: 0.7rem !important;
+    width: auto;
+    padding: 0.6rem 0.7rem !important;
+    border-inline-start-width: 3px;
+  }
+
+  .welcome-dash .welcome-slide figcaption strong {
+    font-size: 0.84rem !important;
+  }
+
+  .welcome-dash .welcome-slide figcaption span {
+    font-size: 0.72rem !important;
+  }
+}
+
+.welcome-dash .welcome-hero-copy > .welcome-sub {
+  color: #4B5A70 !important;
+  font-family: var(--font-main) !important;
+  font-size: 1rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.85 !important;
+  text-wrap: pretty;
+}
+
+@media (max-width: 600px) {
+  .welcome-dash .welcome-hero-copy > .welcome-sub {
+    font-size: 0.94rem !important;
+    line-height: 1.8 !important;
+  }
+}

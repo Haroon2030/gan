@@ -1,0 +1,1182 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME MANARA — طبقة التصميم التنفيذي (Figma: لوحة المؤشرات التنفيذية)
+   تُحمَّل بعد style.css و theme-growth.css وتعيد تلوين المكوّنات الموجودة فقط؛
+   لا تضيف عناصر ولا تغيّر الشاشات. تعتمد !important لأن theme-growth يستخدمه.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. الرموز (Design tokens) ─────────────────────────────────────────────── */
+:root,
+body,
+body.theme-growth,
+body.theme-navy {
+  --mn-page: #F3F5F7;
+  --mn-surface: #FFFFFF;
+  --mn-subtle: #F8FAFB;
+  --mn-ink: #142326;
+  --mn-muted: #68777A;
+  --mn-faint: #96A2A4;
+  --mn-line: #E3E8E9;
+  --mn-line-soft: #EEF1F2;
+  --mn-teal: #117C77;
+  --mn-teal-dark: #0D6662;
+  --mn-teal-soft: #E4F3F1;
+  --mn-teal-mid: #72B7B1;
+  --mn-side: #102A2E;
+  --mn-side-text: #BCD0D2;
+  --mn-side-label: #688589;
+  --mn-side-muted: #86A0A3;
+  --mn-side-hover: rgba(255, 255, 255, 0.06);
+  --mn-side-active: rgba(255, 255, 255, 0.08);
+  --mn-ok: #16815D;
+  --mn-ok-bg: #E8F5EF;
+  --mn-warn: #C37A19;
+  --mn-warn-bg: #FFF4DF;
+  --mn-danger: #C9504A;
+  --mn-danger-bg: #FCEBE9;
+  --mn-radius: 14px;
+  --mn-radius-sm: 10px;
+  --mn-shadow: 0 3px 14px rgba(16, 42, 46, 0.04);
+  --mn-ring: 0 0 0 3px rgba(17, 124, 119, 0.16);
+  --mn-font: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+
+  /* التصميم يستخدم خطاً واحداً للنصوص والأرقام؛ الأرقام بعرض ثابت عبر tabular-nums */
+  --font-mono: var(--mn-font);
+
+  /* ربط متغيرات الثيمات السابقة بالرموز الجديدة */
+  --bg-main: var(--mn-page);
+  --bg-canvas: var(--mn-page);
+  --bg: var(--mn-page);
+  --bg-soft: var(--mn-subtle);
+  --text-primary: var(--mn-ink);
+  --text-secondary: var(--mn-muted);
+  --text-muted: var(--mn-faint);
+  --ink: var(--mn-ink);
+  --ink-soft: #34474B;
+  --muted: var(--mn-muted);
+  --brand: var(--mn-teal);
+  --brand-mid: #1B8F89;
+  --brand-dark: var(--mn-teal-dark);
+  --brand-soft: var(--mn-teal-soft);
+  --primary: var(--mn-teal);
+  --accent: var(--mn-teal);
+  --accent-soft: var(--mn-teal-soft);
+  --success: var(--mn-ok);
+  --ok: var(--mn-ok);
+  --ok-bg: var(--mn-ok-bg);
+  --warning: var(--mn-warn);
+  --warn: var(--mn-warn);
+  --warn-bg: var(--mn-warn-bg);
+  --danger: var(--mn-danger);
+  --danger-bg: var(--mn-danger-bg);
+  --border: var(--mn-line);
+  --line: var(--mn-line);
+  --line-strong: #CBD5D7;
+  --shadow-sm: var(--mn-shadow);
+  --shadow-card: var(--mn-shadow);
+  --shadow-card-hover: 0 6px 18px rgba(16, 42, 46, 0.07);
+  --grad-text: linear-gradient(135deg, var(--mn-teal), var(--mn-teal));
+}
+
+/* ── 2. الصفحة والطباعة ────────────────────────────────────────────────────── */
+html {
+  background-color: var(--mn-page);
+}
+
+body,
+body.theme-growth,
+body.theme-navy {
+  background: var(--mn-page) !important;
+  color: var(--mn-ink) !important;
+}
+
+.app-backdrop {
+  display: none !important;
+}
+
+.page.has-sidebar:not(#mn) {
+  background: var(--mn-page) !important;
+}
+
+.mono:not(#mn),
+.money:not(#mn),
+.money-value:not(#mn) {
+  font-family: var(--mn-font) !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0 !important;
+}
+
+h1, .welcome-title, .login-brand,
+h2, .dash-head-copy h2, .ss-page .ss-head h2, .login-panel-title,
+h3, .dash-panel-head h3, .panel-title {
+  color: var(--mn-ink) !important;
+}
+
+h4, h5, h6, strong, b {
+  color: inherit !important;
+}
+
+.dash-head {
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.dash-head-copy h2 {
+  font-size: clamp(1.35rem, 4vw, 1.625rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.dash-head-copy p {
+  font-size: 0.78rem !important;
+}
+
+.dash-head-copy p,
+p,
+.page p,
+.sales-ov-sub,
+.welcome-sub {
+  color: var(--mn-muted) !important;
+}
+
+label,
+.field label {
+  color: var(--mn-muted) !important;
+  font-weight: 600 !important;
+}
+
+.text-gradient,
+.gradient-text,
+.growth-highlight {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--mn-teal) !important;
+}
+
+/* ── 3. الشريط الجانبي ─────────────────────────────────────────────────────── */
+body.theme-growth .sidebar,
+body.theme-navy .sidebar,
+.sidebar {
+  background: var(--mn-side) !important;
+  border-inline-end: 0 !important;
+  box-shadow: none !important;
+  color: #FFFFFF !important;
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+.sidebar-brand-lockup,
+.sidebar-brand-lockup:hover {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.sidebar-brand-lockup:focus-visible {
+  outline: 2px solid var(--mn-teal-mid) !important;
+}
+
+.sidebar-brand .brand-mark {
+  display: grid !important;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 10px !important;
+  background: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+.sidebar-brand .brand-mark .brand-bar {
+  fill: rgba(255, 255, 255, 0.55) !important;
+}
+
+.sidebar-brand .brand-mark rect:last-of-type {
+  fill: #FFFFFF !important;
+}
+
+/* في التصميم: اسم المنصة كبير أبيض وتحته وصف صغير تركوازي.
+   العنصر الأول (brand-sub) يحمل الاسم «غرفة القرار» فيأخذ دور العنوان. */
+.sidebar-brand .brand-sub {
+  margin: 0 0 2px !important;
+  color: #FFFFFF !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  white-space: nowrap;
+}
+
+.sidebar-brand .brand {
+  margin: 0 !important;
+  color: var(--mn-teal-mid) !important;
+  font-size: 0.68rem !important;
+  font-weight: 500 !important;
+  line-height: 1.3 !important;
+  white-space: nowrap;
+}
+
+.sidebar-brand-tools .app-hard-refresh,
+.sidebar-brand-tools .sidebar-collapse,
+.sidebar-brand-tools .sidebar-close {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-side-active) !important;
+  color: var(--mn-side-text) !important;
+  box-shadow: none !important;
+}
+
+.sidebar-brand-tools .app-hard-refresh:hover,
+.sidebar-brand-tools .sidebar-collapse:hover,
+.sidebar-brand-tools .sidebar-close:hover {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
+}
+
+.sidebar-section-label,
+label.sidebar-section-label {
+  color: var(--mn-side-label) !important;
+  font-size: 0.7rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+}
+
+.sidebar-nav .sidebar-link,
+.sidebar-nav .sidebar-group-toggle {
+  min-height: 44px;
+  border: 0 !important;
+  border-inline-start: 3px solid transparent !important;
+  border-radius: var(--mn-radius-sm) !important;
+  color: var(--mn-side-text) !important;
+  font-size: 0.93rem !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.sidebar-nav .sidebar-link:hover,
+.sidebar-nav .sidebar-group-toggle:hover {
+  background: var(--mn-side-hover) !important;
+  color: #FFFFFF !important;
+  transform: none !important;
+}
+
+.sidebar-nav .sidebar-link.is-active,
+.sidebar-nav .sidebar-link[aria-current="page"] {
+  border: 0 !important;
+  border-inline-start: 3px solid var(--mn-teal-mid) !important;
+  background: var(--mn-side-active) !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.sidebar-group > .sidebar-group-toggle:not(#mn),
+.sidebar-group.is-open > .sidebar-group-toggle:not(#mn) {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-group > .sidebar-group-toggle:not(#mn):hover {
+  background: var(--mn-side-hover) !important;
+}
+
+.sidebar-group.is-current > .sidebar-group-toggle:not(#mn) {
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+}
+
+.sidebar-group-chevron {
+  color: var(--mn-side-label) !important;
+  stroke: currentColor !important;
+}
+
+.sidebar-nav .sidebar-sublink {
+  color: var(--mn-side-muted) !important;
+  font-size: 0.86rem !important;
+}
+
+.sidebar-nav .sidebar-sublink:hover,
+.sidebar-nav .sidebar-sublink.is-active {
+  color: #FFFFFF !important;
+}
+
+.sidebar-group-items {
+  border-inline-start-color: rgba(188, 208, 210, 0.18) !important;
+}
+
+.sidebar-foot {
+  border-top-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+.sidebar-user {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-user-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: #274C58 !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.sidebar-user-name {
+  color: #FFFFFF !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+}
+
+.sidebar-user-role {
+  color: var(--mn-side-muted) !important;
+  font-size: 0.68rem !important;
+}
+
+.btn-logout,
+.sidebar-foot .btn-logout {
+  border: 1px solid rgba(201, 80, 74, 0.28) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: rgba(201, 80, 74, 0.1) !important;
+  color: #F2B8B4 !important;
+}
+
+.btn-logout:hover,
+.sidebar-foot .btn-logout:hover {
+  border-color: rgba(201, 80, 74, 0.45) !important;
+  background: rgba(201, 80, 74, 0.18) !important;
+  color: #FFFFFF !important;
+}
+
+/* زر فتح القائمة في الجوال خارج الشريط */
+.sidebar-open,
+.app-hard-refresh {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-surface) !important;
+  color: var(--mn-ink) !important;
+  box-shadow: none !important;
+}
+
+.sidebar-open:hover,
+.app-hard-refresh:hover {
+  border-color: #BCD0D2 !important;
+  background: var(--mn-subtle) !important;
+  color: var(--mn-teal) !important;
+}
+
+/* ── 4. البطاقات واللوحات ──────────────────────────────────────────────────── */
+.dash-panel,
+.dash-panel-glass,
+.dash-panel-glass.dash-sellers,
+.dash-panel-glass.dash-top-items,
+.table-wrap,
+.search-box,
+.filter-bar,
+.dash-filter,
+.income-filter,
+.sales-ov-filter {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius) !important;
+  background: var(--mn-surface) !important;
+  box-shadow: var(--mn-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dash-panel-glass::before,
+.dash-panel-glass::after,
+.dash-kpi-glass::before,
+.dash-kpi-glass::after {
+  display: none !important;
+}
+
+.dash-panel-head,
+.dash-panel-glass .dash-panel-head {
+  border-bottom: 1px solid var(--mn-line-soft) !important;
+  background: var(--mn-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dash-panel-head h3 {
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+}
+
+.dash-panel-head p {
+  font-size: 0.72rem !important;
+}
+
+.dash-panel-glass .seller-card,
+.dash-panel-glass .cashier-machine {
+  border-color: var(--mn-line) !important;
+  background: var(--mn-subtle) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── 5. بطاقات المؤشرات ────────────────────────────────────────────────────── */
+.dash-kpi-card,
+.dash-kpi-glass,
+.lm-kpi,
+.up-kpi,
+.vpc-kpi,
+.income-kpi,
+.ss-turn-card,
+.growth-kpi-card {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius) !important;
+  box-shadow: var(--mn-shadow) !important;
+  padding: 1rem 1.05rem !important;
+  align-items: stretch !important;
+  text-align: start !important;
+  gap: 0.6rem !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.dash-kpi-card,
+.dash-kpi-glass,
+.growth-kpi-card {
+  background: var(--mn-surface) !important;
+}
+
+.dash-kpi-card:hover,
+.growth-kpi-card:hover {
+  border-color: #CFDADB !important;
+  box-shadow: var(--shadow-card-hover) !important;
+  transform: none !important;
+}
+
+.dash-kpi-label,
+.lm-kpi-label,
+.up-kpi-label,
+.ss-turn-label,
+.growth-kpi-label {
+  flex-direction: row-reverse !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100%;
+  margin-bottom: 0 !important;
+  color: var(--mn-muted) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  text-align: start !important;
+}
+
+.dash-kpi-ico,
+.lm-kpi-ico,
+.up-kpi-ico,
+.growth-kpi-ico {
+  width: 30px !important;
+  height: 30px !important;
+  margin: 0 !important;
+  border-radius: 6px !important;
+}
+
+/* المؤشر الأول هو الرئيسي في كل شاشة: حد تركوازي وشريط علوي 4px كما في التصميم */
+:is(
+  .sales-ov-kpis:not(.sales-ov-rank-kpis),
+  .purchase-kpis,
+  .vt-kpis,
+  .inv-kpi-grid,
+  .up-kpi-grid,
+  .lm-kpi-grid,
+  .vpc-kpi-grid
+) > :is(.dash-kpi-card, .dash-kpi-glass, .lm-kpi, .up-kpi, .vpc-kpi, .income-kpi):first-child:not(#mn) {
+  border-color: var(--mn-teal-mid) !important;
+  box-shadow: inset 0 4px 0 var(--mn-teal), var(--mn-shadow) !important;
+}
+
+/* :not(#mn) يرفع الأولوية فوق قواعد theme-growth المعتمدة على :nth-child
+   حتى تُطبَّق ألوان التصميم على كل البطاقات دون لمس الملفات الأخرى. */
+:is(.dash-kpi-ico, .lm-kpi-ico, .up-kpi-ico, .growth-kpi-ico):not(#mn) {
+  background: var(--mn-teal-soft) !important;
+  color: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+.dash-kpi-ico svg,
+.growth-kpi-ico svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke-width: 1.9 !important;
+  filter: none !important;
+}
+
+.dash-kpi-card:hover .dash-kpi-ico,
+.growth-kpi-card:hover .growth-kpi-ico {
+  transform: none !important;
+}
+
+/* أيقونات ذات دلالة: المرتجع خطر، المبيعات الآجلة/الجملة تنبيه */
+:is(.dash-kpi-glass-returns, .dash-kpi-glass-item-ret, .kpi-pink) .dash-kpi-ico:not(#mn),
+:is(.dash-kpi-ico-returns, .dash-kpi-ico-item-ret):not(#mn).dash-kpi-ico {
+  background: var(--mn-danger-bg) !important;
+  color: var(--mn-danger) !important;
+}
+
+:is(.dash-kpi-glass-wholesale, .kpi-orange) .dash-kpi-ico:not(#mn),
+.dash-kpi-ico-wholesale:not(#mn).dash-kpi-ico {
+  background: var(--mn-warn-bg) !important;
+  color: var(--mn-warn) !important;
+}
+
+:is(.dash-kpi-card, .dash-kpi-glass, .growth-kpi-card):not(#mn) {
+  border-color: var(--mn-line) !important;
+}
+
+:is(.dash-kpi-card, .dash-kpi-glass, .growth-kpi-card):not(#mn):hover {
+  border-color: #CFDADB !important;
+}
+
+.dash-kpi-value,
+.dash-kpi-value.mono,
+.growth-kpi-val {
+  font-size: clamp(1.45rem, 2.4vw, 1.875rem) !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+  margin-bottom: 0 !important;
+  text-align: start !important;
+}
+
+:is(.dash-kpi-value, .growth-kpi-val):not(#mn),
+:is(.dash-kpi-value, .growth-kpi-val) :is(.money, .money-value):not(#mn) {
+  color: var(--mn-ink) !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+.dash-kpi-hint,
+.dash-kpi-hint.mono,
+.growth-kpi-pill {
+  justify-content: flex-start !important;
+  align-self: stretch;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  text-align: start !important;
+}
+
+:is(.dash-kpi-hint, .growth-kpi-pill):not(#mn) {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--mn-faint) !important;
+}
+
+/* شارة المقارنة في التصميم: صعود أخضر، هبوط أحمر (نفس دلالة is-up / is-down الحالية) */
+.dash-kpi-hint.is-up:not(#mn),
+.income-kpi.is-up :is(.dash-kpi-hint, .income-kpi-formula):not(#mn) {
+  align-self: flex-start;
+  width: auto;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  background: var(--mn-ok-bg) !important;
+  color: var(--mn-ok) !important;
+  font-weight: 700 !important;
+}
+
+.dash-kpi-hint.is-down:not(#mn),
+.income-kpi.is-down :is(.dash-kpi-hint, .income-kpi-formula):not(#mn) {
+  align-self: flex-start;
+  width: auto;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  background: var(--mn-danger-bg) !important;
+  color: var(--mn-danger) !important;
+  font-weight: 700 !important;
+}
+
+/* ── 6. الجداول ────────────────────────────────────────────────────────────── */
+thead th,
+.table-wrap thead th,
+.sales-table thead th,
+.data-table thead th,
+.dash-panel-glass .data-table th {
+  border-bottom: 1px solid var(--mn-line) !important;
+  background: var(--mn-subtle) !important;
+  color: var(--mn-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+  padding-top: 0.65rem !important;
+  padding-bottom: 0.65rem !important;
+}
+
+tbody td,
+.table-wrap tbody td,
+.sales-table tbody td,
+.data-table tbody td {
+  border-bottom: 1px solid var(--mn-line-soft) !important;
+  color: var(--mn-ink) !important;
+}
+
+.dash-panel-glass .data-table tbody tr:nth-child(even) td {
+  background: transparent !important;
+}
+
+tbody tr:hover td,
+.dash-panel-glass .data-table tbody tr:hover td {
+  background: var(--mn-subtle) !important;
+}
+
+tbody tr.is-selected td,
+tbody tr.active td {
+  background: var(--mn-teal-soft) !important;
+  color: var(--mn-teal-dark) !important;
+}
+
+tfoot td,
+.sales-grand-row td,
+.dash-panel-glass .sales-grand-row td {
+  border-top: 1px solid var(--mn-line) !important;
+  font-weight: 700 !important;
+}
+
+/* رؤوس وتذييلات الجداول ملوّنة في شاشات عدة بقواعد !important عالية الأولوية */
+thead th:not(#mn) {
+  border-inline: 0 !important;
+  background: var(--mn-subtle) !important;
+  background-image: none !important;
+  color: var(--mn-muted) !important;
+  box-shadow: inset 0 -1px 0 var(--mn-line) !important;
+}
+
+tbody td:not(#mn) {
+  border-inline: 0 !important;
+}
+
+/* صفوف بلا مبيعات: التصميم لا يلوّن الصفوف؛ الأرقام الحمراء تكفي للدلالة */
+tbody tr.sales-zero-row td:not(#mn) {
+  background: transparent !important;
+}
+
+tbody tr.sales-zero-row:hover td:not(#mn) {
+  background: var(--mn-subtle) !important;
+}
+
+tfoot td,
+.sales-grand-row td,
+.dash-panel-glass .sales-grand-row td {
+  background: var(--mn-subtle) !important;
+  color: var(--mn-ink) !important;
+}
+
+.sales-overview-dash .sales-ov-scroll tfoot td:not(#mn) {
+  background: var(--mn-subtle) !important;
+  box-shadow: inset 0 1px 0 var(--mn-line) !important;
+}
+
+/* تذييلات داكنة مقصودة في بعض الشاشات (نص أبيض): تُحوَّل من السماوي إلى تركواز التصميم */
+:is(
+  .inv-dash .inv-table-foot td,
+  .inv-dash .inv-table-scroll tfoot td,
+  .purchase-returns-dash .pr-vendors-table tfoot .sales-grand-row td,
+  .suppliers-dash .suppliers-table tfoot .sales-grand-row td:not(.sup-col-buy, .sup-col-pay),
+  .vendor-turnover-dash .vt-table-compact tfoot td,
+  .assets-dash .assets-table tfoot .sales-grand-row td
+):not(#mn) {
+  background: var(--mn-teal) !important;
+  color: #FFFFFF !important;
+}
+
+.sales-grand-row td:not(.mono, .money) {
+  font-family: var(--font-main) !important;
+  letter-spacing: 0 !important;
+}
+
+.result-pill {
+  border-color: rgba(17, 124, 119, 0.18) !important;
+  background: var(--mn-teal-soft) !important;
+  color: var(--mn-teal) !important;
+}
+
+.dash-panel .table-wrap,
+.dash-panel-glass .table-wrap {
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.sales-overview-dash .sales-table tbody td.sales-col-share:not(#mn) {
+  background: transparent !important;
+  color: var(--mn-teal) !important;
+  font-weight: 700 !important;
+}
+
+/* ── 7. الحقول ─────────────────────────────────────────────────────────────── */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="search"],
+input[type="email"],
+input[type="tel"],
+input[type="url"],
+input[type="time"],
+input[type="month"],
+select,
+textarea {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background-color: var(--mn-surface) !important;
+  color: var(--mn-ink) !important;
+  box-shadow: none !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--mn-faint) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--mn-teal) !important;
+  box-shadow: var(--mn-ring) !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--mn-teal);
+}
+
+/* ── 8. الأزرار ────────────────────────────────────────────────────────────── */
+.btn-primary,
+button.btn-primary,
+.login-submit,
+.income-filter-submit,
+.pr-compare-submit {
+  min-height: 42px;
+  border: 1px solid var(--mn-teal) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-teal) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.btn-primary:hover,
+button.btn-primary:hover,
+.login-submit:hover,
+.income-filter-submit:hover,
+.pr-compare-submit:hover {
+  border-color: var(--mn-teal-dark) !important;
+  background: var(--mn-teal-dark) !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.btn-ghost,
+.btn-secondary,
+button.btn-secondary,
+.dash-pdf-btn,
+.btn-new-search,
+.btn-scan,
+.btn-refresh {
+  min-height: 42px;
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-surface) !important;
+  color: var(--mn-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.btn-ghost:hover,
+.btn-secondary:hover,
+button.btn-secondary:hover,
+.dash-pdf-btn:hover,
+.btn-new-search:hover,
+.btn-scan:hover,
+.btn-refresh:hover {
+  border-color: #BCD0D2 !important;
+  background: var(--mn-subtle) !important;
+  color: var(--mn-teal) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.dash-pdf-btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0 0.9rem !important;
+  font-size: 0.82rem !important;
+}
+
+.dash-pdf-btn svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dash-pdf-btn-sm {
+  min-height: 2.15rem;
+}
+
+button:focus-visible,
+a:focus-visible,
+a.btn-primary:focus-visible,
+a.btn-ghost:focus-visible,
+a.btn-new-search:focus-visible,
+input[type="submit"]:focus-visible {
+  outline: 2px solid var(--mn-teal) !important;
+  outline-offset: 2px !important;
+}
+
+.sidebar a:focus-visible,
+.sidebar button:focus-visible {
+  outline-color: var(--mn-teal-mid) !important;
+}
+
+.dash-tab.is-active,
+.sales-view-btn,
+.sales-invoice-link:hover,
+.sales-invoice-link.is-active,
+.seller-card.is-active .seller-pct {
+  border-color: var(--mn-teal) !important;
+  background: var(--mn-teal) !important;
+  color: #FFFFFF !important;
+}
+
+.scroll-edge-btn {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: var(--mn-teal) !important;
+  box-shadow: 0 4px 12px rgba(17, 124, 119, 0.25) !important;
+}
+
+/* ── 9. التنبيهات والشارات ─────────────────────────────────────────────────── */
+.alert-success {
+  border: 1px solid rgba(22, 129, 93, 0.22) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-ok-bg) !important;
+  color: var(--mn-ok) !important;
+}
+
+.alert-error,
+.login-error {
+  border: 1px solid rgba(201, 80, 74, 0.25) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-danger-bg) !important;
+  color: var(--mn-danger) !important;
+}
+
+.alert-warning,
+.alert-warn {
+  border: 1px solid rgba(195, 122, 25, 0.25) !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-warn-bg) !important;
+  color: var(--mn-warn) !important;
+}
+
+.sales-ov-scope,
+.welcome-dash .welcome-kicker,
+.growth-pill-badge,
+.welcome-kicker {
+  border: 1px solid rgba(17, 124, 119, 0.18) !important;
+  background: var(--mn-teal-soft) !important;
+  color: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+/* ── 10. أشرطة الرسوم (تحويل السماوي إلى التركوازي) ───────────────────────── */
+.branch-chart-fill,
+.browse-loading-fill,
+.dash-load-fill,
+.seller-fill,
+.dash-sellers .seller-fill,
+.dash-top-items .seller-fill,
+.sales-bar-fill,
+.sync-progress-fill,
+.income-hbar-fill,
+.income-vfill,
+.income-waterfall-fill,
+.income-top-bar::after,
+.inv-dash .inv-rank-fill,
+.inv-dash .inv-rank-fill-group,
+.purchase-dash .inv-rank-fill,
+.purchase-dash .inv-rank-fill-purchase,
+.perf-leg-b::before {
+  background: linear-gradient(90deg, var(--mn-teal-mid), var(--mn-teal)) !important;
+}
+
+:is(.inv-rank-fill, .inv-rank-fill-group, .inv-rank-fill-purchase):not(#mn) {
+  background: linear-gradient(90deg, var(--mn-teal-mid), var(--mn-teal)) !important;
+}
+
+/* المستودعات تتميّز عن المجموعات في شاشة المخزون: الأردوازي الثانوي من التصميم */
+.inv-rank-fill-wh:not(#mn) {
+  background: linear-gradient(90deg, #5C8691, #274C58) !important;
+}
+
+:is(.inv-share, .inv-col-share):not(#mn) {
+  color: var(--mn-teal) !important;
+}
+
+:is(.sales-grand-row .inv-share, .sales-grand-row .inv-col-share, .inv-table-scroll tfoot td.inv-col-share):not(#mn) {
+  background: var(--mn-teal-soft) !important;
+}
+
+/* ترتيب المجموعات (أعمدة عمودية): تخطيطها كان في theme-v2.css غير المحمَّل */
+.inv-rank-vchart:not(#mn) {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  min-height: 16.5rem;
+  overflow-x: auto;
+}
+
+.inv-rank-vcol:not(#mn) {
+  flex: 1 1 0;
+  min-width: 3.4rem;
+  max-width: 5.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.inv-rank-vpct:not(#mn) {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--mn-teal);
+  line-height: 1;
+}
+
+.inv-rank-vtrack:not(#mn) {
+  width: 1.15rem;
+  height: 9.5rem;
+  border-radius: 6px;
+  background: var(--mn-teal-soft, #E4F3F1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.inv-rank-vfill:not(#mn) {
+  width: 100%;
+  height: 0;
+  border-radius: inherit;
+  background: linear-gradient(0deg, var(--mn-teal), var(--mn-teal-mid)) !important;
+}
+
+.inv-rank-vnum:not(#mn) {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--mn-teal-soft, #E4F3F1);
+  color: var(--mn-teal);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  direction: ltr;
+  flex-shrink: 0;
+}
+
+.inv-rank-vcol:first-child .inv-rank-vnum:not(#mn) {
+  background: var(--mn-teal);
+  color: #fff;
+}
+
+.inv-rank-vname:not(#mn) {
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--mn-ink, #142326);
+  text-align: center;
+  line-height: 1.25;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.inv-rank-vmeta:not(#mn) {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--mn-muted, #68777A);
+  text-align: center;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* دونات المشتريات حسب الفروع: الألوان مكتوبة في السكربت كسمات SVG و CSS يتقدّم عليها.
+   تسلسل التصميم: تركواز، أردوازي داكن، تركواز فاتح، ثم ألوان الحالة.
+   دونات المرتجعات تبقى بدرجات الأحمر لأنها تحمل دلالة الخطر. */
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 1),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 1) .branch-donut-swatch { --mn-slice: #117C77; }
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 2),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 2) .branch-donut-swatch { --mn-slice: #274C58; }
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 3),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 3) .branch-donut-swatch { --mn-slice: #72B7B1; }
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 4),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 4) .branch-donut-swatch { --mn-slice: #C37A19; }
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 5),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 5) .branch-donut-swatch { --mn-slice: #C9504A; }
+.purchase-branch-donut .branch-donut-slice:nth-of-type(6n + 6),
+.purchase-branch-donut .branch-donut-legend-item:nth-child(6n + 6) .branch-donut-swatch { --mn-slice: #96A2A4; }
+
+.purchase-branch-donut .branch-donut-slice {
+  stroke: var(--mn-slice) !important;
+}
+
+.purchase-branch-donut .branch-donut-legend-item .branch-donut-swatch {
+  background: var(--mn-slice) !important;
+}
+
+.income-compare-row.is-revenue .income-compare-track.is-current .income-compare-fill,
+.perf-action.sev-low::before,
+.dash-sellers-mark,
+.users-avatar,
+.income-rank-row:nth-child(2) .income-rank-num,
+.inv-dash .inv-rank-row:nth-child(2) .inv-rank-num,
+.purchase-dash .inv-rank-row:nth-child(2) .inv-rank-num {
+  background: var(--mn-teal) !important;
+}
+
+/* ── 11. الشاشة الرئيسية ───────────────────────────────────────────────────── */
+.welcome-dash .welcome-title,
+.welcome-title {
+  background: none !important;
+  -webkit-text-fill-color: currentColor !important;
+  color: var(--mn-ink) !important;
+}
+
+.welcome-dash .welcome-hero-copy::before {
+  display: none !important;
+}
+
+.welcome-card,
+.welcome-dash .welcome-card {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: var(--mn-radius) !important;
+  background: var(--mn-surface) !important;
+  box-shadow: var(--mn-shadow) !important;
+  color: var(--mn-ink) !important;
+}
+
+.welcome-card:hover,
+.welcome-dash .welcome-card:hover,
+.welcome-dash .welcome-card:focus-visible {
+  border-color: var(--mn-teal-mid) !important;
+  box-shadow: var(--shadow-card-hover) !important;
+  transform: none !important;
+}
+
+.welcome-dash .welcome-card::before {
+  height: 3px !important;
+  background: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+.welcome-card .welcome-card-ico {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: var(--mn-radius-sm) !important;
+  background: var(--mn-teal-soft) !important;
+  color: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+.welcome-card:hover .welcome-card-ico {
+  transform: none !important;
+}
+
+.welcome-card span {
+  color: var(--mn-muted) !important;
+}
+
+.welcome-dash .welcome-slider {
+  border: 1px solid var(--mn-line) !important;
+  background: var(--mn-surface) !important;
+  box-shadow: var(--mn-shadow) !important;
+}
+
+.welcome-dash .welcome-slider-btn {
+  border-color: var(--mn-line) !important;
+  color: var(--mn-teal) !important;
+}
+
+.welcome-dash .welcome-slider-btn:hover,
+.welcome-dash .welcome-slider-btn:focus-visible {
+  border-color: var(--mn-teal) !important;
+  background: var(--mn-teal) !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+}
+
+.welcome-dash .welcome-slider-dots button {
+  background: #CBD5D7 !important;
+}
+
+.welcome-dash .welcome-slider-dots button.is-active,
+.welcome-dash .welcome-slider-dots button[aria-selected="true"] {
+  background: var(--mn-teal) !important;
+  box-shadow: none !important;
+}
+
+.welcome-dash .welcome-slide figcaption {
+  border-color: var(--mn-line);
+  border-inline-start-color: var(--mn-teal);
+}
+
+.welcome-dash .welcome-slide figcaption strong {
+  color: var(--mn-ink) !important;
+}
+
+.welcome-dash .welcome-slide figcaption span {
+  color: var(--mn-muted) !important;
+}
+
+/* ── 12. تسجيل الدخول ─────────────────────────────────────────────────────── */
+.login-shell {
+  background: var(--mn-page) !important;
+}
+
+.login-card {
+  border: 1px solid var(--mn-line) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 10px 30px rgba(16, 42, 46, 0.06) !important;
+}
+
+.login-panel-kicker {
+  color: var(--mn-teal) !important;
+}
+
+/* ── 13. الطباعة ───────────────────────────────────────────────────────────── */
+@media print {
+  .dash-panel,
+  .dash-kpi-card,
+  .table-wrap {
+    box-shadow: none !important;
+  }
+}
