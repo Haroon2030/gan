@@ -310,6 +310,9 @@ CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SECURE = _env_bool('CSRF_COOKIE_SECURE', default=not DEBUG)
 CSRF_FAILURE_VIEW = 'search.csrf.csrf_failure'
+# الكوكيز لا تفصل بين المنافذ على نفس الـ IP — أسماء خاصة تمنع تعارضها مع تطبيقات أخرى على الخادم
+CSRF_COOKIE_NAME = 'dash_csrftoken'
+SESSION_COOKIE_NAME = 'dash_sessionid'
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = 'same-origin'

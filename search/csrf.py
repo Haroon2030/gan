@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import logging
+
+from django.conf import settings
 from django.http import HttpResponseForbidden, JsonResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import render
+
+
+logger = logging.getLogger(__name__)
 
 
 def _wants_json(request) -> bool:
@@ -24,6 +30,14 @@ def _wants_json(request) -> bool:
 
 
 def csrf_failure(request, reason=''):
+    logger.warning(
+        'CSRF رُفض: reason=%s path=%s origin=%s host=%s cookie=%s',
+        reason,
+        request.path,
+        request.headers.get('Origin'),
+        request.get_host(),
+        'csrf-cookie' if request.COOKIES.get(settings.CSRF_COOKIE_NAME) else 'no-cookie',
+    )
     message = 'انتهت صلاحية الجلسة أو رمز الحماية. حدّث الصفحة ثم أعد المحاولة.'
     # جدّد رمز CSRF في الاستجابة حتى يعمل النموذج فوراً دون تحديث يدوي
     get_token(request)
