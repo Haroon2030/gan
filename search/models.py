@@ -115,6 +115,7 @@ class ItemGroup(models.Model):
 class OracleConnection(models.Model):
     """ربط أوراكل المُدخل من شاشة الربط — صف واحد يتقدّم على قيم .env عند وجوده."""
 
+    # صف واحد دائماً (pk=1) — يُفرض من الكود؛ MySQL يمنع CHECK على عمود AUTO_INCREMENT
     SINGLETON_PK = 1
 
     enabled = models.BooleanField('مفعّل', default=True)
@@ -152,10 +153,6 @@ class OracleConnection(models.Model):
         verbose_name = 'ربط أوراكل'
         verbose_name_plural = 'ربط أوراكل'
         constraints = [
-            models.CheckConstraint(
-                condition=models.Q(pk=1),
-                name='search_oracleconn_singleton',
-            ),
             models.CheckConstraint(
                 condition=~(models.Q(service_name='') & models.Q(sid='')),
                 name='search_oracleconn_service_or_sid',

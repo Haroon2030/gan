@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'ربط أوراكل',
                 'verbose_name_plural': 'ربط أوراكل',
-                'constraints': [models.CheckConstraint(condition=models.Q(('pk', 1)), name='search_oracleconn_singleton'), models.CheckConstraint(condition=models.Q(('service_name', ''), ('sid', ''), _negated=True), name='search_oracleconn_service_or_sid')],
+                'constraints': [models.CheckConstraint(condition=models.Q(('service_name', ''), ('sid', ''), _negated=True), name='search_oracleconn_service_or_sid')],
             },
         ),
     ]
