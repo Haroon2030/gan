@@ -11,7 +11,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Instant Client مطلوب لـ Thick mode (DPY-3015 مع كلمة سر أوراكل القديمة)
-ARG ORACLE_IC_ZIP_URL=https://download.oracle.com/otn_software/linux/instantclient/2370000/instantclient-basiclite-linux.x64-23.7.0.25.01.zip
+# الإصدار 19 لا 23: عميل 23 لا يقبل مصادق كلمة السر القديم (10G / 0x939)
+# في قواعد أونكس على Oracle 11g فيرفض الدخول بـ ORA-01017 رغم صحة كلمة السر
+ARG ORACLE_IC_ZIP_URL=https://download.oracle.com/otn_software/linux/instantclient/1928000/instantclient-basiclite-linux.x64-19.28.0.0.0dbru.zip
+
+# sqlnet.ora يسمح ببروتوكول الدخول القديم (عميل 12c+ يمنعه افتراضياً)
+ENV TNS_ADMIN=/opt/oracle/tns
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -29,6 +34,8 @@ RUN apt-get update \
     && test -n "${IC_DIR}" \
     && echo "${IC_DIR}" > /etc/ld.so.conf.d/oracle-instantclient.conf \
     && ldconfig \
+    && mkdir -p "${TNS_ADMIN}" \
+    && echo 'SQLNET.ALLOWED_LOGON_VERSION_CLIENT=8' > "${TNS_ADMIN}/sqlnet.ora" \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
