@@ -40,6 +40,11 @@
   .oc-page .oc-wh-item bdi { font-weight: 700; color: #0F172A; }
   .oc-page .oc-wh-item small { display: block; color: #64748B; font-size: .75rem; }
   .oc-page [hidden] { display: none !important; }
+  .oc-page .oc-link { background: #fff; border: 1px solid rgba(226,232,240,.85); border-radius: 14px; padding: 1rem 1.4rem; margin-block: 1rem; max-width: 900px; }
+  .oc-page .oc-link h3 { margin: 0 0 .3rem; font-size: .95rem; color: #0F172A; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+  .oc-page .oc-link-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-block-start: .7rem; }
+  .oc-page .oc-link-actions form { margin: 0; }
+  .oc-page .oc-link ol { margin: .5rem 0 0; padding-inline-start: 1.2rem; color: #475569; font-size: .84rem; line-height: 1.8; }
 </style>
 
 <section class="dash-head" aria-label="ربط أوراكل">
@@ -71,6 +76,44 @@
     <span>كلمة المرور المحفوظة لا يمكن فك تشفيرها (تغيّر مفتاح التشفير على السيرفر). أعد إدخالها واحفظ.</span>
   </div>
 {% endif %}
+
+<section class="oc-link" aria-label="وكيل الربط">
+  <h3>
+    وكيل الربط — بدون فتح منافذ عند العميل
+    {% if link.connected %}
+      <span class="oc-chip is-on">متصل</span>
+    {% elif link.has_key %}
+      <span class="oc-chip">مُولَّد — بانتظار اتصال جهاز العميل</span>
+    {% else %}
+      <span class="oc-chip is-off">غير مُولَّد</span>
+    {% endif %}
+  </h3>
+  <p class="oc-help">برنامج صغير على جهاز قاعدة العميل يفتح اتصالاً صادراً مشفّراً إلى هذا الخادم، فتصل اللوحة إلى أوراكل عبره — لا Port Forward في الراوتر ولا تأثر بتغيّر عنوان العميل.</p>
+  {% if not link.server_ready %}
+    <p class="oc-err">خادم الربط غير جاهز على هذا الخادم بعد — أعد نشر التطبيق وتأكد من نشر المنفذ {{ link.ssh_port }}.</p>
+  {% endif %}
+  <div class="oc-link-actions">
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="action" value="link_generate" class="btn-primary"
+        {% if link.has_key %}onclick="return confirm('توليد ملف جديد يُلغي الملف السابق ويقطع الاتصال الحالي حتى يُشغَّل الجديد على جهاز العميل. متابعة؟');"{% endif %}>
+        {% if link.has_key %}توليد ملف ربط جديد{% else %}توليد ملف الربط{% endif %}
+      </button>
+    </form>
+    <button type="button" class="btn-ghost" id="oc-use-link" data-host="{{ link.local_host }}" data-port="{{ link.local_port }}">استخدام الوكيل في الاتصال</button>
+    {% if link.has_key %}
+      <form method="post" onsubmit="return confirm('إلغاء الربط يقطع اتصال جهاز العميل. متابعة؟');">
+        {% csrf_token %}
+        <button type="submit" name="action" value="link_revoke" class="btn-ghost">إلغاء الربط</button>
+      </form>
+    {% endif %}
+  </div>
+  <ol>
+    <li>«توليد ملف الربط» ينزّل <bdi dir="ltr">OracleLink.zip</bdi>.</li>
+    <li>على جهاز قاعدة أوراكل: فك الضغط وانقر مرتين على «تشغيل الربط.bat».</li>
+    <li>حدّث هذه الصفحة حتى تظهر «متصل»، ثم «استخدام الوكيل في الاتصال» وأكمل المستخدم وكلمة المرور واسم الخدمة.</li>
+  </ol>
+</section>
 
 <div class="oc-live" id="oc-live" aria-live="polite">{% if test_result %}<div class="alert {% if test_result.ok %}alert-success{% else %}alert-error{% endif %}" role="status"><span>{{ test_result.message }}</span></div>{% endif %}</div>
 
@@ -463,6 +506,19 @@
       if (enabledBox) enabledBox.checked = false;
       send(saveDisabledBtn, "save");
     });
+
+    var useLinkBtn = document.getElementById("oc-use-link");
+    if (useLinkBtn) {
+      useLinkBtn.addEventListener("click", function () {
+        var hostInput = form.querySelector("input[name=host]");
+        var portInput = form.querySelector("input[name=port]");
+        hostInput.value = useLinkBtn.dataset.host;
+        portInput.value = useLinkBtn.dataset.port;
+        onyxInput.value = "";
+        showResult(true, "تم ضبط الاتصال على وكيل الربط. أدخل اسم الخدمة والمستخدم وكلمة المرور ثم «اتصال وجلب البيانات».", liveDiscover);
+        hostInput.focus();
+      });
+    }
 
     renderWarehouses(warehouses);
     // ربط محفوظ بلا مخازن في الكاش: نجلبها بعد فتح الصفحة دون تعليقها

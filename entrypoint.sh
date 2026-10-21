@@ -3,6 +3,20 @@ set -e
 
 mkdir -p /app/data /app/data/django_cache /app/staticfiles
 
+# وكيل الربط: sshd داخلي يستقبل نفق جهاز العميل (مفتاح الخادم دائم في data حتى لا يتغير بعد النشر)
+if [ -x /usr/sbin/sshd ]; then
+  mkdir -p /app/data/oralink /run/sshd
+  chmod 755 /app/data /app/data/oralink
+  if [ ! -f /app/data/oralink/ssh_host_ed25519_key ]; then
+    ssh-keygen -q -t ed25519 -N '' -C oracle-link-server -f /app/data/oralink/ssh_host_ed25519_key
+  fi
+  touch /app/data/oralink/authorized_keys
+  chmod 644 /app/data/oralink/authorized_keys
+  /usr/sbin/sshd -f /app/deploy/sshd_oralink.conf -E /app/data/oralink/sshd.log \
+    && echo "oracle-link: sshd listening on 2222" \
+    || echo "WARN: oracle-link sshd failed to start" >&2
+fi
+
 # انتظار جاهزية MySQL إن وُجد DB_HOST (Dokploy)
 if [ -n "${DB_HOST:-}" ] || [ -n "${MYSQL_HOST:-}" ]; then
   echo "Waiting for MySQL at ${DB_HOST:-$MYSQL_HOST}:${DB_PORT:-${MYSQL_PORT:-3306}}…"

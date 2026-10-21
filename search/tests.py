@@ -2036,3 +2036,101 @@ class HomeDashboardPermissionTests(TestCase):
         self.assertIn('welcome-hero', html)
 
 
+
+
+class OracleLinkTests(TestCase):
+    """وكيل الربط: توليد حزمة جهاز العميل وتقييد المفتاح وإلغاؤه."""
+
+    def setUp(self):
+        import tempfile
+        from pathlib import Path
+
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.link_dir = Path(tmp.name) / 'oralink'
+        self.link_dir.mkdir()
+        (self.link_dir / 'ssh_host_ed25519_key.pub').write_text(
+            'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHostKeyForTests oracle-link-server\n', encoding='ascii'
+        )
+        override = override_settings(
+            ORACLE_LINK_DIR=self.link_dir,
+            ORACLE_LINK_PUBLIC_HOST='',
+            ORACLE_LINK_SSH_PORT=2222,
+            ORACLE_LINK_LOCAL_PORT=15210,
+        )
+        override.enable()
+        self.addCleanup(override.disable)
+        self.url = reverse('oracle_connection_settings')
+        self.admin = get_user_model().objects.create_superuser(
+            username='link-admin', password='StrongPassword123!', email='link@example.com'
+        )
+
+    def _authorized(self):
+        return (self.link_dir / 'authorized_keys').read_text(encoding='ascii')
+
+    def test_generate_returns_zip_with_key_and_restricted_authorized_key(self):
+        import io
+        import json
+        import zipfile
+
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, {'action': 'link_generate'}, HTTP_HOST='72.61.107.230:7097')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/zip')
+
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+            names = set(zf.namelist())
+            for name in ('id_ed25519', 'known_hosts', 'config.json', 'install.ps1', 'tunnel.ps1', 'تشغيل الربط.bat'):
+                self.assertIn(f'OracleLink/{name}', names)
+            config = json.loads(zf.read('OracleLink/config.json'))
+            known = zf.read('OracleLink/known_hosts').decode()
+            private = zf.read('OracleLink/id_ed25519').decode()
+
+        self.assertEqual(config['server'], '72.61.107.230')
+        self.assertEqual(config['ssh_port'], 2222)
+        self.assertEqual(config['remote_port'], 15210)
+        self.assertTrue(known.startswith('[72.61.107.230]:2222 ssh-ed25519 '))
+        self.assertIn('BEGIN OPENSSH PRIVATE KEY', private)
+
+        line = self._authorized()
+        self.assertTrue(line.startswith('restrict,port-forwarding,permitlisten="127.0.0.1:15210" ssh-ed25519 '))
+        self.assertEqual(len(line.strip().splitlines()), 1)
+        # المفتاح الخاص لا يُحفظ على الخادم
+        for path in self.link_dir.iterdir():
+            self.assertNotIn('PRIVATE KEY', path.read_text(encoding='ascii', errors='ignore'))
+
+    def test_regenerate_replaces_previous_key(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        first = self._authorized()
+        self.client.post(self.url, {'action': 'link_generate'})
+        self.assertNotEqual(first, self._authorized())
+        self.assertEqual(len(self._authorized().strip().splitlines()), 1)
+
+    def test_revoke_clears_authorized_keys(self):
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        response = self.client.post(self.url, {'action': 'link_revoke'})
+        self.assertRedirects(response, self.url, fetch_redirect_response=False)
+        self.assertEqual(self._authorized(), '')
+
+    def test_generate_fails_cleanly_without_server_host_key(self):
+        (self.link_dir / 'ssh_host_ed25519_key.pub').unlink()
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, {'action': 'link_generate'})
+        self.assertRedirects(response, self.url, fetch_redirect_response=False)
+        self.assertFalse((self.link_dir / 'authorized_keys').exists())
+
+    def test_non_superuser_cannot_generate(self):
+        user = get_user_model().objects.create_user(username='staff-only', password='StrongPassword123!', is_staff=True)
+        self.client.force_login(user)
+        response = self.client.post(self.url, {'action': 'link_generate'})
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse((self.link_dir / 'authorized_keys').exists())
+
+    def test_screen_shows_link_section(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'وكيل الربط')
+        self.assertContains(response, 'غير مُولَّد')
+        self.assertContains(response, 'data-port="15210"')

@@ -1,0 +1,7 @@
+# ملفات جهاز العميل (ويندوز) بنهايات CRLF حتى داخل حاوية لينكس التي تولّد الحزمة
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+الربط/*.txt text eol=crlf
+# سكربتات الحاوية بنهايات LF
+*.sh text eol=lf
+deploy/*.conf text eol=lf

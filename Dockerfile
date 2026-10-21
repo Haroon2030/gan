@@ -23,6 +23,7 @@ RUN apt-get update \
         curl \
         unzip \
         ca-certificates \
+        openssh-server \
     && (apt-get install -y --no-install-recommends libaio1t64 \
         || apt-get install -y --no-install-recommends libaio1) \
     && (ln -sf /usr/lib/x86_64-linux-gnu/libaio.so.1t64 /usr/lib/x86_64-linux-gnu/libaio.so.1 || true) \
@@ -36,6 +37,9 @@ RUN apt-get update \
     && ldconfig \
     && mkdir -p "${TNS_ADMIN}" \
     && echo 'SQLNET.ALLOWED_LOGON_VERSION_CLIENT=8' > "${TNS_ADMIN}/sqlnet.ora" \
+    && rm -f /etc/ssh/ssh_host_* \
+    && useradd --no-create-home --shell /usr/sbin/nologin oralink \
+    && usermod -p '*' oralink \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -46,7 +50,8 @@ COPY . .
 RUN chmod +x /app/entrypoint.sh \
     && mkdir -p /app/data /app/staticfiles
 
-EXPOSE 8000
+# 2222 = وكيل الربط (نفق SSH عكسي من جهاز قاعدة العميل)
+EXPOSE 8000 2222
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -fsS "http://127.0.0.1:${PORT:-8000}/" >/dev/null || exit 1

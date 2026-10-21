@@ -5504,6 +5504,7 @@ def oracle_connection_settings(request):
         save_connection,
     )
     from .api_client import ApiClientError, probe_onyx_service
+    from .oracle_link import link_status
     from .oracle_stock import OracleStockError, probe_connection
 
     if not request.user.is_superuser:
@@ -5521,6 +5522,9 @@ def oracle_connection_settings(request):
     test_result = None
     warehouse_options: list[dict] | None = None
     wants_json = request.headers.get('X-Requested-With') == 'fetch'
+
+    if request.method == 'POST' and str(request.POST.get('action') or '') in ('link_generate', 'link_revoke'):
+        return _oracle_link_action(request)
 
     if request.method == 'POST':
         action = str(request.POST.get('action') or '').strip()
@@ -5639,5 +5643,40 @@ def oracle_connection_settings(request):
             'password_unreadable': (
                 row is not None and bool(row.password_encrypted) and not has_saved_password
             ),
+            'link': link_status(),
         },
     )
+
+
+def _oracle_link_public_host(request) -> str:
+    configured = str(getattr(settings, 'ORACLE_LINK_PUBLIC_HOST', '') or '').strip()
+    if configured:
+        return configured
+    host = request.get_host()
+    if host.startswith('['):
+        return host[1:].split(']', 1)[0]
+    return host.rsplit(':', 1)[0] if host.count(':') == 1 else host
+
+
+def _oracle_link_action(request):
+    """توليد ملف وكيل الربط (zip لجهاز العميل) أو إلغاؤه — ضمن شاشة الربط لمدير النظام."""
+    from django.http import HttpResponse
+
+    from .oracle_link import OracleLinkError, generate_link_package, revoke_link
+
+    action = request.POST.get('action')
+    try:
+        if action == 'link_generate':
+            package = generate_link_package(_oracle_link_public_host(request))
+            response = HttpResponse(package, content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename="OracleLink.zip"'
+            response['Cache-Control'] = 'no-store'
+            return response
+        revoke_link()
+        messages.success(request, 'تم إلغاء ملف الربط — جهاز العميل لن يستطيع الاتصال حتى تولّد ملفاً جديداً.')
+    except OracleLinkError as exc:
+        messages.error(request, str(exc))
+    except OSError as exc:
+        logger.warning('Oracle link action failed: %s', exc)
+        messages.error(request, f'تعذّر تنفيذ العملية: {exc}')
+    return redirect('oracle_connection_settings')

@@ -414,6 +414,15 @@ ORACLE = {
 # شاشة الربط: مفتاح تشفير كلمة مرور أوراكل المحفوظة (فارغ = مشتق من SECRET_KEY)
 ORACLE_CONNECTION_SECRET = _env('ORACLE_CONNECTION_SECRET', '')
 ORACLE_CONNECTION_STAMP_FILE = _DATA_DIR / 'oracle_connection.stamp'
+# وكيل الربط: نفق SSH عكسي من جهاز العميل إلى sshd داخل الحاوية (بلا فتح منافذ عند العميل)
+# الخادم الظاهر للعميل — فارغ = اسم المضيف من الطلب عند توليد الملف
+ORACLE_LINK_PUBLIC_HOST = _env('ORACLE_LINK_PUBLIC_HOST', '')
+ORACLE_LINK_SSH_PORT = int(_env('ORACLE_LINK_SSH_PORT', '2222') or '2222')
+# المنفذ الذي يظهر عليه أوراكل العميل داخل الحاوية (127.0.0.1 فقط)
+ORACLE_LINK_LOCAL_PORT = int(_env('ORACLE_LINK_LOCAL_PORT', '15210') or '15210')
+ORACLE_LINK_DIR = _DATA_DIR / 'oralink'
+# قالب ملفات جهاز العميل في جذر المشروع
+ORACLE_LINK_TEMPLATE_DIR = BASE_DIR / 'الربط'
 # مصدر الكميات يتبع مفتاح «تفعيل» في شاشة الربط (oracle عند التفعيل، api عند الإيقاف)
 STOCK_QTY_SOURCE = 'api'
 # مبيعات المجموعات: light = أسرع عبر WAN | full = مسح DTL دقيق (بطيء وقد يعلّق السنة)
