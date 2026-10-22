@@ -5,229 +5,234 @@
 
 {% block content %}
 <style>
-  .oc-page .oc-status { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: .6rem; }
-  .oc-page .oc-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .65rem; border-radius: 999px; font-size: .82rem; font-weight: 600; background: #F1F5F9; color: #334155; border: 1px solid #E2E8F0; }
-  .oc-page .oc-chip.is-on { background: #ECFDF5; color: #065F46; border-color: rgba(16,185,129,.3); }
+  .oc-page { --oc-line: #E2E8F0; --oc-ink: #0F172A; --oc-muted: #64748B; --oc-brand: #0E7C7B; --oc-soft: #F8FAFC; }
+  .oc-page .oc-wrap { max-width: 1040px; display: grid; gap: 1rem; }
+  .oc-page .oc-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem 1rem; }
+  .oc-page .oc-head h2 { margin: 0; font-size: 1.35rem; color: var(--oc-ink); }
+  .oc-page .oc-head p { margin: .2rem 0 0; color: var(--oc-muted); font-size: .88rem; }
+  .oc-page .oc-status { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .oc-page .oc-chip { display: inline-flex; align-items: center; gap: .35rem; padding: .18rem .65rem; border-radius: 999px; font-size: .78rem; font-weight: 700; background: #F1F5F9; color: #334155; border: 1px solid var(--oc-line); white-space: nowrap; }
+  .oc-page .oc-chip::before { content: ""; inline-size: .5rem; block-size: .5rem; border-radius: 50%; background: #94A3B8; }
+  .oc-page .oc-chip.is-on { background: #ECFDF5; color: #065F46; border-color: rgba(16,185,129,.35); }
+  .oc-page .oc-chip.is-on::before { background: #10B981; }
   .oc-page .oc-chip.is-off { background: #FFF1F2; color: #9F1239; border-color: rgba(244,63,94,.3); }
-  .oc-page .oc-form { background: #fff; border: 1px solid rgba(226,232,240,.85); border-radius: 14px; padding: 1.25rem 1.4rem; margin-block: 1rem; max-width: 900px; }
-  .oc-page .oc-form fieldset { border: 0; padding: 0; margin: 0 0 1.2rem; }
-  .oc-page .oc-form legend { font-weight: 700; color: #0F172A; margin-block-end: .6rem; font-size: .95rem; display: flex; align-items: center; gap: .5rem; }
-  .oc-page .oc-step { display: inline-grid; place-items: center; inline-size: 1.5rem; block-size: 1.5rem; border-radius: 50%; background: #0F172A; color: #fff; font-size: .8rem; }
-  .oc-page .oc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: .8rem 1rem; }
-  .oc-page .field { display: flex; flex-direction: column; gap: .3rem; }
+  .oc-page .oc-chip.is-off::before { background: #F43F5E; }
+  .oc-page .oc-chip.plain::before { display: none; }
+
+  .oc-page .oc-card { background: #fff; border: 1px solid var(--oc-line); border-radius: 14px; padding: 1.1rem 1.25rem; }
+  .oc-page .oc-card > h3, .oc-page .oc-card > summary h3 { margin: 0; font-size: .98rem; color: var(--oc-ink); display: flex; align-items: center; gap: .55rem; }
+  .oc-page .oc-num { display: inline-grid; place-items: center; inline-size: 1.45rem; block-size: 1.45rem; border-radius: 50%; background: var(--oc-ink); color: #fff; font-size: .78rem; flex: none; }
+  .oc-page .oc-hint { color: var(--oc-muted); font-size: .8rem; margin: 0; }
+  .oc-page .oc-body { margin-block-start: .9rem; }
+
+  .oc-page details.oc-card > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+  .oc-page details.oc-card > summary::-webkit-details-marker { display: none; }
+  .oc-page details.oc-card > summary::after { content: "▾"; color: var(--oc-muted); margin-inline-start: auto; transition: transform .15s; }
+  .oc-page details.oc-card[open] > summary::after { transform: rotate(180deg); }
+  .oc-page .oc-link-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+  .oc-page .oc-link-actions form { margin: 0; }
+
+  .oc-page .oc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .75rem 1rem; }
+  .oc-page .oc-cols { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+  @media (min-width: 1000px) { .oc-page .oc-cols { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .oc-page .field { display: flex; flex-direction: column; gap: .3rem; min-inline-size: 0; }
+  .oc-page .field label { font-size: .82rem; font-weight: 700; color: #334155; }
   .oc-page .field input[type="text"], .oc-page .field input[type="number"], .oc-page .field input[type="password"], .oc-page .field input[type="search"], .oc-page .field select { width: 100%; }
   .oc-page .oc-connect { display: flex; flex-wrap: wrap; align-items: center; gap: .7rem; margin-block-start: .9rem; }
-  .oc-page .oc-sub { font-weight: 700; color: #334155; font-size: .88rem; margin: 1rem 0 .5rem; }
-  .oc-page .oc-manual { margin-block-start: .7rem; max-width: 420px; }
-  .oc-page .oc-manual summary { cursor: pointer; color: #475569; font-size: .85rem; margin-block-end: .5rem; }
+  .oc-page .oc-sub { font-weight: 700; color: #334155; font-size: .85rem; margin: 1rem 0 .45rem; padding-block-start: .8rem; border-block-start: 1px dashed var(--oc-line); }
+  .oc-page .oc-sub:first-of-type { border: 0; padding: 0; margin-block-start: 0; }
+  .oc-page .oc-manual { margin-block-start: .6rem; }
+  .oc-page .oc-manual summary { cursor: pointer; color: #475569; font-size: .8rem; margin-block-end: .5rem; }
   .oc-page .oc-live:empty { display: none; }
   .oc-page .oc-live--inline { margin-block-start: .8rem; }
-  .oc-page .oc-live--inline .alert { margin: 0; }
-  .oc-page .oc-help { color: #64748B; font-size: .8rem; }
-  .oc-page .oc-found { color: #065F46; font-size: .8rem; font-weight: 600; }
-  .oc-page .oc-err { color: #9F1239; font-size: .8rem; font-weight: 600; margin: 0; padding: 0; list-style: none; }
-  .oc-page .oc-toggle { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
-  .oc-page .oc-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; border-block-start: 1px solid #E2E8F0; padding-block-start: 1rem; }
-  .oc-page .oc-actions .oc-help { margin-inline-start: auto; }
-  .oc-page .oc-notes { max-width: 900px; color: #475569; font-size: .88rem; line-height: 1.8; padding-inline-start: 1.1rem; }
+  .oc-page .oc-live--inline .alert, .oc-page .alert { margin: 0; }
+  .oc-page .oc-help { color: var(--oc-muted); font-size: .78rem; }
+  .oc-page .oc-found { color: #065F46; font-size: .78rem; font-weight: 600; }
+  .oc-page .oc-err { color: #9F1239; font-size: .78rem; font-weight: 600; margin: 0; padding: 0; list-style: none; }
+  .oc-page .oc-toggle { display: inline-flex; align-items: center; gap: .5rem; font-weight: 700; font-size: .9rem; cursor: pointer; }
+
+  .oc-page .oc-actions { position: sticky; inset-block-end: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; background: rgba(255,255,255,.94); backdrop-filter: blur(6px); border: 1px solid var(--oc-line); border-radius: 14px; padding: .75rem 1.1rem; box-shadow: 0 -6px 20px rgba(15,23,42,.06); }
+  .oc-page .oc-actions .oc-toggle { margin-inline-end: auto; }
   .oc-page button[disabled] { opacity: .65; cursor: progress; }
+
   .oc-page .oc-wh-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-block-end: .5rem; }
-  .oc-page .oc-wh-tools input[type="search"] { max-width: 260px; }
-  .oc-page .oc-wh-list { border: 1px solid #E2E8F0; border-radius: 10px; max-block-size: 280px; overflow-y: auto; padding: .35rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .15rem .5rem; }
-  .oc-page .oc-wh-item { display: flex; align-items: flex-start; gap: .45rem; padding: .3rem .4rem; border-radius: 6px; cursor: pointer; font-size: .86rem; line-height: 1.4; }
-  .oc-page .oc-wh-item:hover { background: #F8FAFC; }
+  .oc-page .oc-wh-tools input[type="search"] { max-width: 240px; }
+  .oc-page .oc-wh-list { border: 1px solid var(--oc-line); border-radius: 10px; max-block-size: 240px; overflow-y: auto; padding: .35rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .15rem .5rem; }
+  .oc-page .oc-wh-item { display: flex; align-items: flex-start; gap: .45rem; padding: .3rem .4rem; border-radius: 6px; cursor: pointer; font-size: .84rem; line-height: 1.4; }
+  .oc-page .oc-wh-item:hover { background: var(--oc-soft); }
   .oc-page .oc-wh-item input { margin-block-start: .2rem; }
-  .oc-page .oc-wh-item bdi { font-weight: 700; color: #0F172A; }
-  .oc-page .oc-wh-item small { display: block; color: #64748B; font-size: .75rem; }
+  .oc-page .oc-wh-item bdi { font-weight: 700; color: var(--oc-ink); }
+  .oc-page .oc-wh-item small { display: block; color: var(--oc-muted); font-size: .74rem; }
   .oc-page [hidden] { display: none !important; }
-  .oc-page .oc-link { background: #fff; border: 1px solid rgba(226,232,240,.85); border-radius: 14px; padding: 1rem 1.4rem; margin-block: 1rem; max-width: 900px; }
-  .oc-page .oc-link h3 { margin: 0 0 .3rem; font-size: .95rem; color: #0F172A; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-  .oc-page .oc-link-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-block-start: .7rem; }
-  .oc-page .oc-link-actions form { margin: 0; }
-  .oc-page .oc-link ol { margin: .5rem 0 0; padding-inline-start: 1.2rem; color: #475569; font-size: .84rem; line-height: 1.8; }
+  .oc-page .oc-foot { color: var(--oc-muted); font-size: .78rem; margin: 0; text-align: center; }
 </style>
 
-<section class="dash-head" aria-label="ربط أوراكل">
-  <div class="dash-head-copy">
-    <h2>ربط قاعدة بيانات العميل</h2>
-    <p>أدخل بيانات الاتصال مرة واحدة واضغط «اتصال وجلب البيانات» — يجلب البرنامج من قاعدة العميل السنوات والوحدات والمخازن، ويكتشف خدمة أونكس تلقائياً.</p>
+<div class="oc-wrap">
+  <section class="oc-head" aria-label="ربط أوراكل">
+    <div>
+      <h2>ربط أوراكل</h2>
+      <p>اتصال للقراءة فقط بقاعدة بيانات العميل.</p>
+    </div>
     <div class="oc-status">
-      <span class="oc-chip {% if oracle_enabled_now %}is-on{% else %}is-off{% endif %}">
-        {% if oracle_enabled_now %}القراءة من أوراكل مفعّلة{% else %}القراءة من أوراكل متوقفة{% endif %}
-      </span>
-      <span class="oc-chip">
-        {% if source == 'screen' %}الربط محفوظ من هذه الشاشة{% else %}لم يُضبط الربط بعد{% endif %}
-      </span>
+      <span class="oc-chip {% if oracle_enabled_now %}is-on{% else %}is-off{% endif %}">{% if oracle_enabled_now %}مفعّل{% else %}متوقف{% endif %}</span>
+      <span class="oc-chip {% if source == 'screen' %}is-on{% endif %}">{% if source == 'screen' %}الربط محفوظ{% else %}غير مضبوط{% endif %}</span>
       {% if row %}
-        <span class="oc-chip">آخر تعديل: {{ row.updated_at|date:"Y-m-d H:i" }}{% if row.updated_by %} · {{ row.updated_by.get_full_name|default:row.updated_by.username }}{% endif %}</span>
+        <span class="oc-chip plain">{{ row.updated_at|date:"Y-m-d H:i" }}{% if row.updated_by %} · {{ row.updated_by.get_full_name|default:row.updated_by.username }}{% endif %}</span>
       {% endif %}
     </div>
-  </div>
-</section>
+  </section>
 
-{% for message in messages %}
-  <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" role="status">
-    <span>{{ message }}</span>
-  </div>
-{% endfor %}
-
-{% if password_unreadable %}
-  <div class="alert alert-error" role="alert">
-    <span>كلمة المرور المحفوظة لا يمكن فك تشفيرها (تغيّر مفتاح التشفير على السيرفر). أعد إدخالها واحفظ.</span>
-  </div>
-{% endif %}
-
-<section class="oc-link" aria-label="وكيل الربط">
-  <h3>
-    وكيل الربط — بدون فتح منافذ عند العميل
-    {% if link.connected %}
-      <span class="oc-chip is-on">متصل</span>
-    {% elif link.has_key %}
-      <span class="oc-chip">مُولَّد — بانتظار اتصال جهاز العميل</span>
-    {% else %}
-      <span class="oc-chip is-off">غير مُولَّد</span>
-    {% endif %}
-  </h3>
-  <p class="oc-help">برنامج صغير على جهاز قاعدة العميل يفتح اتصالاً صادراً مشفّراً إلى هذا الخادم، فتصل اللوحة إلى أوراكل عبره — لا Port Forward في الراوتر ولا تأثر بتغيّر عنوان العميل.</p>
-  {% if not link.server_ready %}
-    <p class="oc-err">خادم الربط غير جاهز على هذا الخادم بعد — أعد نشر التطبيق وتأكد من نشر المنفذ {{ link.ssh_port }}.</p>
-  {% endif %}
-  <div class="oc-link-actions">
-    <form method="post">
-      {% csrf_token %}
-      <button type="submit" name="action" value="link_generate" class="btn-primary"
-        {% if link.has_key %}onclick="return confirm('توليد ملف جديد يُلغي الملف السابق ويقطع الاتصال الحالي حتى يُشغَّل الجديد على جهاز العميل. متابعة؟');"{% endif %}>
-        {% if link.has_key %}توليد ملف ربط جديد{% else %}توليد ملف الربط{% endif %}
-      </button>
-    </form>
-    <button type="button" class="btn-ghost" id="oc-use-link" data-host="{{ link.local_host }}" data-port="{{ link.local_port }}">استخدام الوكيل في الاتصال</button>
-    {% if link.has_key %}
-      <form method="post" onsubmit="return confirm('إلغاء الربط يقطع اتصال جهاز العميل. متابعة؟');">
-        {% csrf_token %}
-        <button type="submit" name="action" value="link_revoke" class="btn-ghost">إلغاء الربط</button>
-      </form>
-    {% endif %}
-  </div>
-  <ol>
-    <li>«توليد ملف الربط» ينزّل <bdi dir="ltr">OracleLink.zip</bdi>.</li>
-    <li>على جهاز قاعدة أوراكل: فك الضغط وانقر مرتين على «تشغيل الربط.bat».</li>
-    <li>حدّث هذه الصفحة حتى تظهر «متصل»، ثم «استخدام الوكيل في الاتصال» وأكمل المستخدم وكلمة المرور واسم الخدمة.</li>
-  </ol>
-</section>
-
-<div class="oc-live" id="oc-live" aria-live="polite">{% if test_result %}<div class="alert {% if test_result.ok %}alert-success{% else %}alert-error{% endif %}" role="status"><span>{{ test_result.message }}</span></div>{% endif %}</div>
-
-{% if form.non_field_errors %}
-  {% for err in form.non_field_errors %}
-    <div class="alert alert-error" role="alert"><span>{{ err }}</span></div>
+  {% for message in messages %}
+    <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}" role="status">
+      <span>{{ message }}</span>
+    </div>
   {% endfor %}
-{% endif %}
 
-<form method="post" class="oc-form" id="oc-form" novalidate{% if source == 'screen' and not test_result and not form.errors %} data-auto-discover="1"{% endif %}>
-  {% csrf_token %}
+  {% if password_unreadable %}
+    <div class="alert alert-error" role="alert">
+      <span>تعذّر فك تشفير كلمة المرور المحفوظة (تغيّر مفتاح التشفير). أعد إدخالها واحفظ.</span>
+    </div>
+  {% endif %}
 
-  <fieldset>
-    <legend><span class="oc-step" aria-hidden="true">1</span> بيانات الاتصال</legend>
-    <div class="oc-grid">
-      {% for field in form %}{% if field.name == 'host' or field.name == 'port' or field.name == 'service_name' or field.name == 'sid' or field.name == 'username' or field.name == 'password' %}
-        <div class="field">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.name == 'sid' %}<span class="oc-help">اتركه فارغاً عند استخدام اسم الخدمة.</span>{% endif %}
-          {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+  <details class="oc-card oc-link" aria-label="وكيل الربط" {% if not link.connected %}open{% endif %}>
+    <summary>
+      <h3>وكيل الربط <span class="oc-hint">— بدون فتح منافذ عند العميل</span></h3>
+      {% if link.connected %}
+        <span class="oc-chip is-on">متصل</span>
+      {% elif link.has_key %}
+        <span class="oc-chip">بانتظار جهاز العميل</span>
+      {% else %}
+        <span class="oc-chip is-off">غير مُولَّد</span>
+      {% endif %}
+    </summary>
+    <div class="oc-body">
+      {% if not link.server_ready %}
+        <p class="oc-err" style="margin-block-end:.6rem">خادم الربط غير جاهز — أعد نشر التطبيق وانشر المنفذ {{ link.ssh_port }}.</p>
+      {% endif %}
+      <div class="oc-link-actions">
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="action" value="link_generate" class="btn-primary"
+            {% if link.has_key %}onclick="return confirm('الملف الجديد يُلغي السابق ويقطع الاتصال الحالي. متابعة؟');"{% endif %}>
+            {% if link.has_key %}توليد ملف جديد{% else %}توليد ملف الربط{% endif %}
+          </button>
+        </form>
+        <button type="button" class="btn-ghost" id="oc-use-link" data-host="{{ link.local_host }}" data-port="{{ link.local_port }}">استخدام الوكيل في الاتصال</button>
+        {% if link.has_key %}
+          <form method="post" onsubmit="return confirm('إلغاء الربط يقطع اتصال جهاز العميل. متابعة؟');">
+            {% csrf_token %}
+            <button type="submit" name="action" value="link_revoke" class="btn-ghost">إلغاء الربط</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </details>
+
+  <div class="oc-live" id="oc-live" aria-live="polite">{% if test_result %}<div class="alert {% if test_result.ok %}alert-success{% else %}alert-error{% endif %}" role="status"><span>{{ test_result.message }}</span></div>{% endif %}</div>
+
+  {% if form.non_field_errors %}
+    {% for err in form.non_field_errors %}
+      <div class="alert alert-error" role="alert"><span>{{ err }}</span></div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" id="oc-form" novalidate style="display:grid;gap:1rem"{% if source == 'screen' and not test_result and not form.errors %} data-auto-discover="1"{% endif %}>
+    {% csrf_token %}
+
+    <div class="oc-cols">
+      <section class="oc-card">
+        <h3><span class="oc-num" aria-hidden="true">1</span> الاتصال</h3>
+        <div class="oc-body">
+          <div class="oc-grid">
+            {% for field in form %}{% if field.name == 'host' or field.name == 'port' or field.name == 'service_name' or field.name == 'sid' or field.name == 'username' or field.name == 'password' %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.name == 'sid' %}<span class="oc-help">اختياري بدل اسم الخدمة</span>{% endif %}
+                {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              </div>
+            {% endif %}{% endfor %}
+          </div>
+          <div class="oc-connect">
+            <button type="submit" name="action" value="discover" class="btn-primary" id="oc-discover" data-busy-label="جارٍ الاتصال…">اتصال وجلب البيانات</button>
+            <span class="oc-help">يجلب السنوات والوحدات والمخازن وخدمة أونكس.</span>
+          </div>
+          <div class="oc-live oc-live--inline" id="oc-live-discover" aria-live="polite"></div>
         </div>
-      {% endif %}{% endfor %}
-    </div>
-    <div class="oc-connect">
-      <button type="submit" name="action" value="discover" class="btn-primary" id="oc-discover" data-busy-label="جارٍ الاتصال والجلب…">اتصال وجلب البيانات</button>
-      <span class="oc-help">يتصل بالقاعدة ويجلب السنوات والوحدات والمخازن، ويبحث عن خدمة أونكس على نفس الخادم.</span>
-    </div>
-    <div class="oc-live oc-live--inline" id="oc-live-discover" aria-live="polite"></div>
-  </fieldset>
+      </section>
 
-  <fieldset>
-    <legend><span class="oc-step" aria-hidden="true">2</span> ما جُلب من القاعدة — راجِعه</legend>
+      <section class="oc-card">
+        <h3><span class="oc-num" aria-hidden="true">2</span> البيانات المجلوبة</h3>
+        <div class="oc-body">
+          <p class="oc-sub">السنة والوحدة</p>
+          {{ form.known_schemas }}
+          <div class="oc-grid">
+            {% for field in form %}{% if field.name == 'year' or field.name == 'unit' %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+              </div>
+            {% endif %}{% endfor %}
+            <div class="field" style="justify-content:flex-end">
+              <span class="oc-help" id="oc-schema-preview">{% if form.year.value and form.unit.value %}المخطط: <bdi dir="ltr">IAS{{ form.year.value }}{{ form.unit.value }}</bdi>{% else %}&nbsp;{% endif %}</span>
+            </div>
+          </div>
+          <details class="oc-manual" {% if form.schema.value or form.schema.errors %}open{% endif %}>
+            <summary>مخطط بصيغة مختلفة</summary>
+            <div class="field">
+              <label for="{{ form.schema.id_for_label }}">{{ form.schema.label }}</label>
+              {{ form.schema }}
+              {% if form.schema.errors %}<ul class="oc-err">{% for e in form.schema.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+          </details>
 
-    <p class="oc-sub">السنة والوحدة المحاسبية</p>
-    {{ form.known_schemas }}
-    <div class="oc-grid">
-      {% for field in form %}{% if field.name == 'year' or field.name == 'unit' %}
-        <div class="field">
-          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-          {{ field }}
-          {% if field.errors %}<ul class="oc-err">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          {# أونكس والمخازن مخفية من الواجهة — تبقى الحقول لتُملأ تلقائياً عند «اتصال وجلب» وتُحفظ قيمها الحالية #}
+          <div hidden>
+          <p class="oc-sub">خدمة أونكس</p>
+          <div class="field">
+            <label for="{{ form.onyx_base_url.id_for_label }}">{{ form.onyx_base_url.label }}</label>
+            {{ form.onyx_base_url }}
+            <span class="oc-help" id="oc-onyx-note">تُكتشف تلقائياً على المنفذ 8090، ويمكن تعديلها.</span>
+            {% if form.onyx_base_url.errors %}<ul class="oc-err">{% for e in form.onyx_base_url.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+
+          <p class="oc-sub">المخازن</p>
+          <div class="field">
+            <label for="oc-wh-default">{{ form.default_warehouse.label }}</label>
+            <select id="oc-wh-default" hidden></select>
+            {{ form.default_warehouse }}
+            {% if form.default_warehouse.errors %}<ul class="oc-err">{% for e in form.default_warehouse.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+          <div class="field" style="margin-block-start:.8rem">
+            <label for="{{ form.compare_warehouses.id_for_label }}">{{ form.compare_warehouses.label }} <span class="oc-help" id="oc-wh-count"></span></label>
+            <div id="oc-wh-picker" hidden>
+              <div class="oc-wh-tools">
+                <input type="search" id="oc-wh-filter" placeholder="ابحث برقم المخزن أو اسمه" aria-label="بحث في المخازن">
+                <button type="button" class="btn-ghost" id="oc-wh-clear">إلغاء التحديد</button>
+              </div>
+              <div class="oc-wh-list" id="oc-wh-list" role="group" aria-label="مخازن المقارنة"></div>
+            </div>
+            {{ form.compare_warehouses }}
+            <span class="oc-help" id="oc-wh-help">اضغط «اتصال وجلب» لعرض المخازن واختيارها.</span>
+            {% if form.compare_warehouses.errors %}<ul class="oc-err">{% for e in form.compare_warehouses.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+          </div>
+          </div>
         </div>
-      {% endif %}{% endfor %}
-      <div class="field" style="justify-content:flex-end">
-        <span class="oc-help" id="oc-schema-preview">{% if form.year.value and form.unit.value %}المخطط: <bdi dir="ltr">IAS{{ form.year.value }}{{ form.unit.value }}</bdi>{% else %}&nbsp;{% endif %}</span>
-      </div>
-    </div>
-    <p class="oc-help">تُختار أحدث سنة تلقائياً. السنة المختارة تُطبَّق أيضاً على خدمة أونكس.</p>
-    <details class="oc-manual" {% if form.schema.value or form.schema.errors %}open{% endif %}>
-      <summary>مخطط لا يتبع صيغة IAS + السنة + الوحدة</summary>
-      <div class="field">
-        <label for="{{ form.schema.id_for_label }}">{{ form.schema.label }}</label>
-        {{ form.schema }}
-        {% if form.schema.errors %}<ul class="oc-err">{% for e in form.schema.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-      </div>
-    </details>
-
-    <p class="oc-sub">خدمة أونكس (Web Service)</p>
-    <div class="field">
-      <label for="{{ form.onyx_base_url.id_for_label }}">{{ form.onyx_base_url.label }}</label>
-      {{ form.onyx_base_url }}
-      <span class="oc-help" id="oc-onyx-note">تُكتشف تلقائياً عند «اتصال وجلب» إن كانت على نفس الخادم (المنفذ 8090)، ويمكن تعديلها يدوياً. تُختبر قبل الحفظ.</span>
-      {% if form.onyx_base_url.errors %}<ul class="oc-err">{% for e in form.onyx_base_url.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+      </section>
     </div>
 
-    <p class="oc-sub">المخازن</p>
-    <div class="oc-grid">
-      <div class="field">
-        <label for="oc-wh-default">{{ form.default_warehouse.label }}</label>
-        <select id="oc-wh-default" hidden></select>
-        {{ form.default_warehouse }}
-        <span class="oc-help">المخزن الذي تفتح عليه شاشات البحث والأرصدة.</span>
-        {% if form.default_warehouse.errors %}<ul class="oc-err">{% for e in form.default_warehouse.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-      </div>
+    <div class="oc-actions">
+      <label class="oc-toggle" for="{{ form.enabled.id_for_label }}">{{ form.enabled }} {{ form.enabled.label }}</label>
+      <button type="submit" name="action" value="test" class="btn-ghost" data-busy-label="جارٍ الاختبار…">اختبار</button>
+      <button type="submit" name="action" value="save" class="btn-primary" data-busy-label="جارٍ الحفظ…">حفظ وتفعيل</button>
+      <button type="button" class="btn-ghost" id="oc-save-disabled" hidden>حفظ مع إيقاف أوراكل</button>
     </div>
-    <div class="field" style="margin-block-start:.8rem">
-      <label for="{{ form.compare_warehouses.id_for_label }}">{{ form.compare_warehouses.label }} <span class="oc-help" id="oc-wh-count"></span></label>
-      <div id="oc-wh-picker" hidden>
-        <div class="oc-wh-tools">
-          <input type="search" id="oc-wh-filter" placeholder="ابحث برقم المخزن أو اسمه أو الفرع" aria-label="بحث في المخازن">
-          <button type="button" class="btn-ghost" id="oc-wh-clear">إلغاء التحديد</button>
-        </div>
-        <div class="oc-wh-list" id="oc-wh-list" role="group" aria-label="مخازن المقارنة"></div>
-      </div>
-      {{ form.compare_warehouses }}
-      <span class="oc-help" id="oc-wh-help">المخازن التي تُقارن أسعارها ومبيعاتها. اضغط «اتصال وجلب» لعرض مخازن القاعدة واختيارها.</span>
-      {% if form.compare_warehouses.errors %}<ul class="oc-err">{% for e in form.compare_warehouses.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
-    </div>
-  </fieldset>
+    <div class="oc-live oc-live--inline" id="oc-live-inline" aria-live="polite"></div>
+  </form>
 
-  <fieldset>
-    <legend><span class="oc-step" aria-hidden="true">3</span> التفعيل والحفظ</legend>
-    <label class="oc-toggle" for="{{ form.enabled.id_for_label }}">
-      {{ form.enabled }} {{ form.enabled.label }}
-    </label>
-    <span class="oc-help">عند التفعيل تُقرأ الكميات والتقارير من أوراكل. إيقافه يحفظ البيانات دون اختبار أوراكل، وتُقرأ الكميات من خدمة أونكس بدلاً منه.</span>
-  </fieldset>
-
-  <div class="oc-actions">
-    <button type="submit" name="action" value="test" class="btn-ghost" data-busy-label="جارٍ الاختبار…">اختبار الاتصال</button>
-    <button type="submit" name="action" value="save" class="btn-primary" data-busy-label="جارٍ الاختبار والحفظ…">حفظ وتفعيل</button>
-    <button type="button" class="btn-ghost" id="oc-save-disabled" hidden>حفظ مع إيقاف أوراكل مؤقتاً</button>
-    <span class="oc-help">الحفظ يختبر الاتصال أولاً ولا يُطبَّق إلا عند نجاحه.</span>
-  </div>
-  <div class="oc-live oc-live--inline" id="oc-live-inline" aria-live="polite"></div>
-</form>
-
-<ul class="oc-notes">
-  <li>كل بيانات العميل تُحفظ هنا في قاعدة بيانات البرنامج — لا تُقرأ من ملفات الإعداد، فالنسخة الجديدة لأي عميل تحتاج إدخال هذه الشاشة فقط.</li>
-  <li>تغيير الخادم أو المخطط أو المستخدم يعزل كاش التقارير السابق تلقائياً، فلا تظهر أرقام العميل القديم.</li>
-  <li>كلمة المرور تُحفظ مشفّرة ولا تُعرض مرة أخرى.</li>
-  <li>الاتصال للقراءة فقط (SELECT) — لا يكتب البرنامج شيئاً في قاعدة العميل.</li>
-</ul>
+  <p class="oc-foot">الحفظ يختبر الاتصال أولاً · كلمة المرور مشفّرة · قراءة فقط (SELECT) · تغيير الاتصال يعزل الكاش القديم.</p>
+</div>
 
 {{ form.schema_options|json_script:"oc-schema-options" }}
 {{ warehouse_options|json_script:"oc-warehouses" }}
@@ -336,7 +341,7 @@
 
     function updateCount() {
       var n = splitCodes(compareInput.value).length;
-      whCount.textContent = n ? "(" + n + " محدد)" : "(لا شيء محدد — تُستخدم المقارنة على المخزن الافتراضي)";
+      whCount.textContent = n ? "(" + n + " محدد)" : "(الافتراضي فقط)";
     }
 
     function renderWarehouses(list) {
@@ -348,7 +353,7 @@
       compareInput.hidden = has;
       whCount.textContent = "";
       if (!has) return;
-      whHelp.textContent = "المخازن التي تُقارن أسعارها ومبيعاتها — " + warehouses.length + " مخزناً نشطاً في القاعدة.";
+      whHelp.textContent = warehouses.length + " مخزناً نشطاً في القاعدة.";
 
       var codes = warehouses.map(function (w) { return w.code; });
       var current = defaultInput.value.trim();
@@ -447,10 +452,10 @@
       if (res.onyx_detected && res.onyx_base_url && !onyxInput.value.trim()) {
         onyxInput.value = res.onyx_base_url;
         onyxNote.className = "oc-found";
-        onyxNote.textContent = "اكتُشفت الخدمة تلقائياً على نفس الخادم وتستجيب.";
+        onyxNote.textContent = "اكتُشفت الخدمة وتستجيب.";
       } else if (!onyxInput.value.trim()) {
         onyxNote.className = "oc-help";
-        onyxNote.textContent = "لم تُكتشف خدمة أونكس على المنفذ 8090 لهذا الخادم — أدخل رابطها يدوياً إن وُجدت، أو اتركه فارغاً.";
+        onyxNote.textContent = "لم تُكتشف خدمة أونكس — أدخل رابطها يدوياً أو اتركه فارغاً.";
       }
       if (res.warehouses && res.warehouses.length) renderWarehouses(res.warehouses);
     }
@@ -515,7 +520,7 @@
         hostInput.value = useLinkBtn.dataset.host;
         portInput.value = useLinkBtn.dataset.port;
         onyxInput.value = "";
-        showResult(true, "تم ضبط الاتصال على وكيل الربط. أدخل اسم الخدمة والمستخدم وكلمة المرور ثم «اتصال وجلب البيانات».", liveDiscover);
+        showResult(true, "تم ضبط العنوان والمنفذ. أكمل اسم الخدمة والمستخدم وكلمة المرور ثم اضغط «اتصال وجلب البيانات».", liveDiscover);
         hostInput.focus();
       });
     }

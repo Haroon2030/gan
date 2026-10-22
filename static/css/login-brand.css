@@ -1,0 +1,174 @@
+/* صفحة الدخول — هوية واحة خيرات البركة: أخضر داكن + برتقالي + حبر أسود */
+body.login-body {
+  --wk-green: #2f6b3f;
+  --wk-green-deep: #1d4a2b;
+  --wk-green-ink: #12301c;
+  --wk-orange: #e8762b;
+  --wk-orange-dark: #cf6219;
+  --wk-ink: #1b1b1b;
+  --wk-muted: #6a6f68;
+  --wk-line: #dfe5dc;
+  --wk-cream: #f7f6f1;
+  background: var(--wk-cream);
+  color: var(--wk-ink);
+}
+
+.wk-shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  font-family: var(--font);
+}
+
+/* اللوحة الجانبية */
+.wk-side {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(232, 118, 43, 0.18), transparent 60%),
+    linear-gradient(160deg, var(--wk-green) 0%, var(--wk-green-deep) 55%, var(--wk-green-ink) 100%);
+  color: #f1f6ef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 40px;
+}
+.wk-leaf {
+  position: absolute;
+  width: 520px;
+  height: 520px;
+  border-radius: 62% 38% 70% 30% / 55% 45% 55% 45%;
+  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+.wk-leaf-a { inset-block-start: -180px; inset-inline-end: -160px; transform: rotate(24deg); }
+.wk-leaf-b { inset-block-end: -220px; inset-inline-start: -200px; width: 600px; height: 600px; transform: rotate(-18deg); }
+.wk-side-body { position: relative; max-width: 420px; text-align: center; }
+.wk-logo-tile {
+  display: inline-flex;
+  padding: 26px 34px;
+  background: #fff;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+.wk-logo-tile img { display: block; width: min(240px, 52vw); height: auto; }
+.wk-side-kicker { margin: 34px 0 8px; font-size: 1.55rem; font-weight: 800; }
+.wk-side-lead { margin: 0 auto 22px; line-height: 1.9; color: rgba(241, 246, 239, 0.82); }
+.wk-points {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  text-align: start;
+  max-width: 300px;
+}
+.wk-points li {
+  position: relative;
+  padding-inline-start: 22px;
+  font-weight: 600;
+  color: rgba(241, 246, 239, 0.92);
+}
+.wk-points li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.55em;
+  width: 9px;
+  height: 9px;
+  background: var(--wk-orange);
+  border-radius: 2px 70% 2px 70%;
+}
+
+/* بطاقة الدخول */
+.wk-main { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+.wk-card { width: 100%; max-width: 400px; }
+.wk-logo-sm { display: none; margin: 0 auto 18px; height: auto; }
+.wk-head { margin-bottom: 26px; }
+.wk-title { margin: 0 0 6px; font-size: 1.9rem; font-weight: 800; color: var(--wk-green-deep); }
+.wk-sub { margin: 0; color: var(--wk-muted); }
+
+.wk-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fdf0e7;
+  border: 1px solid #f3c9a8;
+  color: #9a3d06;
+  font-weight: 600;
+}
+.wk-error svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+.wk-form { display: grid; gap: 18px; }
+.wk-field label { display: block; margin-bottom: 7px; font-weight: 700; font-size: 0.92rem; }
+.wk-input { position: relative; }
+.wk-input svg {
+  position: absolute;
+  inset-inline-start: 14px;
+  top: 50%;
+  width: 19px;
+  height: 19px;
+  transform: translateY(-50%);
+  color: var(--wk-green);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.wk-input input {
+  width: 100%;
+  height: 50px;
+  padding-inline: 44px 14px;
+  border: 1.5px solid var(--wk-line);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--wk-ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.wk-input input:focus {
+  outline: none;
+  border-color: var(--wk-green);
+  box-shadow: 0 0 0 4px rgba(47, 107, 63, 0.14);
+}
+.wk-submit {
+  margin-top: 6px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--wk-orange), var(--wk-orange-dark));
+  color: #fff;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(232, 118, 43, 0.28);
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+.wk-submit:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(232, 118, 43, 0.34); }
+.wk-submit:active { transform: translateY(0); }
+.wk-submit:focus-visible { outline: 3px solid rgba(47, 107, 63, 0.45); outline-offset: 2px; }
+.wk-submit svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.wk-foot { margin: 28px 0 0; text-align: center; font-size: 0.85rem; color: var(--wk-muted); }
+
+@media (max-width: 900px) {
+  .wk-shell { grid-template-columns: 1fr; }
+  .wk-side { display: none; }
+  .wk-main { min-height: 100dvh; padding: 28px 20px; background: linear-gradient(180deg, #eef3ea 0, var(--wk-cream) 220px); }
+  .wk-logo-sm { display: block; width: 130px; }
+  .wk-head { text-align: center; }
+  .wk-input input { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-submit, .wk-input input { transition: none; }
+}

@@ -6,133 +6,77 @@
 {% block body_class %}login-body{% endblock %}
 {% block page_class %}login-page{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/login-brand.css' %}?v={{ app_client_version }}">
+{% endblock %}
+
 {% block content %}
-<section class="login-shell" aria-labelledby="login-brand">
-  <div class="login-welcome">
-    <div class="login-welcome-media" aria-hidden="true">
-      <img
-        src="{% static 'img/welcome/login-hero.jpg' %}?v={{ app_client_version }}"
-        alt=""
-        width="720"
-        height="405"
-        decoding="async"
-        fetchpriority="high"
-      >
-      <span class="login-welcome-scrim"></span>
-      <span class="login-welcome-glow"></span>
-    </div>
-
-    <div class="login-welcome-copy">
-      <p class="login-kicker">
-        <span class="login-kicker-ico" aria-hidden="true">
-          <svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16V9M13 16V6M18 16v-4"/></svg>
-        </span>
-        تحليل الأعمال · قرار تنفيذي
-      </p>
-
-      <div class="login-mark" aria-hidden="true" title="غرفة القرار">
-        <svg viewBox="0 0 24 24" focusable="false">
-          <defs>
-            <linearGradient id="loginGrow" x1="19.1" y1="4.4" x2="19.1" y2="20.4" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#67E8F9"/>
-              <stop offset="55%" stop-color="#A78BFA"/>
-              <stop offset="100%" stop-color="#37D26F"/>
-            </linearGradient>
-          </defs>
-          <rect class="brand-bar" x="3.4" y="13.2" width="3.2" height="7.2" rx="1.6"/>
-          <rect class="brand-bar" x="8.1" y="10.2" width="3.2" height="10.2" rx="1.6"/>
-          <rect class="brand-bar" x="12.8" y="7.6" width="3.2" height="12.8" rx="1.6"/>
-          <rect x="17.5" y="4.4" width="3.2" height="16" rx="1.6" fill="url(#loginGrow)"/>
-        </svg>
+<section class="wk-shell" aria-labelledby="wk-title">
+  <aside class="wk-side" aria-hidden="true">
+    <span class="wk-leaf wk-leaf-a"></span>
+    <span class="wk-leaf wk-leaf-b"></span>
+    <div class="wk-side-body">
+      <div class="wk-logo-tile">
+        <img src="{% static 'img/brand/logo.png' %}?v={{ app_client_version }}" alt="" width="276" height="232" decoding="async" fetchpriority="high">
       </div>
-
-      <h1 id="login-brand" class="login-brand">غرفة القرار</h1>
-      <p class="login-hello">من البيانات إلى قرار الإدارة</p>
-      <p class="login-lead">قائمة الدخل، المبيعات، مؤشرات الأداء، المخزون، المشتريات والأصول — صورة تنفيذية واحدة للقياس والمقارنة واتخاذ القرار بثقة.</p>
-
-      <ul class="login-points" aria-label="محاور المنصة">
+      <p class="wk-side-kicker">غرفة القرار</p>
+      <p class="wk-side-lead">من البيانات إلى قرار الإدارة — مبيعات، مخزون، مشتريات وأداء في صورة تنفيذية واحدة.</p>
+      <ul class="wk-points">
         <li>قراءة تنفيذية للدخل والأداء</li>
         <li>ربحية الفروع والقنوات</li>
         <li>كفاءة المخزون والتوريد</li>
       </ul>
     </div>
-  </div>
+  </aside>
 
-  <div class="login-panel">
-    <div class="login-card">
-      <header class="login-brand-block">
-        <p class="login-panel-kicker">غرفة القرار</p>
-        <h2 class="login-panel-title">تسجيل الدخول</h2>
-        <p class="login-tagline">ادخل إلى لوحة المؤشرات التنفيذية</p>
+  <div class="wk-main">
+    <div class="wk-card">
+      <img class="wk-logo-sm" src="{% static 'img/brand/logo.png' %}?v={{ app_client_version }}" alt="واحة خيرات البركة" width="130" height="109">
+
+      <header class="wk-head">
+        <h1 id="wk-title" class="wk-title">تسجيل الدخول</h1>
+        <p class="wk-sub">ادخل إلى لوحة المؤشرات التنفيذية</p>
       </header>
 
       {% if error %}
-        <div class="login-error" role="alert">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        <div class="wk-error" role="alert">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
           <span>{{ error }}</span>
         </div>
       {% elif form.errors %}
-        <div class="login-error" role="alert">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        <div class="wk-error" role="alert">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
           <span>اسم المستخدم أو كلمة المرور غير صحيحة.</span>
         </div>
       {% endif %}
 
-      <form method="post" action="{% url 'login' %}" class="login-form" novalidate>
+      <form method="post" action="{% url 'login' %}" class="wk-form" novalidate>
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
 
-        <div class="login-field">
+        <div class="wk-field">
           <label for="id_username">الاسم أو الرقم</label>
-          <div class="login-input-wrap">
-            <svg class="login-field-ico" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-            <input
-              id="id_username"
-              name="username"
-              type="text"
-              autocomplete="username"
-              maxlength="150"
-              required
-              autofocus
-              placeholder=" "
-              value=""
-              enterkeyhint="next"
-              autocapitalize="off"
-              spellcheck="false"
-            >
+          <div class="wk-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input id="id_username" name="username" type="text" autocomplete="username" maxlength="150" required autofocus placeholder=" " value="" enterkeyhint="next" autocapitalize="off" spellcheck="false">
           </div>
         </div>
 
-        <div class="login-field">
+        <div class="wk-field">
           <label for="id_password">كلمة المرور</label>
-          <div class="login-input-wrap">
-            <svg class="login-field-ico" viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="4" y="10" width="16" height="11" rx="2"/>
-              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
-            </svg>
-            <input
-              id="id_password"
-              name="password"
-              type="password"
-              autocomplete="current-password"
-              required
-              placeholder=" "
-              value=""
-              enterkeyhint="go"
-            >
+          <div class="wk-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input id="id_password" name="password" type="password" autocomplete="current-password" required placeholder=" " value="" enterkeyhint="go">
           </div>
         </div>
 
-        <button type="submit" class="login-submit">
-          <span>دخول إلى غرفة القرار</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
-          </svg>
+        <button type="submit" class="wk-submit">
+          <span>دخول</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
         </button>
       </form>
+
+      <p class="wk-foot">واحة خيرات البركة</p>
     </div>
   </div>
 </section>

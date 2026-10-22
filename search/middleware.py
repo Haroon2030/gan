@@ -137,23 +137,6 @@ class RateLimitMiddleware:
             if not self._allow(f'login:{ip}', limit, window):
                 return self._login_blocked_response(request)
 
-        if path.rstrip('/').endswith('sync-barcodes') and request.method == 'POST':
-            limit = int(getattr(settings, 'RATE_LIMIT_SYNC_PER_HOUR', 10))
-            if not self._allow(f'sync:{ip}', limit, 3600):
-                wants_json = (
-                    request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-                    or 'application/json' in (request.headers.get('Accept') or '')
-                )
-                if wants_json:
-                    return JsonResponse(
-                        {'ok': False, 'error': 'تم تجاوز حد المزامنة. حاول لاحقاً.'},
-                        status=429,
-                    )
-                return HttpResponseForbidden(
-                    'تم تجاوز حد المزامنة. حاول لاحقًا.',
-                    content_type='text/plain; charset=utf-8',
-                )
-
         if request.method == 'GET' and request.GET.get('q'):
             limit = int(getattr(settings, 'RATE_LIMIT_SEARCH_PER_MINUTE', 60))
             if not self._allow(f'search:{ip}', limit, 60):
@@ -174,11 +157,7 @@ class NavPermissionMiddleware:
 
     def __call__(self, request):
         user = getattr(request, 'user', None)
-        if (
-            user is not None
-            and getattr(user, 'is_authenticated', False)
-            and not getattr(user, 'is_staff', False)
-        ):
+        if user is not None and getattr(user, 'is_authenticated', False):
             from django.contrib import messages
             from django.shortcuts import redirect
             from django.urls import Resolver404, resolve
@@ -190,7 +169,11 @@ class NavPermissionMiddleware:
                 url_name = match.url_name
             except Resolver404:
                 url_name = None
-            if url_name and not user_can_access_screen(user, url_name):
+            if (
+                url_name
+                and not getattr(user, 'is_staff', False)
+                and not user_can_access_screen(user, url_name)
+            ):
                 messages.error(request, 'لا تملك صلاحية فتح هذه الشاشة.')
                 return redirect('home')
         return self.get_response(request)

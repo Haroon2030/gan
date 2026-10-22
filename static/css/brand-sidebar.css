@@ -1,0 +1,89 @@
+/* الشريط الجانبي — هوية واحة خيرات البركة: أخضر زيتوني داكن + لمسة برتقالية */
+:root,
+body.theme-navy,
+body.theme-growth {
+  --mn-side: #16301F;
+  --mn-side-text: #CFE0D2;
+  --mn-side-label: #7E9C84;
+  --mn-side-muted: #A3BBA7;
+  --mn-side-hover: rgba(255, 255, 255, 0.06);
+  --mn-side-active: rgba(232, 118, 43, 0.14);
+  --wk-orange: #E8762B;
+  --wk-orange-soft: #F4A46E;
+}
+
+body.theme-growth .sidebar,
+body.theme-navy .sidebar,
+.sidebar {
+  background:
+    radial-gradient(ellipse 120% 40% at 100% 0%, rgba(232, 118, 43, 0.12), transparent 60%),
+    linear-gradient(180deg, #1D3D28 0%, #16301F 45%, #10241A 100%) !important;
+}
+
+/* الشعار والاسم */
+.sidebar-brand .brand-mark {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  background: #FFFFFF !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+  overflow: hidden;
+}
+.sidebar-brand .brand-mark img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+.sidebar-brand .brand-sub {
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+}
+.sidebar-brand .brand {
+  margin-top: 3px !important;
+  color: var(--wk-orange-soft) !important;
+  font-size: 0.72rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em;
+}
+
+/* قائمة مسطّحة: عنوان قسم ثابت وتحته الروابط مباشرة (بلا قوائم منسدلة) */
+.sidebar-nav .sidebar-section-label {
+  margin: 16px 12px 4px !important;
+  font-size: 0.72rem !important;
+}
+.sidebar-nav .sidebar-zone:first-child > .sidebar-link:first-child {
+  margin-top: 6px;
+}
+.sidebar-nav .sidebar-link {
+  min-height: 38px !important;
+  font-size: 0.88rem !important;
+}
+
+/* الروابط */
+.sidebar-nav .sidebar-link.is-active,
+.sidebar-nav .sidebar-link[aria-current="page"] {
+  border-inline-start-color: var(--wk-orange) !important;
+}
+.sidebar-nav .sidebar-link.is-active .sidebar-ico,
+.sidebar-nav .sidebar-link[aria-current="page"] .sidebar-ico {
+  color: var(--wk-orange-soft) !important;
+}
+.sidebar-group.is-current > .sidebar-group-toggle:not(#mn) .sidebar-ico {
+  color: var(--wk-orange-soft) !important;
+}
+.sidebar-nav .sidebar-sublink.is-active::before {
+  background: var(--wk-orange) !important;
+}
+.sidebar-group-items {
+  border-inline-start-color: rgba(207, 224, 210, 0.16) !important;
+}
+
+/* التذييل */
+.sidebar-user-avatar {
+  background: #2F6B3F !important;
+}
+.sidebar a:focus-visible,
+.sidebar button:focus-visible {
+  outline-color: var(--wk-orange) !important;
+}

@@ -3,18 +3,7 @@
 from __future__ import annotations
 
 import re
-import unicodedata
 
-from django.conf import settings
-
-
-# أكواد باركود/رقم صنف
-_QUERY_RE = re.compile(r'^[\w\-/\\.$+:%]+$', re.UNICODE)
-# أسماء أصناف: مسافات وعربية وعلامات شائعة في أسماء المنتجات
-_NAME_QUERY_RE = re.compile(r'^[\w\-/\\.$+:%\s()\[\]«»"،,.*+-]+$', re.UNICODE)
-_WAREHOUSE_RE = re.compile(r'^[0-9A-Za-z_-]{1,16}$')
-_GROUP_RE = re.compile(r'^[\w\-/\\.$+:%]{1,64}$', re.UNICODE)
-_CODE_LIKE_RE = re.compile(r'^[\w\-/\\.]+$', re.UNICODE)
 
 # أنماط شائعة لمحاولات SQL Injection (دفاع إضافي فوق ORM)
 _SQLI_PATTERNS = (
@@ -46,18 +35,6 @@ class ValidationError(ValueError):
     pass
 
 
-def _normalize_query(value: str) -> str:
-    text = unicodedata.normalize('NFKC', value or '')
-    cleaned = []
-    for ch in text:
-        if unicodedata.category(ch) in {'Mn', 'Me', 'Cf'}:
-            continue
-        if ch in '\u200e\u200f\u202a\u202b\u202c\u202d\u202e':
-            continue
-        cleaned.append(ch)
-    return ''.join(cleaned).strip()
-
-
 def contains_sql_injection(value: str | None) -> bool:
     """هل النص يشبه محاولة حقن SQL؟"""
     text = str(value or '')
@@ -75,61 +52,6 @@ def reject_sql_injection(value: str | None, field_name: str = 'input') -> str:
     if contains_sql_injection(text):
         raise ValidationError(f'قيمة غير مسموحة في الحقل «{field_name}».')
     return text
-
-
-def sanitize_search_query(raw: str | None) -> str:
-    query = _normalize_query((raw or '').strip())
-    max_len = int(getattr(settings, 'SEARCH_QUERY_MAX_LEN', 128))
-    if not query:
-        return ''
-    if len(query) > max_len:
-        raise ValidationError(f'نص البحث طويل جدًا (الحد {max_len} حرفًا).')
-    if contains_sql_injection(query):
-        raise ValidationError('نص البحث يحتوي أنماطاً غير مسموحة.')
-    # اسم صنف (مسافات/عربية) أو كود/باركود
-    if ' ' in query or any(ord(ch) > 127 for ch in query):
-        if not _NAME_QUERY_RE.match(query):
-            raise ValidationError('نص البحث يحتوي رموزًا غير مسموحة.')
-    elif not _QUERY_RE.match(query):
-        raise ValidationError('نص البحث يحتوي رموزًا غير مسموحة.')
-    return query
-
-
-def looks_like_item_code(query: str) -> bool:
-    """هل النص يشبه رقم صنف/باركود أكثر من اسم؟"""
-    q = (query or '').strip()
-    if not q or ' ' in q or len(q) > 48:
-        return False
-    return bool(_CODE_LIKE_RE.match(q))
-
-
-def resolve_warehouse(raw: str | None, warehouses: list[dict], default: str) -> str:
-    allowed = {str(w.get('code')) for w in warehouses}
-    selected = (raw or '').strip()
-    if selected:
-        if contains_sql_injection(selected):
-            raise ValidationError('المخزن المحدد غير صالح.')
-        if not _WAREHOUSE_RE.match(selected) or selected not in allowed:
-            raise ValidationError('المخزن المحدد غير صالح.')
-        return selected
-    if default in allowed:
-        return default
-    return next(iter(allowed), '60')
-
-
-def resolve_group(raw: str | None, groups: list[dict], *, required: bool = False) -> str:
-    """التحقق من رمز المجموعة ضد القائمة المحلية. فارغ مسموح إن لم يكن required."""
-    allowed = {str(g.get('g_code')) for g in groups if g.get('g_code')}
-    selected = (raw or '').strip()
-    if not selected:
-        if required:
-            raise ValidationError('اختر المجموعة أولاً.')
-        return ''
-    if contains_sql_injection(selected):
-        raise ValidationError('المجموعة المحددة غير صالحة.')
-    if not _GROUP_RE.match(selected) or selected not in allowed:
-        raise ValidationError('المجموعة المحددة غير صالحة.')
-    return selected
 
 
 def scan_request_for_sql_injection(request) -> str | None:

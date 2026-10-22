@@ -6,10 +6,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable
 
 # شاشات تفصيلية تُحسب ضمن الشاشة الأم عند الحجب
-SCREEN_ALIASES: dict[str, str] = {
-    "browse_tr_compare_detail": "browse_tr_compare",
-    "browse_pr_compare_detail": "browse_pr_compare",
-}
+SCREEN_ALIASES: dict[str, str] = {}
 
 # مسارات بلا قسم (دائماً مسموحة للمُسجّل) أو تُدار بـ is_staff
 ALWAYS_ALLOWED: frozenset[str] = frozenset(
@@ -17,7 +14,6 @@ ALWAYS_ALLOWED: frozenset[str] = frozenset(
         "home",
         "login",
         "logout",
-        "sync_barcodes",
     }
 )
 
@@ -79,28 +75,13 @@ NAV_SECTIONS: tuple[NavSection, ...] = (
         "إدارة المخزون",
         (
             NavScreen("browse_inventory", "تحليل المخزون"),
-            NavScreen("browse_stock_turnover", "حركة فواتير الشراء"),
-            NavScreen("browse_groups", "مخزون المجموعات"),
-            NavScreen("browse_unsold", "رصيد بلا مبيعات"),
-            NavScreen("browse_inventory_pack_errors", "اختلاف شد الشراء/التحويل"),
         ),
     ),
     NavSection(
         "purchases",
         "إدارة المشتريات",
         (
-            NavScreen("item_search", "بحث الأصناف"),
             NavScreen("browse_purchases", "تحليل المشتريات"),
-            NavScreen("browse_vendor_turnover", "دوران الموردين"),
-            NavScreen("browse_pr_compare", "مقارنات طلب الشراء"),
-            NavScreen("browse_tr_compare", "طلب النواقص"),
-            NavScreen("browse_low_margin_prices", "حد ربح التسعير"),
-            NavScreen("browse_name_barcode_conflicts", "اسم مشابه · باركود مختلف"),
-            NavScreen("browse_unpriced_items", "أصناف غير مسعّرة"),
-            NavScreen("browse_below_cost_prices", "أقل من التكلفة"),
-            NavScreen("browse_price_changes", "تعديل أسعار اليوم"),
-            NavScreen("browse_cost_adjustments", "تسوية التكاليف"),
-            NavScreen("browse_vendor_price_compare", "مقارنة أسعار الموردين"),
         ),
     ),
     NavSection(
@@ -108,9 +89,7 @@ NAV_SECTIONS: tuple[NavSection, ...] = (
         "إدارة المبيعات",
         (
             NavScreen("browse_sales", "تحليل المبيعات"),
-            NavScreen("sales_search", "البحث عن مبيعات صنف"),
             NavScreen("browse_performance", "تحليل الأداء"),
-            NavScreen("browse_sold_no_supply", "بيع بلا توريد"),
         ),
     ),
 )

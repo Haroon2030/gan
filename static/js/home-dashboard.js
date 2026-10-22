@@ -462,19 +462,6 @@
       if (d.item_count > 0) bell();
     },
 
-    stagnantBlock: function (card, d) {
-      card.classList.toggle("is-warn", d.item_count > 0);
-      var href = card.getAttribute("data-href") || "";
-      card.innerHTML =
-        '<div class="hx-alert-head"><span class="hx-alert-title">' +
-        '<svg class="hx-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/></svg>' +
-        'مخزون راكد</span><span class="hx-alert-count">' + num(d.item_count) + "</span></div>" +
-        '<p class="hx-alert-desc">صنف له رصيد بلا أي مبيعات خلال الفترة في ' + num(d.branch_count) +
-        " فرع · قيمته بالتكلفة " + esc(moneyText(d.net_total)) + ".</p>" +
-        (href ? '<a class="hx-alert-action" href="' + esc(href) + '">مراجعة الأصناف</a>' : "");
-      if (d.item_count > 0) bell();
-    },
-
     recentPanel: function (card, d) {
       var rows = d.rows || [];
       if (!rows.length) {
@@ -693,7 +680,7 @@
     initHeader();
     markLoading();
     // الأسرع أولاً حتى تمتلئ الشاشة بسرعة؛ الأثقل (الأصناف، الهامش) آخراً
-    ["sales", "purchases", "inventory", "recent", "groups", "shortage", "stagnant"].forEach(function (name) {
+    ["sales", "purchases", "inventory", "recent", "groups", "shortage"].forEach(function (name) {
       if (WIDGETS.has(name)) load(name);
     });
     loadTrend();

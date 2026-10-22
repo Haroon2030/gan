@@ -31,7 +31,6 @@ WIDGET_SCREENS: dict[str, tuple[str, ...]] = {
     # الدوران يكشف تكلفة المبيعات → يحتاج صلاحية الأداء أيضاً
     "turnover": ("browse_inventory", "browse_performance"),
     "shortage": ("browse_inventory",),
-    "stagnant": ("browse_unsold",),
 }
 
 # أنواع المستندات في «العمليات الحديثة» وشاشة كل نوع
@@ -556,17 +555,6 @@ def build_shortage_widget(limit: int = 3) -> dict:
         for r in rows[:limit]
     ]
     return {"item_count": len(rows), "lookback_days": days, "top": top}
-
-
-def build_stagnant_widget(d_from: date, d_to: date) -> dict:
-    from .oracle_unsold import build_unsold_report
-
-    k = build_unsold_report(d_from, d_to).get("kpis") or {}
-    return {
-        "item_count": int(k.get("item_count") or 0),
-        "branch_count": int(k.get("branch_count") or 0),
-        "net_total": round(float(k.get("net_total") or 0), 2),
-    }
 
 
 # ── أحدث المستندات ────────────────────────────────────────────────────
