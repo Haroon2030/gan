@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import io
 import json
 import logging
@@ -189,12 +191,37 @@ def revoke_link() -> None:
     logger.info('Oracle link revoked')
 
 
+def key_fingerprint(key_text: str) -> str:
+    """بصمة SHA256 كما يعرضها ssh-keygen -l — للتعرّف على المفتاح دون كشفه."""
+    parts = str(key_text or '').split()
+    for i, part in enumerate(parts[:-1]):
+        if part.startswith('ssh-'):
+            try:
+                blob = base64.b64decode(parts[i + 1], validate=True)
+            except ValueError:
+                return ''
+            digest = base64.b64encode(hashlib.sha256(blob).digest()).decode('ascii')
+            return 'SHA256:' + digest.rstrip('=')
+    return ''
+
+
+def _saved_keys():
+    from .models import OracleLinkKeys
+
+    try:
+        return OracleLinkKeys.objects.filter(pk=OracleLinkKeys.SINGLETON_PK).first()
+    except Exception:  # noqa: BLE001 — قبل migrate
+        return None
+
+
 def link_status() -> dict:
     path = _link_dir() / AUTHORIZED_KEYS
     try:
-        has_key = bool(path.read_text(encoding='ascii').strip())
+        authorized = path.read_text(encoding='ascii')
     except OSError:
-        has_key = False
+        authorized = ''
+    has_key = bool(authorized.strip())
+    saved = _saved_keys()
     connected = False
     if has_key:
         try:
@@ -209,4 +236,7 @@ def link_status() -> dict:
         'local_host': '127.0.0.1',
         'local_port': _local_port(),
         'ssh_port': int(settings.ORACLE_LINK_SSH_PORT),
+        'key_fingerprint': key_fingerprint(authorized) if has_key else '',
+        'host_fingerprint': key_fingerprint(saved.host_public_key) if saved else '',
+        'key_updated_at': saved.updated_at if saved and has_key else None,
     }

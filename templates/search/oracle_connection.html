@@ -29,6 +29,11 @@
   .oc-page details.oc-card > summary::-webkit-details-marker { display: none; }
   .oc-page details.oc-card > summary::after { content: "▾"; color: var(--oc-muted); margin-inline-start: auto; transition: transform .15s; }
   .oc-page details.oc-card[open] > summary::after { transform: rotate(180deg); }
+  .oc-page .oc-keyinfo { display: flex; flex-wrap: wrap; gap: .5rem 1.6rem; margin: 0 0 .5rem; padding: .7rem .9rem; background: var(--oc-soft); border: 1px solid var(--oc-line); border-radius: 10px; }
+  .oc-page .oc-keyinfo div { min-inline-size: 0; }
+  .oc-page .oc-keyinfo dt { font-size: .74rem; color: var(--oc-muted); font-weight: 600; }
+  .oc-page .oc-keyinfo dd { margin: .15rem 0 0; font-size: .82rem; font-weight: 700; color: var(--oc-ink); }
+  .oc-page .oc-fp { font-family: var(--mono); font-size: .78rem; word-break: break-all; }
   .oc-page .oc-link-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
   .oc-page .oc-link-actions form { margin: 0; }
 
@@ -114,6 +119,27 @@
     <div class="oc-body">
       {% if not link.server_ready %}
         <p class="oc-err" style="margin-block-end:.6rem">خادم الربط غير جاهز — أعد نشر التطبيق وانشر المنفذ {{ link.ssh_port }}.</p>
+      {% endif %}
+      {% if link.key_fingerprint %}
+        <dl class="oc-keyinfo">
+          <div>
+            <dt>المفتاح المفعّل</dt>
+            <dd><bdi dir="ltr" class="oc-fp">{{ link.key_fingerprint }}</bdi></dd>
+          </div>
+          {% if link.key_updated_at %}
+          <div>
+            <dt>وُلّد في</dt>
+            <dd><bdi dir="ltr">{{ link.key_updated_at|date:"Y-m-d H:i" }}</bdi></dd>
+          </div>
+          {% endif %}
+          {% if link.host_fingerprint %}
+          <div>
+            <dt>مفتاح الخادم</dt>
+            <dd><bdi dir="ltr" class="oc-fp">{{ link.host_fingerprint }}</bdi></dd>
+          </div>
+          {% endif %}
+        </dl>
+        <p class="oc-hint" style="margin-block-end:.8rem">المفتاح الخاص داخل ملف الربط على جهاز العميل فقط (<bdi dir="ltr">C:\OracleLink</bdi>) ولا يُحفظ هنا. يبقى ثابتاً حتى «توليد ملف جديد» أو «إلغاء الربط».</p>
       {% endif %}
       <div class="oc-link-actions">
         <form method="post">

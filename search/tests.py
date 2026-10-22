@@ -1406,3 +1406,17 @@ class OracleLinkTests(TestCase):
             self.assertContains(self.client.get(self.url), 'مفتاح التشفير غير ثابت')
         with override_settings(DEBUG=False, SECRET_KEY_FROM_ENV=True):
             self.assertNotContains(self.client.get(self.url), 'مفتاح التشفير غير ثابت')
+
+    def test_screen_shows_active_key_fingerprint(self):
+        from search.oracle_link import key_fingerprint, restore_link_files
+
+        restore_link_files()
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        fingerprint = key_fingerprint(self._authorized())
+        self.assertTrue(fingerprint.startswith('SHA256:'))
+        self.assertEqual(len(fingerprint), len('SHA256:') + 43)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'المفتاح المفعّل')
+        self.assertContains(response, fingerprint)
+        self.assertNotContains(response, 'PRIVATE KEY')
