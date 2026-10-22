@@ -1351,3 +1351,58 @@ class OracleLinkTests(TestCase):
         self.assertContains(response, 'وكيل الربط')
         self.assertContains(response, 'غير مُولَّد')
         self.assertContains(response, 'data-port="15210"')
+
+    def _wipe_link_dir(self):
+        # محاكاة نشر جديد: مجلد البيانات داخل الحاوية يبدأ فارغاً
+        for path in self.link_dir.iterdir():
+            path.unlink()
+
+    def test_generated_key_survives_redeploy(self):
+        from search.oracle_link import restore_link_files
+
+        restore_link_files()
+        host_key = (self.link_dir / 'ssh_host_ed25519_key.pub').read_text(encoding='ascii')
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        authorized = self._authorized()
+
+        self._wipe_link_dir()
+        self.assertEqual(restore_link_files(), 'database')
+        self.assertEqual(self._authorized(), authorized)
+        self.assertEqual((self.link_dir / 'ssh_host_ed25519_key.pub').read_text(encoding='ascii'), host_key)
+        self.assertIn('PRIVATE KEY', (self.link_dir / 'ssh_host_ed25519_key').read_text(encoding='ascii'))
+
+    def test_first_restore_adopts_existing_host_key(self):
+        from search.models import OracleLinkKeys
+        from search.oracle_link import restore_link_files
+
+        (self.link_dir / 'ssh_host_ed25519_key').write_text('-----BEGIN OPENSSH PRIVATE KEY-----\nx\n', encoding='ascii')
+        self.assertEqual(restore_link_files(), 'disk')
+        row = OracleLinkKeys.objects.get()
+        self.assertIn('HostKeyForTests', row.host_public_key)
+
+    def test_restore_generates_host_key_when_missing(self):
+        from search.oracle_link import restore_link_files
+
+        self._wipe_link_dir()
+        self.assertEqual(restore_link_files(), 'generated')
+        self.assertTrue((self.link_dir / 'ssh_host_ed25519_key.pub').read_text(encoding='ascii').startswith('ssh-ed25519 '))
+        self.assertEqual(self._authorized(), '')
+
+    def test_revoke_is_kept_after_redeploy(self):
+        from search.oracle_link import restore_link_files
+
+        restore_link_files()
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        self.client.post(self.url, {'action': 'link_revoke'})
+        self._wipe_link_dir()
+        restore_link_files()
+        self.assertEqual(self._authorized(), '')
+
+    def test_screen_warns_when_secret_key_not_from_env(self):
+        self.client.force_login(self.admin)
+        with override_settings(DEBUG=False, SECRET_KEY_FROM_ENV=False):
+            self.assertContains(self.client.get(self.url), 'مفتاح التشفير غير ثابت')
+        with override_settings(DEBUG=False, SECRET_KEY_FROM_ENV=True):
+            self.assertNotContains(self.client.get(self.url), 'مفتاح التشفير غير ثابت')

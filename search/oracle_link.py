@@ -6,6 +6,9 @@
 
 الشاشة تولّد زوج مفاتيح جديداً في كل مرة: العام يُكتب مقيّداً في authorized_keys
 (لا يسمح إلا بعكس منفذ واحد)، والخاص يُسلَّم في الحزمة فقط ولا يُحفظ على الخادم.
+
+مفتاح الخادم وسطر authorized_keys محفوظان في القاعدة (OracleLinkKeys) ويُستعادان للقرص
+عند كل إقلاع — فيبقى الربط بعد إعادة النشر ولا يتغيّر إلا بتوليد ملف جديد.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 AUTHORIZED_KEYS = 'authorized_keys'
+HOST_KEY = 'ssh_host_ed25519_key'
 HOST_KEY_PUB = 'ssh_host_ed25519_key.pub'
 PACKAGE_ROOT = 'OracleLink'
 KEY_COMMENT = 'oracle-link'
@@ -78,14 +82,62 @@ def _server_host_key() -> str:
     return f'{parts[0]} {parts[1]}'
 
 
-def _write_authorized_keys(content: str) -> None:
+def _write_file(name: str, content: str, mode: int) -> None:
     directory = _link_dir()
     directory.mkdir(parents=True, exist_ok=True)
-    target = directory / AUTHORIZED_KEYS
-    tmp = directory / (AUTHORIZED_KEYS + '.tmp')
+    target = directory / name
+    tmp = directory / (name + '.tmp')
     tmp.write_text(content, encoding='ascii')
-    os.chmod(tmp, 0o644)
+    os.chmod(tmp, mode)
     os.replace(tmp, target)
+
+
+def _write_authorized_keys(content: str) -> None:
+    _write_file(AUTHORIZED_KEYS, content, 0o644)
+
+
+def _keys_row():
+    from .models import OracleLinkKeys
+
+    row, _ = OracleLinkKeys.objects.get_or_create(pk=OracleLinkKeys.SINGLETON_PK)
+    return row
+
+
+def _save_authorized_keys(content: str) -> None:
+    """يحفظ مفتاح جهاز العميل في القاعدة ثم على القرص (sshd يقرأ الملف مع كل اتصال)."""
+    row = _keys_row()
+    row.authorized_keys = content
+    row.save(update_fields=['authorized_keys', 'updated_at'])
+    _write_authorized_keys(content)
+
+
+def restore_link_files() -> str:
+    """يكتب مفاتيح الربط المحفوظة إلى مجلد sshd قبل تشغيله — يُستدعى عند الإقلاع.
+
+    أول مرة: يعتمد مفتاح الخادم الموجود على القرص إن وُجد (حتى لا تبطل حزمة مثبّتة)،
+    وإلا يولّد مفتاحاً جديداً، ثم يحفظه في القاعدة.
+    """
+    row = _keys_row()
+    private_path = _link_dir() / HOST_KEY
+    public_path = _link_dir() / HOST_KEY_PUB
+    if row.host_private_key and row.host_public_key:
+        source = 'database'
+    elif private_path.exists() and public_path.exists():
+        row.host_private_key = private_path.read_text(encoding='ascii')
+        row.host_public_key = public_path.read_text(encoding='ascii').strip()
+        source = 'disk'
+    else:
+        private, public = _generate_keypair()
+        row.host_private_key = private
+        row.host_public_key = f'{public} oracle-link-server'
+        source = 'generated'
+    if source != 'database':
+        row.save(update_fields=['host_private_key', 'host_public_key', 'updated_at'])
+    _write_file(HOST_KEY, row.host_private_key, 0o600)
+    _write_file(HOST_KEY_PUB, row.host_public_key.strip() + '\n', 0o644)
+    _write_authorized_keys(row.authorized_keys)
+    logger.info('Oracle link keys restored (host key from %s)', source)
+    return source
 
 
 def _template_files() -> list[Path]:
@@ -105,7 +157,7 @@ def generate_link_package(public_host: str) -> bytes:
     templates = _template_files()
 
     private, public = _generate_keypair()
-    _write_authorized_keys(_authorized_line(public))
+    _save_authorized_keys(_authorized_line(public))
 
     config = {
         'server': host,
@@ -133,7 +185,7 @@ def generate_link_package(public_host: str) -> bytes:
 
 def revoke_link() -> None:
     """يلغي المفتاح المفعّل — النفق الحالي يُرفض عند إعادة الاتصال."""
-    _write_authorized_keys('')
+    _save_authorized_keys('')
     logger.info('Oracle link revoked')
 
 

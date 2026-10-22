@@ -71,6 +71,8 @@ def _hosts_from_origins(origins: list[str]) -> list[str]:
 _LEGACY_SECRET_FILE = BASE_DIR / '.secret_key'
 _SECRET_FILE = Path(_env('DATA_DIR', str(BASE_DIR / 'data'))) / '.secret_key'
 SECRET_KEY = _env('DJANGO_SECRET_KEY')
+# بلا متغير بيئة يُحفظ المفتاح في DATA_DIR — يضيع مع كل نشر إن لم يكن المجلد Volume
+SECRET_KEY_FROM_ENV = bool(SECRET_KEY)
 if not SECRET_KEY:
     for _candidate in (_LEGACY_SECRET_FILE, _SECRET_FILE):
         if _candidate.exists():

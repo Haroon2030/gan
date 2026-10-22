@@ -1439,6 +1439,9 @@ def oracle_connection_settings(request):
                 row is not None and bool(row.password_encrypted) and not has_saved_password
             ),
             'link': link_status(),
+            # كلمة مرور أوراكل مشفّرة بمفتاح مشتق من SECRET_KEY — يجب أن يكون ثابتاً في الإنتاج
+            'secret_key_unstable': not settings.DEBUG
+            and not getattr(settings, 'SECRET_KEY_FROM_ENV', True),
         },
     )
 

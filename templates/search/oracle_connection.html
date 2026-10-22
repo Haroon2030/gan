@@ -94,6 +94,12 @@
     </div>
   {% endif %}
 
+  {% if secret_key_unstable %}
+    <div class="alert alert-error" role="alert">
+      <span>مفتاح التشفير غير ثابت: كلمة مرور أوراكل ستُفقد مع كل نشر. عيّن <bdi dir="ltr">DJANGO_SECRET_KEY</bdi> بقيمة ثابتة في متغيرات البيئة ثم أعد إدخال كلمة المرور.</span>
+    </div>
+  {% endif %}
+
   <details class="oc-card oc-link" aria-label="وكيل الربط" {% if not link.connected %}open{% endif %}>
     <summary>
       <h3>وكيل الربط <span class="oc-hint">— بدون فتح منافذ عند العميل</span></h3>

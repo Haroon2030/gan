@@ -137,6 +137,20 @@ body.login-body {
   border-color: var(--wk-green);
   box-shadow: 0 0 0 4px rgba(47, 107, 63, 0.14);
 }
+/* ملفات الثيم العامة تفرض padding/حدوداً بـ !important على كل الحقول — نستعيد مساحة الأيقونة */
+.wk-input input[type="text"],
+.wk-input input[type="password"] {
+  height: 50px !important;
+  padding: 0 14px !important;
+  padding-inline-start: 44px !important;
+  border: 1.5px solid var(--wk-line) !important;
+  border-radius: 12px !important;
+}
+.wk-input input[type="text"]:focus,
+.wk-input input[type="password"]:focus {
+  border-color: var(--wk-green) !important;
+  box-shadow: 0 0 0 4px rgba(47, 107, 63, 0.14) !important;
+}
 .wk-submit {
   margin-top: 6px;
   height: 52px;

@@ -162,3 +162,25 @@ class OracleConnection(models.Model):
     def __str__(self) -> str:
         target = self.service_name or self.sid
         return f'{self.username}@{self.host}:{self.port}/{target}'
+
+
+class OracleLinkKeys(models.Model):
+    """مفاتيح وكيل الربط — في القاعدة لأن مجلد البيانات داخل الحاوية يُمسح مع كل نشر.
+
+    تُكتب للقرص عند كل إقلاع، ولا تتغيّر إلا بـ«توليد ملف ربط جديد» أو «إلغاء الربط».
+    """
+
+    SINGLETON_PK = 1
+
+    host_private_key = models.TextField('مفتاح الخادم الخاص', blank=True, default='')
+    host_public_key = models.TextField('مفتاح الخادم العام', blank=True, default='')
+    # سطر authorized_keys المقيّد لجهاز العميل — فارغ = لا ربط
+    authorized_keys = models.TextField('مفتاح جهاز العميل', blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'مفاتيح وكيل الربط'
+        verbose_name_plural = 'مفاتيح وكيل الربط'
+
+    def __str__(self) -> str:
+        return 'مفاتيح وكيل الربط'

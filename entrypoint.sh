@@ -3,19 +3,20 @@ set -e
 
 mkdir -p /app/data /app/data/django_cache /app/staticfiles
 
-# وكيل الربط: sshd داخلي يستقبل نفق جهاز العميل (مفتاح الخادم دائم في data حتى لا يتغير بعد النشر)
-if [ -x /usr/sbin/sshd ]; then
+# وكيل الربط: sshd داخلي يستقبل نفق جهاز العميل.
+# مفاتيحه محفوظة في القاعدة وتُستعاد بعد migrate (مجلد data يُمسح مع كل نشر)
+start_oracle_link() {
+  [ -x /usr/sbin/sshd ] || return 0
   mkdir -p /app/data/oralink /run/sshd
   chmod 755 /app/data /app/data/oralink
+  python manage.py restore_oracle_link || echo "WARN: oracle-link keys not restored from database" >&2
   if [ ! -f /app/data/oralink/ssh_host_ed25519_key ]; then
     ssh-keygen -q -t ed25519 -N '' -C oracle-link-server -f /app/data/oralink/ssh_host_ed25519_key
   fi
   touch /app/data/oralink/authorized_keys
   chmod 644 /app/data/oralink/authorized_keys
-  /usr/sbin/sshd -f /app/deploy/sshd_oralink.conf -E /app/data/oralink/sshd.log \
-    && echo "oracle-link: sshd listening on 2222" \
-    || echo "WARN: oracle-link sshd failed to start" >&2
-fi
+  /usr/sbin/sshd -f /app/deploy/sshd_oralink.conf -E /app/data/oralink/sshd.log     && echo "oracle-link: sshd listening on 2222"     || echo "WARN: oracle-link sshd failed to start" >&2
+}
 
 # انتظار جاهزية MySQL إن وُجد DB_HOST (Dokploy)
 if [ -n "${DB_HOST:-}" ] || [ -n "${MYSQL_HOST:-}" ]; then
@@ -53,6 +54,7 @@ fi
 
 python manage.py migrate --noinput
 python manage.py ensure_app_user
+start_oracle_link
 python manage.py collectstatic --noinput
 
 # صور شرائح الترحيب في جذر static — تُنسخ صراحة بعد collectstatic لضمان ظهورها بعد كل رفع
