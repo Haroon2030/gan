@@ -692,6 +692,17 @@ def browse_sales(request):
             error = f'تعذّر تحليل المبيعات: {exc}'
             dashboard = None
 
+    daily = None
+    daily_error = ''
+    if dashboard is not None and not dashboard.get('from_cache'):
+        try:
+            from .sales_dashboard import build_sales_daily
+
+            daily = build_sales_daily(date_from, date_to, branch_code=selected_branch)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning('sales daily table failed: %s', exc)
+            daily_error = 'تعذّر جلب المبيعات اليومية الآن.'
+
     groups_api_url = ''
     groups_month_api_url = ''
     items_api_url = ''
@@ -759,6 +770,8 @@ def browse_sales(request):
             'branches': branches,
             'groups': groups,
             'dashboard': dashboard,
+            'daily': daily,
+            'daily_error': daily_error,
             'error': error,
             'browsed': dashboard is not None,
             'groups_api_url': groups_api_url,

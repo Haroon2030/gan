@@ -2080,6 +2080,101 @@ def _fetch_pos_branch_totals(date_from, date_to) -> list[dict]:
     return _assemble_branch_rows(sales_rows, returns_by_brn)
 
 
+def fetch_pos_daily_totals(date_from, date_to, branch_code: str = "") -> list[dict]:
+    """مبيعات نقاط البيع يوماً بيوم — نفس صيغة جدول الفروع (صافي بعد المرتجع شامل الضريبة).
+
+    يعيد صفاً لكل يوم في الفترة حتى الأيام بلا مبيعات. SELECT فقط.
+    """
+    if not oracle_enabled():
+        raise OracleStockError("أوراكل غير مفعّل.")
+    d_from = _as_date(date_from)
+    d_to = _as_date(date_to)
+    brn = _norm_brn_code(branch_code)
+    with_returns = not _skip_mst_returns(d_from, d_to)
+    cache_key = (
+        f"sales:daily:v1:pos:{d_from.isoformat()}:{d_to.isoformat()}:{brn}:r{int(with_returns)}"
+    )
+    if d_to < date.today():
+        cached = _sales_cache_get(cache_key)
+        if cached is not None:
+            return cached
+
+    pos = _pos_owner()
+    params = _date_params(d_from, d_to)
+    sales_brn = ret_brn = ""
+    if brn:
+        params["brn"] = _bind_brn(brn)
+        sales_brn = "AND p.BRN_NO = :brn"
+        ret_brn = "AND r.BRN_NO = :brn"
+
+    by_day: dict[date, dict] = {}
+    # رقم الفاتورة يتكرر بين الفروع — العدّ على (الفرع، الرقم) كما في جدول الفروع
+    for row in _fetch_all(
+        f"""
+        SELECT
+            TRUNC(p.BILL_DATE) AS DAY,
+            COUNT(DISTINCT TO_CHAR(p.BRN_NO) || ':' || TO_CHAR(p.BILL_NO)) AS INVOICE_COUNT,
+            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0)), 2) AS GROSS_TOTAL
+        FROM {pos}.IAS_POS_BILL_MST p
+        WHERE p.BILL_DATE >= :d_from AND p.BILL_DATE < :d_to_excl
+          AND {_hung_ok("p")}
+          AND {_bill_amt_ok("p", "BILL_AMT")}
+          {sales_brn}
+        GROUP BY TRUNC(p.BILL_DATE)
+        """,
+        params,
+    ):
+        day = _as_date(row.get("DAY"))
+        by_day[day] = {
+            "invoice_count": int(row.get("INVOICE_COUNT") or 0),
+            "gross_total": float(row.get("GROSS_TOTAL") or 0),
+            "return_count": 0,
+            "return_total": 0.0,
+        }
+
+    if with_returns:
+        for row in _fetch_all(
+            f"""
+            SELECT
+                TRUNC(r.RT_BILL_DATE) AS DAY,
+                COUNT(DISTINCT TO_CHAR(r.BRN_NO) || ':' || TO_CHAR(r.RT_BILL_NO)) AS RET_COUNT,
+                ROUND(SUM(NVL(r.RT_BILL_AMT, 0) + NVL(r.VAT_AMT, 0)), 2) AS RET_TOTAL
+            FROM {pos}.IAS_POS_RT_BILL_MST r
+            WHERE r.RT_BILL_DATE >= :d_from AND r.RT_BILL_DATE < :d_to_excl
+              AND {_hung_ok("r")}
+              AND {_bill_amt_ok("r", "RT_BILL_AMT")}
+              {ret_brn}
+            GROUP BY TRUNC(r.RT_BILL_DATE)
+            """,
+            params,
+        ):
+            day = _as_date(row.get("DAY"))
+            slot = by_day.setdefault(
+                day, {"invoice_count": 0, "gross_total": 0.0, "return_count": 0, "return_total": 0.0}
+            )
+            slot["return_count"] = int(row.get("RET_COUNT") or 0)
+            slot["return_total"] = float(row.get("RET_TOTAL") or 0)
+
+    out: list[dict] = []
+    day = d_from
+    while day <= d_to:
+        slot = by_day.get(day) or {}
+        gross = float(slot.get("gross_total") or 0)
+        ret = float(slot.get("return_total") or 0)
+        out.append(
+            {
+                "date": day.isoformat(),
+                "invoice_count": int(slot.get("invoice_count") or 0),
+                "return_count": int(slot.get("return_count") or 0),
+                "return_total": round(ret, 2),
+                "sales_total": round(gross - ret, 2),
+            }
+        )
+        day += timedelta(days=1)
+    _sales_cache_set(cache_key, out, date_from=d_from, date_to=d_to)
+    return out
+
+
 def _fetch_bill_branch_totals(date_from, date_to, conf: dict) -> list[dict]:
     """إجماليات من IAS_BILL_MST (الآجل وغيرها)."""
     schema = _schema()

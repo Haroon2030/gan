@@ -137,20 +137,24 @@
       </div>
     </section>
 
-    <section class="dash-panel dash-panel-glass sales-ov-panel" aria-label="مبيعات نظام المبيعات حسب الفروع">
+    <section class="dash-panel dash-panel-glass sales-ov-panel sales-daily" aria-label="مبيعات نقاط البيع اليومية">
       <div class="dash-panel-head">
         <div>
-          <h3>مبيعات نظام المبيعات</h3>
-          <p class="sales-ov-sub">آجل (4/8) + نقدي فواتير يزيد عن نقاط البيع فقط · بلا دمج نقدي POS</p>
+          <h3>المبيعات اليومية</h3>
+          {% if daily %}
+            <p class="sales-ov-sub">نقاط البيع · صافي بعد المرتجع · من <bdi dir="ltr">{{ daily.date_from }}</bdi> إلى <bdi dir="ltr">{{ daily.date_to }}</bdi>{% if selected_branch %} · فرع {{ selected_branch }}{% endif %}</p>
+          {% else %}
+            <p class="sales-ov-sub">نقاط البيع · صافي بعد المرتجع</p>
+          {% endif %}
         </div>
-        <span class="result-pill">{{ dashboard.wholesale.branches|length }}</span>
+        {% if daily %}<span class="result-pill" title="أيام فيها مبيعات">{{ daily.totals.selling_days }}</span>{% endif %}
       </div>
       <div class="table-wrap sales-ov-scroll">
         <table class="data-table sales-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>الفرع</th>
+              <th>اليوم</th>
+              <th>التاريخ</th>
               <th>الفواتير</th>
               <th>المرتجع</th>
               <th>المبيعات</th>
@@ -158,26 +162,28 @@
             </tr>
           </thead>
           <tbody>
-            {% for row in dashboard.wholesale.branches %}
-              <tr>
-                <td class="mono">{{ forloop.counter }}</td>
-                <td title="{{ row.branch_code }}">{{ row.branch_name }}</td>
-                <td class="mono sales-col-inv">{{ row.invoice_count_display }}</td>
-                <td class="mono">{% money row.return_total_display %}</td>
-                <td class="mono sales-amt">{% money row.sales_total_display %}</td>
-                <td class="mono sales-col-share">{{ row.share_display }}</td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="6" class="sales-empty">لا مبيعات من نظام المبيعات في الفترة.</td></tr>
-            {% endfor %}
+            {% if daily %}
+              {% for row in daily.rows %}
+                <tr class="{% if row.no_sales %}sales-zero-row{% endif %}{% if row.is_today %} sales-today-row{% endif %}">
+                  <td>{{ row.weekday }}{% if row.is_today %} <span class="sales-today-tag">اليوم</span>{% endif %}</td>
+                  <td class="mono"><bdi dir="ltr">{{ row.date }}</bdi></td>
+                  <td class="mono sales-col-inv">{{ row.invoice_count_display }}</td>
+                  <td class="mono">{% money row.return_total_display %}</td>
+                  <td class="mono sales-amt">{% money row.sales_total_display %}</td>
+                  <td class="mono sales-col-share">{{ row.share_display }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="6" class="sales-empty">{{ daily_error|default:"المبيعات اليومية غير متاحة من الأرقام المحفوظة." }}</td></tr>
+            {% endif %}
           </tbody>
-          {% if dashboard.wholesale.branches %}
+          {% if daily and daily.rows %}
             <tfoot>
               <tr class="sales-grand-row">
-                <td colspan="2">الإجمالي</td>
-                <td class="mono sales-col-inv">{{ dashboard.wholesale.totals.invoice_count_display }}</td>
-                <td class="mono">{% money dashboard.wholesale.totals.return_total_display %}</td>
-                <td class="mono sales-amt">{% money dashboard.wholesale.totals.sales_total_display %}</td>
+                <td colspan="2">الإجمالي · متوسط اليوم {% money daily.totals.avg_day_display %}</td>
+                <td class="mono sales-col-inv">{{ daily.totals.invoice_count_display }}</td>
+                <td class="mono">{% money daily.totals.return_total_display %}</td>
+                <td class="mono sales-amt">{% money daily.totals.sales_total_display %}</td>
                 <td class="mono sales-col-share">100%</td>
               </tr>
             </tfoot>

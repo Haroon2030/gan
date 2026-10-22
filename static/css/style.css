@@ -22289,3 +22289,23 @@ body.fit-printing.fit-measuring table td {
   cursor: grabbing;
   user-select: none;
 }
+
+/* المبيعات اليومية — يوم بلا مبيعات باهت، واليوم الحالي مميّز */
+.sales-daily .sales-zero-row td {
+  color: #94A3B8;
+}
+.sales-daily .sales-today-row td {
+  background: #F0F7F2;
+  font-weight: 700;
+}
+.sales-daily .sales-today-tag {
+  display: inline-block;
+  margin-inline-start: 0.35rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #E8762B;
+  color: #FFFFFF;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}

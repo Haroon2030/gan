@@ -720,6 +720,74 @@ def build_sales_branches_from_cache(
     )
 
 
+_WEEKDAYS_AR = ("الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد")
+DAILY_MAX_DAYS = 92
+
+
+def daily_range(date_from, date_to):
+    """من أول شهر تاريخ النهاية (أو بداية الفترة إن كانت أبكر) حتى تاريخ النهاية — حد 92 يوماً."""
+    from datetime import timedelta
+
+    from .oracle_stock import _as_date
+
+    d_from = _as_date(date_from)
+    d_to = _as_date(date_to)
+    start = min(d_from, d_to.replace(day=1))
+    earliest = d_to - timedelta(days=DAILY_MAX_DAYS - 1)
+    return max(start, earliest), d_to
+
+
+def build_sales_daily(date_from, date_to, *, branch_code: str = "") -> dict[str, Any]:
+    """جدول مبيعات نقاط البيع اليومية — الأحدث أولاً."""
+    from datetime import date
+
+    from .oracle_stock import fetch_pos_daily_totals, oracle_session
+
+    d_from, d_to = daily_range(date_from, date_to)
+    with oracle_session():
+        raw = fetch_pos_daily_totals(d_from, d_to, branch_code=branch_code)
+
+    total_sales = sum(float(r["sales_total"]) for r in raw)
+    total_returns = sum(float(r["return_total"]) for r in raw)
+    total_invoices = sum(int(r["invoice_count"]) for r in raw)
+    total_ret_count = sum(int(r["return_count"]) for r in raw)
+    selling_days = sum(1 for r in raw if r["invoice_count"] > 0)
+    today = date.today().isoformat()
+
+    rows: list[dict] = []
+    for r in reversed(raw):
+        day = date.fromisoformat(r["date"])
+        _pct, share_display = _share(float(r["sales_total"]), total_sales)
+        rows.append(
+            {
+                "date": r["date"],
+                "weekday": _WEEKDAYS_AR[day.weekday()],
+                "is_today": r["date"] == today,
+                "no_sales": r["invoice_count"] == 0,
+                "invoice_count_display": f"{r['invoice_count']:,}",
+                "return_total_display": _money(r["return_total"]),
+                "return_count": r["return_count"],
+                "sales_total_display": _money(r["sales_total"]),
+                "share_display": share_display,
+            }
+        )
+    avg_day = total_sales / selling_days if selling_days else 0.0
+    return {
+        "date_from": d_from.isoformat(),
+        "date_to": d_to.isoformat(),
+        "rows": rows,
+        "totals": {
+            "day_count": len(rows),
+            "selling_days": selling_days,
+            "invoice_count_display": f"{total_invoices:,}",
+            "return_count": total_ret_count,
+            "return_total_display": _money(total_returns),
+            "sales_total_display": _money(total_sales),
+            "avg_day_display": _money(avg_day),
+        },
+    }
+
+
 def build_sales_branches(
     date_from,
     date_to,

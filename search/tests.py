@@ -157,6 +157,66 @@ class AuthenticationTests(TestCase):
         self.assertTrue(ok)
 
 
+class SalesDailyTableTests(TestCase):
+    """جدول المبيعات اليومية: يوم لكل صف، صافي بعد المرتجع، الأحدث أولاً."""
+
+    @patch('search.oracle_stock._pos_owner', return_value='POS')
+    @patch('search.oracle_stock.oracle_enabled', return_value=True)
+    @patch('search.oracle_stock._fetch_all')
+    def test_daily_rows_fill_missing_days_and_net_returns(self, fetch_all, _enabled, _owner):
+        from datetime import date, datetime
+
+        from search.oracle_stock import fetch_pos_daily_totals
+
+        fetch_all.side_effect = [
+            [
+                {'DAY': datetime(2026, 10, 1), 'INVOICE_COUNT': 10, 'GROSS_TOTAL': 1000},
+                {'DAY': datetime(2026, 10, 3), 'INVOICE_COUNT': 4, 'GROSS_TOTAL': 400},
+            ],
+            [{'DAY': datetime(2026, 10, 3), 'RET_COUNT': 1, 'RET_TOTAL': 50}],
+        ]
+        rows = fetch_pos_daily_totals(date(2026, 10, 1), date(2026, 10, 3), branch_code='7')
+        self.assertEqual([r['date'] for r in rows], ['2026-10-01', '2026-10-02', '2026-10-03'])
+        self.assertEqual(rows[1]['invoice_count'], 0)
+        self.assertEqual(rows[2]['sales_total'], 350)
+        self.assertEqual(rows[2]['return_total'], 50)
+        sql, params = fetch_all.call_args_list[0][0]
+        self.assertIn('TRUNC(p.BILL_DATE)', sql)
+        self.assertIn('p.BRN_NO = :brn', sql)
+        self.assertEqual(params['brn'], 7)
+
+    def test_daily_range_starts_at_month_start(self):
+        from datetime import date
+
+        from search.sales_dashboard import daily_range
+
+        self.assertEqual(daily_range(date(2026, 10, 22), date(2026, 10, 22)), (date(2026, 10, 1), date(2026, 10, 22)))
+        self.assertEqual(daily_range(date(2026, 9, 15), date(2026, 10, 5)), (date(2026, 9, 15), date(2026, 10, 5)))
+        self.assertEqual(daily_range(date(2026, 1, 1), date(2026, 10, 22))[0], date(2026, 7, 23))
+
+    @patch('search.oracle_stock.oracle_session')
+    @patch('search.oracle_stock.fetch_pos_daily_totals')
+    def test_build_daily_newest_first_with_share(self, fetch, _session):
+        from datetime import date
+
+        from search.sales_dashboard import build_sales_daily
+
+        fetch.return_value = [
+            {'date': '2026-10-01', 'invoice_count': 3, 'return_count': 0, 'return_total': 0, 'sales_total': 300},
+            {'date': '2026-10-02', 'invoice_count': 0, 'return_count': 0, 'return_total': 0, 'sales_total': 0},
+            {'date': '2026-10-03', 'invoice_count': 1, 'return_count': 0, 'return_total': 0, 'sales_total': 100},
+        ]
+        daily = build_sales_daily(date(2026, 10, 3), date(2026, 10, 3))
+        self.assertEqual(fetch.call_args[0][:2], (date(2026, 10, 1), date(2026, 10, 3)))
+        self.assertEqual([r['date'] for r in daily['rows']], ['2026-10-03', '2026-10-02', '2026-10-01'])
+        self.assertEqual(daily['rows'][0]['weekday'], 'السبت')
+        self.assertTrue(daily['rows'][1]['no_sales'])
+        self.assertEqual(daily['rows'][2]['share_display'], '75.0%')
+        self.assertEqual(daily['totals']['sales_total_display'], '400.00')
+        self.assertEqual(daily['totals']['selling_days'], 2)
+        self.assertEqual(daily['totals']['avg_day_display'], '200.00')
+
+
 class PosSalesTableTests(TestCase):
     @patch(
         'search.sales_dashboard._pos_store_branches',
