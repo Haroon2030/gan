@@ -176,6 +176,10 @@ class OracleLinkKeys(models.Model):
     host_public_key = models.TextField('مفتاح الخادم العام', blank=True, default='')
     # سطر authorized_keys المقيّد لجهاز العميل — فارغ = لا ربط
     authorized_keys = models.TextField('مفتاح جهاز العميل', blank=True, default='')
+    agent_generated_at = models.DateTimeField('توليد مفتاح العميل', null=True, blank=True)
+    # مفتاح المطوّر: يفتح النفق من جهاز التطوير إلى أوراكل (-L) — لا يعكس منفذاً ولا ينفّذ أوامر
+    dev_authorized_keys = models.TextField('مفتاح المطوّر', blank=True, default='')
+    dev_generated_at = models.DateTimeField('توليد مفتاح المطوّر', null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -9,6 +9,9 @@
 
 مفتاح الخادم وسطر authorized_keys محفوظان في القاعدة (OracleLinkKeys) ويُستعادان للقرص
 عند كل إقلاع — فيبقى الربط بعد إعادة النشر ولا يتغيّر إلا بتوليد ملف جديد.
+
+مفتاح المطوّر: جهاز التطوير المحلي يفتح ssh -L إلى نهاية النفق (127.0.0.1:PORT داخل الحاوية)
+فيصل التطبيق المحلي إلى أوراكل العميل عبر نفس الوكيل — دون فتح منافذ جديدة.
 """
 
 from __future__ import annotations
@@ -32,6 +35,8 @@ HOST_KEY = 'ssh_host_ed25519_key'
 HOST_KEY_PUB = 'ssh_host_ed25519_key.pub'
 PACKAGE_ROOT = 'OracleLink'
 KEY_COMMENT = 'oracle-link'
+DEV_KEY_COMMENT = 'oracle-link-dev'
+DEV_PACKAGE_ROOT = 'OracleDev'
 
 
 class OracleLinkError(Exception):
@@ -51,6 +56,14 @@ def _authorized_line(public_key: str) -> str:
     return (
         f'restrict,port-forwarding,permitlisten="127.0.0.1:{_local_port()}" '
         f'{public_key.strip()} {KEY_COMMENT}\n'
+    )
+
+
+def _dev_authorized_line(public_key: str) -> str:
+    # -L إلى نهاية النفق فقط؛ permitlisten على منفذ محجوز يمنع عكس أي منفذ
+    return (
+        f'restrict,port-forwarding,permitopen="127.0.0.1:{_local_port()}",'
+        f'permitlisten="127.0.0.1:1" {public_key.strip()} {DEV_KEY_COMMENT}\n'
     )
 
 
@@ -105,12 +118,29 @@ def _keys_row():
     return row
 
 
+def _authorized_file_content(row) -> str:
+    return f'{row.authorized_keys or ""}{row.dev_authorized_keys or ""}'
+
+
 def _save_authorized_keys(content: str) -> None:
     """يحفظ مفتاح جهاز العميل في القاعدة ثم على القرص (sshd يقرأ الملف مع كل اتصال)."""
+    from django.utils import timezone
+
     row = _keys_row()
     row.authorized_keys = content
-    row.save(update_fields=['authorized_keys', 'updated_at'])
-    _write_authorized_keys(content)
+    row.agent_generated_at = timezone.now() if content else None
+    row.save(update_fields=['authorized_keys', 'agent_generated_at', 'updated_at'])
+    _write_authorized_keys(_authorized_file_content(row))
+
+
+def _save_dev_key(content: str) -> None:
+    from django.utils import timezone
+
+    row = _keys_row()
+    row.dev_authorized_keys = content
+    row.dev_generated_at = timezone.now() if content else None
+    row.save(update_fields=['dev_authorized_keys', 'dev_generated_at', 'updated_at'])
+    _write_authorized_keys(_authorized_file_content(row))
 
 
 def restore_link_files() -> str:
@@ -137,7 +167,7 @@ def restore_link_files() -> str:
         row.save(update_fields=['host_private_key', 'host_public_key', 'updated_at'])
     _write_file(HOST_KEY, row.host_private_key, 0o600)
     _write_file(HOST_KEY_PUB, row.host_public_key.strip() + '\n', 0o644)
-    _write_authorized_keys(row.authorized_keys)
+    _write_authorized_keys(_authorized_file_content(row))
     logger.info('Oracle link keys restored (host key from %s)', source)
     return source
 
@@ -185,6 +215,69 @@ def generate_link_package(public_host: str) -> bytes:
     return buffer.getvalue()
 
 
+def _dev_bat(host: str, ssh_port: int, local_port: int) -> str:
+    # نص إنجليزي فقط داخل bat حتى لا تتعطل أسطر cmd بسبب الترميز
+    lines = [
+        '@echo off',
+        'cd /d "%~dp0"',
+        'title Oracle dev tunnel',
+        'icacls id_ed25519 /inheritance:r /grant:r "%USERNAME%:R" >nul',
+        'echo Oracle dev tunnel: 127.0.0.1:{p} on this PC to the client Oracle. Keep this window open.'.format(p=local_port),
+        ':loop',
+        (
+            'ssh -N -T -i id_ed25519 -p {sp} -o IdentitiesOnly=yes -o BatchMode=yes '
+            '-o StrictHostKeyChecking=yes -o UserKnownHostsFile=known_hosts '
+            '-o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 '
+            '-L 127.0.0.1:{lp}:127.0.0.1:{lp} oralink@{h}'
+        ).format(sp=ssh_port, lp=local_port, h=host),
+        'echo Disconnected - retrying in 5 seconds...',
+        'timeout /t 5 /nobreak >nul',
+        'goto loop',
+        '',
+    ]
+    return '\r\n'.join(lines)
+
+
+def _dev_readme(local_port: int) -> str:
+    return (
+        'نفق المطوّر — ربط التطبيق المحلي بأوراكل العميل عبر الخادم\r\n'
+        '\r\n'
+        '1) فك الضغط في مجلد على جهاز التطوير وانقر مرتين على «تشغيل نفق المطوّر.bat»، واترك النافذة مفتوحة.\r\n'
+        f'2) في شاشة «ربط أوراكل» على النسخة المحلية: العنوان 127.0.0.1 والمنفذ {local_port}، '
+        'ثم اسم الخدمة والمستخدم وكلمة المرور، واضغط «اتصال وجلب البيانات».\r\n'
+        '3) النفق يعمل فقط ما دام وكيل جهاز العميل متصلاً بالخادم.\r\n'
+        '\r\n'
+        'id_ed25519 مفتاح سري: لا ترسله لأحد. لإيقافه نهائياً: «إلغاء مفتاح المطوّر» في الشاشة.\r\n'
+    )
+
+
+def generate_dev_package(public_host: str) -> bytes:
+    """يولّد مفتاح مطوّر جديداً (يُلغي السابق) ويعيد حزمة zip لجهاز التطوير."""
+    host = str(public_host or '').strip()
+    if not host:
+        raise OracleLinkError('تعذّر تحديد عنوان الخادم. اضبط ORACLE_LINK_PUBLIC_HOST.')
+    ssh_port = int(settings.ORACLE_LINK_SSH_PORT)
+    host_key = _server_host_key()
+
+    private, public = _generate_keypair()
+    _save_dev_key(_dev_authorized_line(public))
+
+    known_host = host if ssh_port == 22 else f'[{host}]:{ssh_port}'
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr(f'{DEV_PACKAGE_ROOT}/id_ed25519', private)
+        zf.writestr(f'{DEV_PACKAGE_ROOT}/known_hosts', f'{known_host} {host_key}\n')
+        zf.writestr(f'{DEV_PACKAGE_ROOT}/تشغيل نفق المطوّر.bat', _dev_bat(host, ssh_port, _local_port()))
+        zf.writestr(f'{DEV_PACKAGE_ROOT}/اقرأني.txt', '\ufeff' + _dev_readme(_local_port()))
+    logger.info('Oracle dev tunnel package generated for %s:%s', host, ssh_port)
+    return buffer.getvalue()
+
+
+def revoke_dev_key() -> None:
+    _save_dev_key('')
+    logger.info('Oracle dev tunnel key revoked')
+
+
 def revoke_link() -> None:
     """يلغي المفتاح المفعّل — النفق الحالي يُرفض عند إعادة الاتصال."""
     _save_authorized_keys('')
@@ -215,13 +308,16 @@ def _saved_keys():
 
 
 def link_status() -> dict:
-    path = _link_dir() / AUTHORIZED_KEYS
-    try:
-        authorized = path.read_text(encoding='ascii')
-    except OSError:
-        authorized = ''
-    has_key = bool(authorized.strip())
     saved = _saved_keys()
+    if saved is not None:
+        authorized = saved.authorized_keys or ''
+    else:
+        try:
+            authorized = (_link_dir() / AUTHORIZED_KEYS).read_text(encoding='ascii')
+        except OSError:
+            authorized = ''
+    has_key = bool(authorized.strip())
+    dev_key = (saved.dev_authorized_keys if saved else '') or ''
     connected = False
     if has_key:
         try:
@@ -238,5 +334,8 @@ def link_status() -> dict:
         'ssh_port': int(settings.ORACLE_LINK_SSH_PORT),
         'key_fingerprint': key_fingerprint(authorized) if has_key else '',
         'host_fingerprint': key_fingerprint(saved.host_public_key) if saved else '',
-        'key_updated_at': saved.updated_at if saved and has_key else None,
+        'key_updated_at': saved.agent_generated_at if saved and has_key else None,
+        'dev_has_key': bool(dev_key.strip()),
+        'dev_fingerprint': key_fingerprint(dev_key),
+        'dev_generated_at': saved.dev_generated_at if saved and dev_key.strip() else None,
     }

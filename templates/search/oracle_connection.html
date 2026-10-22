@@ -34,6 +34,9 @@
   .oc-page .oc-keyinfo dt { font-size: .74rem; color: var(--oc-muted); font-weight: 600; }
   .oc-page .oc-keyinfo dd { margin: .15rem 0 0; font-size: .82rem; font-weight: 700; color: var(--oc-ink); }
   .oc-page .oc-fp { font-family: var(--mono); font-size: .78rem; word-break: break-all; }
+  .oc-page .oc-dev { margin-block-start: 1rem; padding-block-start: .9rem; border-block-start: 1px dashed var(--oc-line); }
+  .oc-page .oc-dev h4 { margin: 0 0 .3rem; font-size: .9rem; color: var(--oc-ink); display: flex; align-items: center; gap: .5rem; }
+  .oc-page .oc-dev .oc-hint { margin-block-end: .6rem; }
   .oc-page .oc-link-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
   .oc-page .oc-link-actions form { margin: 0; }
 
@@ -156,6 +159,34 @@
             <button type="submit" name="action" value="link_revoke" class="btn-ghost">إلغاء الربط</button>
           </form>
         {% endif %}
+      </div>
+
+      <div class="oc-dev">
+        <h4>وصول المطوّر
+          {% if link.dev_has_key %}<span class="oc-chip is-on">مفعّل</span>{% else %}<span class="oc-chip plain">غير مفعّل</span>{% endif %}
+        </h4>
+        <p class="oc-hint">يربط النسخة المحلية على جهاز التطوير بأوراكل العميل عبر هذا الخادم: شغّل الملف على جهازك ثم اضبط الاتصال المحلي على <bdi dir="ltr">127.0.0.1:{{ link.local_port }}</bdi>.</p>
+        {% if link.dev_has_key %}
+          <dl class="oc-keyinfo">
+            <div><dt>مفتاح المطوّر</dt><dd><bdi dir="ltr" class="oc-fp">{{ link.dev_fingerprint }}</bdi></dd></div>
+            {% if link.dev_generated_at %}<div><dt>وُلّد في</dt><dd><bdi dir="ltr">{{ link.dev_generated_at|date:"Y-m-d H:i" }}</bdi></dd></div>{% endif %}
+          </dl>
+        {% endif %}
+        <div class="oc-link-actions">
+          <form method="post">
+            {% csrf_token %}
+            <button type="submit" name="action" value="dev_generate" class="btn-ghost"
+              {% if link.dev_has_key %}onclick="return confirm('المفتاح الجديد يُلغي مفتاح المطوّر السابق. متابعة؟');"{% endif %}>
+              {% if link.dev_has_key %}توليد مفتاح مطوّر جديد{% else %}توليد مفتاح المطوّر{% endif %}
+            </button>
+          </form>
+          {% if link.dev_has_key %}
+            <form method="post" onsubmit="return confirm('إلغاء مفتاح المطوّر يقطع نفق جهاز التطوير. متابعة؟');">
+              {% csrf_token %}
+              <button type="submit" name="action" value="dev_revoke" class="btn-ghost">إلغاء مفتاح المطوّر</button>
+            </form>
+          {% endif %}
+        </div>
       </div>
     </div>
   </details>

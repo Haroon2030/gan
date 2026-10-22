@@ -1331,7 +1331,7 @@ def oracle_connection_settings(request):
     warehouse_options: list[dict] | None = None
     wants_json = request.headers.get('X-Requested-With') == 'fetch'
 
-    if request.method == 'POST' and str(request.POST.get('action') or '') in ('link_generate', 'link_revoke'):
+    if request.method == 'POST' and str(request.POST.get('action') or '') in ('link_generate', 'link_revoke', 'dev_generate', 'dev_revoke'):
         return _oracle_link_action(request)
 
     if request.method == 'POST':
@@ -1473,7 +1473,13 @@ def _oracle_link_action(request):
     """توليد ملف وكيل الربط (zip لجهاز العميل) أو إلغاؤه — ضمن شاشة الربط لمدير النظام."""
     from django.http import HttpResponse
 
-    from .oracle_link import OracleLinkError, generate_link_package, revoke_link
+    from .oracle_link import (
+        OracleLinkError,
+        generate_dev_package,
+        generate_link_package,
+        revoke_dev_key,
+        revoke_link,
+    )
 
     action = request.POST.get('action')
     try:
@@ -1483,8 +1489,18 @@ def _oracle_link_action(request):
             response['Content-Disposition'] = 'attachment; filename="OracleLink.zip"'
             response['Cache-Control'] = 'no-store'
             return response
-        revoke_link()
-        messages.success(request, 'تم إلغاء ملف الربط — جهاز العميل لن يستطيع الاتصال حتى تولّد ملفاً جديداً.')
+        if action == 'dev_generate':
+            package = generate_dev_package(_oracle_link_public_host(request))
+            response = HttpResponse(package, content_type='application/zip')
+            response['Content-Disposition'] = 'attachment; filename="OracleDev.zip"'
+            response['Cache-Control'] = 'no-store'
+            return response
+        if action == 'dev_revoke':
+            revoke_dev_key()
+            messages.success(request, 'تم إلغاء مفتاح المطوّر — جهاز التطوير لن يستطيع فتح النفق.')
+        else:
+            revoke_link()
+            messages.success(request, 'تم إلغاء ملف الربط — جهاز العميل لن يستطيع الاتصال حتى تولّد ملفاً جديداً.')
     except OracleLinkError as exc:
         messages.error(request, str(exc))
     except OSError as exc:

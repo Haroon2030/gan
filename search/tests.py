@@ -160,10 +160,13 @@ class AuthenticationTests(TestCase):
 class SalesDailyTableTests(TestCase):
     """جدول المبيعات اليومية: يوم لكل صف، صافي بعد المرتجع، الأحدث أولاً."""
 
+    # كاش الملفات يبقى بين تشغيلات الاختبار — نتجاوزه حتى يُستدعى الاستعلام فعلاً
+    @patch('search.oracle_stock._sales_cache_set')
+    @patch('search.oracle_stock._sales_cache_get', return_value=None)
     @patch('search.oracle_stock._pos_owner', return_value='POS')
     @patch('search.oracle_stock.oracle_enabled', return_value=True)
     @patch('search.oracle_stock._fetch_all')
-    def test_daily_rows_fill_missing_days_and_net_returns(self, fetch_all, _enabled, _owner):
+    def test_daily_rows_fill_missing_days_and_net_returns(self, fetch_all, _enabled, _owner, _get, _set):
         from datetime import date, datetime
 
         from search.oracle_stock import fetch_pos_daily_totals
@@ -1480,3 +1483,71 @@ class OracleLinkTests(TestCase):
         self.assertContains(response, 'المفتاح المفعّل')
         self.assertContains(response, fingerprint)
         self.assertNotContains(response, 'PRIVATE KEY')
+
+    def _dev_zip(self):
+        import io
+        import zipfile
+
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, {'action': 'dev_generate'}, HTTP_HOST='69.62.108.130:8081')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/zip')
+        return zipfile.ZipFile(io.BytesIO(response.content))
+
+    def test_dev_key_package_and_restricted_line(self):
+        with self._dev_zip() as zf:
+            names = set(zf.namelist())
+            bat = zf.read('OracleDev/تشغيل نفق المطوّر.bat').decode('ascii')
+            known = zf.read('OracleDev/known_hosts').decode()
+            private = zf.read('OracleDev/id_ed25519').decode()
+        self.assertIn('OracleDev/اقرأني.txt', names)
+        self.assertIn('-L 127.0.0.1:15210:127.0.0.1:15210 oralink@69.62.108.130', bat)
+        self.assertIn('-p 2222', bat)
+        self.assertNotIn('->', bat)
+        self.assertTrue(known.startswith('[69.62.108.130]:2222 ssh-ed25519 '))
+        self.assertIn('BEGIN OPENSSH PRIVATE KEY', private)
+        line = self._authorized().strip()
+        self.assertTrue(
+            line.startswith('restrict,port-forwarding,permitopen="127.0.0.1:15210",permitlisten="127.0.0.1:1" ssh-ed25519 ')
+        )
+        self.assertTrue(line.endswith(' oracle-link-dev'))
+
+    def test_agent_and_dev_keys_are_independent(self):
+        from search.oracle_link import restore_link_files
+
+        restore_link_files()
+        self.client.force_login(self.admin)
+        self.client.post(self.url, {'action': 'link_generate'})
+        self._dev_zip().close()
+        lines = self._authorized().strip().splitlines()
+        self.assertEqual(len(lines), 2)
+        self.assertTrue(lines[0].endswith('oracle-link'))
+        self.assertTrue(lines[1].endswith('oracle-link-dev'))
+
+        # إلغاء ربط العميل لا يمس مفتاح المطوّر، والعكس
+        self.client.post(self.url, {'action': 'link_revoke'})
+        self.assertEqual(self._authorized().strip().splitlines(), [lines[1]])
+        self.client.post(self.url, {'action': 'link_generate'})
+        self.client.post(self.url, {'action': 'dev_revoke'})
+        remaining = self._authorized().strip().splitlines()
+        self.assertEqual(len(remaining), 1)
+        self.assertTrue(remaining[0].endswith('oracle-link'))
+
+    def test_dev_key_survives_redeploy(self):
+        from search.oracle_link import restore_link_files
+
+        restore_link_files()
+        self._dev_zip().close()
+        dev_line = self._authorized()
+        self._wipe_link_dir()
+        restore_link_files()
+        self.assertEqual(self._authorized(), dev_line)
+        response = self.client.get(self.url)
+        self.assertContains(response, 'وصول المطوّر')
+        self.assertContains(response, 'توليد مفتاح مطوّر جديد')
+
+    def test_non_superuser_cannot_generate_dev_key(self):
+        user = get_user_model().objects.create_user(username='staff-dev', password='StrongPassword123!', is_staff=True)
+        self.client.force_login(user)
+        self.assertEqual(self.client.post(self.url, {'action': 'dev_generate'}).status_code, 403)
+        self.assertFalse((self.link_dir / 'authorized_keys').exists())
