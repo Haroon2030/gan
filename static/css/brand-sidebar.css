@@ -79,6 +79,64 @@ body.theme-navy .sidebar,
   border-inline-start-color: rgba(207, 224, 210, 0.16) !important;
 }
 
+/* زر الطي: لسان دائري على حافة الشريط بمحاذاة الشعار، محفور في خلفية الصفحة */
+.sidebar-edge-toggle {
+  display: none;
+}
+@media (min-width: 901px) {
+  .sidebar-edge-toggle {
+    position: fixed;
+    z-index: 70;
+    top: 38px;
+    inset-inline-start: calc(var(--sidebar-w) - 14px);
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1.5px solid rgba(207, 224, 210, 0.22);
+    border-radius: 50%;
+    background: #1D3D28;
+    color: #CFE0D2;
+    box-shadow: 0 0 0 4px var(--mn-bg, #F3F5F7), 0 4px 12px rgba(16, 36, 26, 0.28);
+    cursor: pointer;
+    transition:
+      inset-inline-start 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .sidebar-edge-toggle svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* الشريط على اليمين: السهم يشير لليمين = «اطوِ»، ويرتد لليسار = «وسّع» */
+  html.sidebar-collapsed .sidebar-edge-toggle svg {
+    transform: scaleX(-1);
+  }
+  .sidebar-edge-toggle:hover {
+    background: var(--wk-orange);
+    border-color: var(--wk-orange);
+    color: #FFFFFF;
+  }
+  .sidebar-edge-toggle:focus-visible {
+    outline: 2px solid var(--wk-orange);
+    outline-offset: 3px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-edge-toggle,
+  .sidebar-edge-toggle svg {
+    transition: none;
+  }
+}
+
 /* التذييل */
 .sidebar-user-avatar {
   background: #2F6B3F !important;
