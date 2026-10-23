@@ -1959,7 +1959,9 @@ class HrScreenTests(TestCase):
 
         admin = self._user('0502000001', 'مدير النظام', is_staff=True)
         finance = self._user('0502000002', 'مدير مالي')
-        self.assertTrue(user_can_access_screen(admin, 'browse_hr'))
+        root = self._user('0502000003', 'سوبر أدمن', is_staff=True, is_superuser=True)
+        self.assertFalse(user_can_access_screen(admin, 'browse_hr'))
+        self.assertTrue(user_can_access_screen(root, 'browse_hr'))
         self.assertFalse(user_can_access_screen(finance, 'browse_hr'))
         self.assertNotIn('hr', ROLE_SECTIONS['مدير مالي'])
         self.assertNotIn('hr', ROLE_SECTIONS['مدير شراء'])

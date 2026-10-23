@@ -171,6 +171,9 @@ NAV_SECTIONS: tuple[NavSection, ...] = (
     ),
 )
 
+# شاشات مقصورة على السوبر أدمن حالياً
+SUPERUSER_ONLY_SCREENS: frozenset[str] = frozenset({"browse_hr"})
+
 SECTION_KEYS: tuple[str, ...] = tuple(s.key for s in NAV_SECTIONS)
 ALL_SCREEN_KEYS: frozenset[str] = frozenset(
     screen.key for section in NAV_SECTIONS for screen in section.screens
@@ -318,6 +321,8 @@ def user_can_access_screen(user, url_name: str | None) -> bool:
         return True
     if key in STAFF_ONLY:
         return bool(getattr(user, "is_staff", False))
+    if normalize_screen_key(key) in SUPERUSER_ONLY_SCREENS:
+        return bool(getattr(user, "is_superuser", False))
     if has_full_app_access(user):
         return True
 
@@ -340,7 +345,10 @@ def user_can_see_section(user, section_key: str) -> bool:
     section = next((s for s in NAV_SECTIONS if s.key == section_key), None)
     if section is None:
         return False
-    return any(screen.key not in blocked for screen in section.screens)
+    return any(
+        screen.key not in blocked and user_can_access_screen(user, screen.key)
+        for screen in section.screens
+    )
 
 
 def build_nav_access(user) -> dict[str, Any]:
