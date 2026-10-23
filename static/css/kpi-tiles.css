@@ -5,7 +5,7 @@
 }
 
 .sales-overview-dash .sales-ov-kpis > .dash-kpi-card {
-  --kpi: #0f766e;
+  --kpi: #1D4A2B;
   position: relative;
   height: auto !important;
   min-height: 8.4rem !important;
@@ -15,9 +15,9 @@
   align-items: center !important;
   justify-content: center !important;
   text-align: center;
-  border: 1px solid rgba(15, 35, 40, 0.06) !important;
+  border: 1px solid color-mix(in srgb, var(--kpi) 22%, #fff) !important;
   border-radius: 24px;
-  background: #fff;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--kpi) 16%, #fff), color-mix(in srgb, var(--kpi) 5%, #fff)) !important;
   box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05), 0 8px 24px rgba(15, 35, 40, 0.06) !important;
   transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease;
 }
@@ -32,11 +32,11 @@
 }
 
 /* لون الإبراز لكل بطاقة */
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-pos { --kpi: #0f766e; }
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-returns { --kpi: #dc2626; }
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-visit { --kpi: #be123c; }
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-total { --kpi: #0e7490; }
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-item-ret { --kpi: #dc2626; }
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-pos { --kpi: #1D4A2B; }
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-returns { --kpi: #C9504A; }
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-visit { --kpi: #E8762B; }
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-total { --kpi: #3C7A52; }
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-glass-item-ret { --kpi: #C9504A; }
 
 /* الأيقونة تختفي: الرقم هو البطل */
 .sales-overview-dash .sales-ov-kpis .dash-kpi-ico {
@@ -50,7 +50,7 @@
   font-size: 0.82rem !important;
   font-weight: 700 !important;
   letter-spacing: 0;
-  color: #5b6b73 !important;
+  color: color-mix(in srgb, var(--kpi) 75%, #1f2d33) !important;
 }
 
 .sales-overview-dash .sales-ov-kpis .dash-kpi-value {
@@ -61,7 +61,7 @@
   font-size: clamp(1.45rem, 9cqi, 2.1rem) !important;
   font-weight: 800 !important;
   letter-spacing: -0.02em;
-  color: #142326 !important;
+  color: color-mix(in srgb, var(--kpi) 70%, #0b1a14) !important;
 }
 
 .sales-overview-dash .sales-ov-kpis .dash-kpi-value .money {
@@ -113,7 +113,7 @@
   text-align: center !important;
   font-size: 0.72rem !important;
   font-weight: 600 !important;
-  color: #7b8a92 !important;
+  color: color-mix(in srgb, var(--kpi) 45%, #6b7a80) !important;
   white-space: normal;
 }
 
@@ -127,7 +127,46 @@
 }
 
 /* يلغي شريط البطاقة الأولى المفروض من الثيم */
-.sales-overview-dash .sales-ov-kpis > .dash-kpi-card:first-child:not(#mn) {
-  border-color: rgba(15, 35, 40, 0.06) !important;
+.sales-overview-dash .sales-ov-kpis > .dash-kpi-card:first-child:not(#mn):not(#mn):not(#mn) {
+  border-color: color-mix(in srgb, var(--kpi) 22%, #fff) !important;
   box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05), 0 8px 24px rgba(15, 35, 40, 0.06) !important;
+}
+
+/* ملخص الصفحات الأخرى (المخزون · المشتريات · القوائم المالية · الموارد البشرية) بنفس أسلوب البطاقات */
+.inv-strip {
+  --kpi: #1D4A2B;
+  border: 1px solid color-mix(in srgb, var(--kpi) 22%, #fff) !important;
+  border-radius: 24px !important;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--kpi) 14%, #fff), color-mix(in srgb, var(--kpi) 4%, #fff)) !important;
+  box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05), 0 8px 24px rgba(15, 35, 40, 0.06);
+}
+
+.inv-strip .inv-strip-label {
+  color: color-mix(in srgb, var(--kpi) 75%, #1f2d33);
+}
+
+.inv-strip .inv-strip-value {
+  color: color-mix(in srgb, var(--kpi) 70%, #0b1a14);
+}
+
+.inv-strip .inv-strip-value.is-loss,
+.inv-strip .inv-strip-qty.is-loss {
+  color: #C9504A;
+}
+
+/* الخط الموجي تحت الرقم الرئيسي */
+.inv-strip .inv-strip-main::after {
+  content: "";
+  display: block;
+  width: 4.6rem;
+  height: 0.5rem;
+  margin-top: 0.45rem;
+  background: var(--kpi);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 8' preserveAspectRatio='none'%3E%3Cpath d='M1 4c4-5 7-5 11 0s7 5 11 0 7-5 11 0 7 5 11 0 7-5 11 0' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 8' preserveAspectRatio='none'%3E%3Cpath d='M1 4c4-5 7-5 11 0s7 5 11 0 7-5 11 0 7 5 11 0 7-5 11 0' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+
+/* صافي الخسارة: الملخص كله بالأحمر الهادئ */
+.inv-strip:has(.inv-strip-value.is-loss) {
+  --kpi: #C9504A;
 }
