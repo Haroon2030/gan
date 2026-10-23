@@ -1,6 +1,7 @@
 from django.urls import path
+from django.views.generic import RedirectView
 
-from . import views
+from . import views, views_users
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -32,7 +33,14 @@ urlpatterns = [
         views.browse_sales_top_users_api,
         name='browse_sales_top_users_api',
     ),
-    path('sales/performance/', views.browse_performance, name='browse_performance'),
+    path('profitability/', views.browse_profitability, name='browse_profitability'),
+    path('hr/', views.browse_hr, name='browse_hr'),
+    # «تحليل الأداء» استُبدل بالربحية: الروابط القديمة تنتقل للشاشة الجديدة
+    path('sales/performance/', RedirectView.as_view(pattern_name='browse_profitability', permanent=False)),
+    path('users/', views_users.user_list, name='user_list'),
+    path('users/new/', views_users.user_create, name='user_create'),
+    path('users/<int:pk>/', views_users.user_edit, name='user_edit'),
+    path('users/<int:pk>/delete/', views_users.user_delete, name='user_delete'),
     path(
         'settings/oracle/',
         views.oracle_connection_settings,

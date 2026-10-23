@@ -918,7 +918,8 @@ table,
   border: 1px solid rgba(226, 232, 240, 0.85) !important;
   border-radius: var(--radius-lg) !important;
   box-shadow: var(--shadow-card) !important;
-  overflow: hidden !important;
+  /* auto لا hidden: الجداول ذات الارتفاع المحدود تحتاج تمريراً لباقي الصفوف */
+  overflow: auto !important;
 }
 
 thead th,

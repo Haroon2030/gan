@@ -66,89 +66,104 @@ def _table_totals(rows: list[dict]) -> dict[str, Any]:
     }
 
 
-def _rank_group_sales(
-    by_group: list[dict],
-    sales_rows: list[dict],
-    *,
-    period_label: str,
-) -> tuple[list[dict], str, dict[str, float]]:
-    """يربط صفوف مبيعات المجموعات برصيد المخزون ويرتّب الأعلى مبيعاً."""
-    stock_map = {
-        str(r.get("code") or "").strip(): r
-        for r in by_group
-        if str(r.get("code") or "").strip()
-    }
-
-    sales_by_code: dict[str, dict[str, float]] = {}
-    name_map: dict[str, str] = {}
-    for row in sales_rows:
-        code = str(row.get("group_code") or "").strip() or "(بلا)"
-        bucket = sales_by_code.setdefault(code, {"sales_total": 0.0, "qty_total": 0.0})
-        bucket["sales_total"] = round(
-            bucket["sales_total"] + float(row.get("sales_total") or 0),
-            2,
-        )
-        bucket["qty_total"] = round(
-            bucket["qty_total"] + float(row.get("qty_total") or 0),
-            2,
-        )
-        name = str(row.get("group_name") or "").strip()
-        if name:
-            name_map[code] = name
-
-    total_sales = round(
-        sum(float(v.get("sales_total") or 0) for v in sales_by_code.values()),
-        2,
-    )
-    ranked: list[dict] = []
-    for code, totals in sales_by_code.items():
-        sales = round(float(totals.get("sales_total") or 0), 2)
-        qty = round(float(totals.get("qty_total") or 0), 2)
-        if sales <= 0 and qty <= 0:
+def _value_composition(
+    by_group: list[dict], total_value: float, *, top: int = 5, key: str = "stock_value"
+) -> list[dict]:
+    """شريط التركيب: أكبر المجموعات قيمةً ثم «أخرى» — النسب من الإجمالي (مخزون أو مشتريات)."""
+    if total_value <= 0:
+        return []
+    ranked = sorted(by_group, key=lambda r: -float(r.get(key) or 0))
+    parts = []
+    for row in ranked[:top]:
+        value = float(row.get(key) or 0)
+        if value <= 0:
             continue
-        stock = stock_map.get(code) or {}
-        stock_val = float(stock.get("stock_value") or 0)
-        stock_qty = float(stock.get("qty_total") or 0)
-        turnover = (sales / stock_val) if stock_val > 0 else None
-        sales_share = (sales / total_sales * 100.0) if total_sales else 0.0
-        ranked.append(
+        parts.append({"name": str(row.get("name") or row.get("code") or "—").strip("() ").strip(), "value": value})
+    rest = total_value - sum(p["value"] for p in parts)
+    if rest > total_value * 0.001:
+        parts.append({"name": "أخرى", "value": rest, "is_rest": True})
+    out = []
+    for i, part in enumerate(parts):
+        pct = part["value"] / total_value * 100.0
+        out.append(
             {
-                "code": code,
-                "name": name_map.get(code) or str(stock.get("name") or code),
-                "sales_total": sales,
-                "sales_display": _money(sales),
-                "qty_total": qty,
-                "qty_display": _qty(qty),
-                "stock_value": stock_val,
-                "stock_value_display": _money(stock_val) if stock_val else "—",
-                "stock_qty": stock_qty,
-                "stock_qty_display": _qty(stock_qty) if stock_qty else "—",
-                "turnover": round(turnover, 2) if turnover is not None else None,
-                "turnover_display": (
-                    f"دوران {turnover:.2f}×" if turnover is not None else "بدون رصيد"
-                ),
-                "share_pct": round(sales_share, 1),
-                "share_display": f"{sales_share:.1f}%",
-                "bar_pct": 0.0,
+                "name": part["name"],
+                "value_display": _money(part["value"]),
+                "share_display": f"{pct:.1f}%",
+                # نص جاهز لـ style: تعريب القالب قد يكتب الفاصلة العشرية «,»
+                "width": f"{pct:.3f}%",
+                "tone": "rest" if part.get("is_rest") else ("lead" if i == 0 else f"g{i}"),
             }
         )
+    return out
 
-    ranked.sort(
-        key=lambda r: (
-            -float(r["sales_total"] or 0),
-            -float(r["qty_total"] or 0),
-            -(float(r["turnover"]) if r.get("turnover") is not None else -1.0),
-            str(r["name"] or ""),
-            str(r["code"] or ""),
-        )
-    )
-    peak = float(ranked[0]["sales_total"]) if ranked else 0.0
-    for row in ranked:
-        bar = (float(row["sales_total"]) / peak * 100.0) if peak else 0.0
-        row["bar_pct"] = round(bar, 1)
-    return ranked[:9], period_label, {
-        code: float(v.get("sales_total") or 0) for code, v in sales_by_code.items()
-    }
+
+_MAP_W = 100.0
+_MAP_H = 56.0
+
+
+def _worst_ratio(row: list[float], side: float) -> float:
+    total = sum(row)
+    return max(max(side * side * a / (total * total), (total * total) / (side * side * a)) for a in row)
+
+
+def _squarify(areas: list[float], x: float, y: float, w: float, h: float) -> list[tuple]:
+    """تقسيم مستطيل إلى مستطيلات مساحتها متناسبة مع القيم، بأقرب شكل للمربع."""
+    rects: list[tuple] = []
+    rest = list(areas)
+    while rest:
+        side = min(w, h)
+        row = [rest[0]]
+        for a in rest[1:]:
+            if _worst_ratio(row + [a], side) <= _worst_ratio(row, side):
+                row.append(a)
+            else:
+                break
+        total = sum(row)
+        if w >= h:
+            col_w = total / h
+            cy = y
+            for a in row:
+                rects.append((x, cy, col_w, a / col_w))
+                cy += a / col_w
+            x, w = x + col_w, w - col_w
+        else:
+            row_h = total / w
+            cx = x
+            for a in row:
+                rects.append((cx, y, a / row_h, row_h))
+                cx += a / row_h
+            y, h = y + row_h, h - row_h
+        rest = rest[len(row):]
+    return rects
+
+
+def _stagnant_tiles(rows: list[dict]) -> None:
+    """خريطة المخزون الراكد: المساحة = الكمية، ودرجة اللون = القيمة بالتكلفة."""
+    import math
+
+    items = [r for r in rows if float(r.get("qty_total") or 0) > 0]
+    if not items:
+        return
+    total_qty = sum(float(r["qty_total"]) for r in items)
+    scale = _MAP_W * _MAP_H / total_qty
+    rects = _squarify([float(r["qty_total"]) * scale for r in items], 0.0, 0.0, _MAP_W, _MAP_H)
+    peak_value = max(float(r.get("stock_value") or 0) for r in items)
+    for row, (x, y, w, h) in zip(items, rects):
+        share_of_map = w * h / (_MAP_W * _MAP_H) * 100.0
+        value = float(row.get("stock_value") or 0)
+        row["tile"] = {
+            # نصوص جاهزة لـ style: تعريب القالب قد يكتب الفاصلة العشرية «,»
+            # الخريطة تبدأ من اليمين: نستخدم right بدل left
+            "right": f"{x / _MAP_W * 100:.3f}%",
+            "top": f"{y / _MAP_H * 100:.3f}%",
+            "width": f"{w / _MAP_W * 100:.3f}%",
+            "height": f"{h / _MAP_H * 100:.3f}%",
+            "size": "lg" if share_of_map >= 12 else "md" if share_of_map >= 4 else "sm" if share_of_map >= 1.2 else "xs",
+            # كتلة ضيقة لا تتسع للمبلغ بعملته — تبقى النسبة، والمبلغ في التلميح
+            "narrow": w / _MAP_W * 100 < 18,
+            "level": 1 if peak_value <= 0 else max(1, math.ceil(value / peak_value * 4)),
+        }
 
 
 def _build_stagnant_items(
@@ -172,6 +187,7 @@ def _build_stagnant_items(
         row["share_display"] = f"{share:.1f}%"
     top = stagnant[:15]
     _attach_inv_rank_bars(top, value_key="qty_total")
+    _stagnant_tiles(top)
     of_all = (
         (stagnant_qty / total_stock_qty * 100.0) if total_stock_qty > 0 else 0.0
     )
@@ -205,7 +221,6 @@ def build_inventory_insights(
         fetch_inventory_by_branch,
         fetch_inventory_by_group,
         fetch_inventory_by_warehouse,
-        fetch_inventory_wastage,
         fetch_stagnant_items,
         oracle_session,
     )
@@ -215,7 +230,6 @@ def build_inventory_insights(
     brn = str(branch_code or "").strip()
     activity_to = date.today()
     activity_from_sales = activity_to - timedelta(days=6)
-    activity_from_ytd = activity_to.replace(month=1, day=1)
 
     def _by_wh():
         with oracle_session():
@@ -235,25 +249,6 @@ def build_inventory_insights(
                 warehouse=wh, group_code=gcode, branch_code=brn
             )
 
-    def _sales_raw():
-        with oracle_session():
-            from .oracle_stock import fetch_group_sales_totals, fetch_warehouse_options
-
-            sales_brn = brn
-            if wh and not sales_brn:
-                for w in fetch_warehouse_options(active_only=True):
-                    if str(w.get("code") or "") == wh:
-                        sales_brn = str(w.get("branch_code") or "").strip()
-                        break
-            return fetch_group_sales_totals(
-                activity_from_sales,
-                activity_to,
-                system="pos",
-                branch_code=sales_brn,
-                group_code=gcode,
-                by_branch=False,
-            )
-
     def _stagnant():
         with oracle_session():
             return fetch_stagnant_items(
@@ -265,30 +260,14 @@ def build_inventory_insights(
                 limit=15,
             )
 
-    def _wastage():
-        with oracle_session():
-            return fetch_inventory_wastage(
-                activity_from_ytd,
-                activity_to,
-                warehouse=wh,
-                group_code=gcode,
-                branch_code=brn,
-            )
-
     # تسلسلي فقط: تجنّب ThreadPoolExecutor (يتعطّل بعد إعادة تحميل runserver على Windows)
     by_warehouse = _by_wh()
     _attach_inv_rank_bars(by_warehouse)
     by_group = _by_group()
     by_branch = _by_brn()
-    sales_rows = _sales_raw()
     stagnant_rows = _stagnant()
-    wastage = _wastage()
 
-    group_sales_rank, sales_period_label, sales_by_code = _rank_group_sales(
-        by_group,
-        sales_rows,
-        period_label=f"{activity_from_sales.isoformat()} → {activity_to.isoformat()}",
-    )
+    sales_period_label = f"{activity_from_sales.isoformat()} → {activity_to.isoformat()}"
 
     total_value = round(sum(float(r.get("stock_value") or 0) for r in by_warehouse), 2)
     total_qty = round(sum(float(r.get("qty_total") or 0) for r in by_warehouse), 2)
@@ -315,7 +294,6 @@ def build_inventory_insights(
     top_wh = by_warehouse[0] if by_warehouse else None
     top_group = by_group[0] if by_group else None
     top_branch = by_branch[0] if by_branch else None
-    top_sales_group = group_sales_rank[0] if group_sales_rank else None
 
     alerts: list[dict] = []
     actions: list[dict] = []
@@ -345,17 +323,6 @@ def build_inventory_insights(
                 "detail": (
                     f"{top_group['name']} تمثّل {top_group['share_display']} "
                     f"من قيمة المخزون."
-                ),
-            }
-        )
-    if top_sales_group and float(top_sales_group.get("share_pct") or 0) >= 30:
-        alerts.append(
-            {
-                "severity": "info",
-                "title": "مجموعة تقود دوران المبيعات",
-                "detail": (
-                    f"{top_sales_group['name']} تمثّل {top_sales_group['share_display']} "
-                    f"من مبيعات آخر 7 أيام ({top_sales_group['turnover_display']})."
                 ),
             }
         )
@@ -391,6 +358,7 @@ def build_inventory_insights(
         "warehouse": wh,
         "group_code": gcode,
         "branch_code": brn,
+        "composition": _value_composition(by_group, total_value),
         "kpis": {
             "stock_value": _money(total_value),
             "stock_value_num": total_value,
@@ -426,10 +394,8 @@ def build_inventory_insights(
         "by_warehouse": by_warehouse[:80],
         "by_group": by_group[:80],
         "by_branch": by_branch[:40],
-        "group_sales_rank": group_sales_rank,
         "sales_period_label": sales_period_label,
         "stagnant": stagnant,
-        "wastage": wastage,
         "warehouse_totals": warehouse_totals,
         "group_totals": group_totals,
         "branch_totals": branch_totals,

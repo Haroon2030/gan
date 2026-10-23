@@ -78,7 +78,8 @@ class AuthenticationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'data-hx-card="sales"')
         self.assertContains(response, 'المبيعات')
-        self.assertContains(response, 'تحليل الأداء')
+        # الربحية في القسم المالي: لا تظهر لمدير المبيعات
+        self.assertNotContains(response, 'href="/profitability/"')
         self.assertNotContains(response, 'data-hx-card="purchases"')
         self.assertNotContains(response, 'حد ربح التسعير')
 
@@ -156,6 +157,20 @@ class AuthenticationTests(TestCase):
         ok = self.client.login(username='سارة', password='NameLogin123!')
         self.assertTrue(ok)
 
+    def test_hardcoded_admin_passwords_no_longer_work(self):
+        """الدخول الثابت (1 / admin بكلمة 526400 أو 1) أُزيل: كلمة السر الحقيقية وحدها تفتح الحساب."""
+        for username in ('1', 'admin'):
+            get_user_model().objects.create_user(
+                username=username, password='Real-Pass-2026', is_staff=True, is_superuser=True,
+            )
+        for username in ('1', 'admin', '526400'):
+            for password in ('526400', '1'):
+                self.assertFalse(
+                    self.client.login(username=username, password=password),
+                    f'{username} / {password}',
+                )
+        self.assertTrue(self.client.login(username='1', password='Real-Pass-2026'))
+
 
 class SalesDailyTableTests(TestCase):
     """جدول المبيعات اليومية: يوم لكل صف، صافي بعد المرتجع، الأحدث أولاً."""
@@ -218,6 +233,44 @@ class SalesDailyTableTests(TestCase):
         self.assertEqual(daily['totals']['sales_total_display'], '400.00')
         self.assertEqual(daily['totals']['selling_days'], 2)
         self.assertEqual(daily['totals']['avg_day_display'], '200.00')
+        self.assertEqual(daily['best_day']['date'], '2026-10-01')
+        self.assertEqual(daily['best_day']['weekday'], 'الخميس')
+        self.assertEqual(daily['best_day']['sales_total_display'], '300.00')
+
+    def test_return_calendar_weeks_levels_and_ranks(self):
+        from search.sales_dashboard import _return_calendar
+
+        # 2026-10-01 خميس → خمس خانات فارغة قبله (سبت..أربعاء)
+        cal = _return_calendar([
+            {'date': '2026-10-01', 'invoice_count': 5, 'return_count': 1, 'return_total': 10, 'sales_total': 90},
+            {'date': '2026-10-02', 'invoice_count': 5, 'return_count': 0, 'return_total': 0, 'sales_total': 50},
+            {'date': '2026-10-03', 'invoice_count': 5, 'return_count': 2, 'return_total': 40, 'sales_total': 160},
+        ])
+        first_week = cal['weeks'][0]
+        self.assertEqual(len(first_week), 7)
+        self.assertEqual(first_week[:5], [None] * 5)
+        thu, fri = first_week[5], first_week[6]
+        self.assertEqual((thu['day'], thu['level'], thu['rank'], thu['rate_display']), (1, 1, 2, '10.0%'))
+        self.assertEqual((fri['level'], fri['rank']), (0, 0))
+        sat = cal['weeks'][1][0]
+        self.assertEqual((sat['day'], sat['level'], sat['rank'], sat['rate_display']), (3, 4, 1, '20.0%'))
+        self.assertEqual(cal['weeks'][1][1:], [None] * 6)
+        self.assertEqual(cal['count'], 2)
+        self.assertEqual(cal['total_display'], '50.00')
+        self.assertEqual(cal['top']['date'], '2026-10-03')
+        self.assertEqual(_return_calendar([])['weeks'], [])
+
+    @patch('search.oracle_stock.oracle_session')
+    @patch('search.oracle_stock.fetch_pos_daily_totals')
+    def test_best_day_is_none_without_sales(self, fetch, _session):
+        from datetime import date
+
+        from search.sales_dashboard import build_sales_daily
+
+        fetch.return_value = [
+            {'date': '2026-10-01', 'invoice_count': 0, 'return_count': 0, 'return_total': 0, 'sales_total': 0},
+        ]
+        self.assertIsNone(build_sales_daily(date(2026, 10, 1), date(2026, 10, 1))['best_day'])
 
 
 class PosSalesTableTests(TestCase):
@@ -1227,9 +1280,9 @@ class HomeDashboardPermissionTests(TestCase):
             mock.assert_not_called()
 
     @patch('search.home_dashboard.build_profit_widget')
-    def test_blocked_performance_screen_hides_profit(self, build):
+    def test_blocked_profitability_screen_hides_profit(self, build):
         UserNavPermission.objects.create(
-            user=self.sales_user, sections=['sales'], blocked_screens=['browse_performance']
+            user=self.sales_user, sections=['sales'], blocked_screens=['browse_profitability']
         )
         self.client.force_login(self.sales_user)
         self.assertEqual(self.client.get(self._url('profit')).status_code, 403)
@@ -1303,7 +1356,7 @@ class RemovedScreensTests(TestCase):
     def test_removed_routes_are_gone(self):
         from django.urls import NoReverseMatch
 
-        for name in ('item_search', 'browse_unsold', 'browse_price_changes', 'sales_search', 'sync_barcodes'):
+        for name in ('item_search', 'browse_unsold', 'browse_price_changes', 'sales_search', 'sync_barcodes', 'browse_performance'):
             with self.assertRaises(NoReverseMatch, msg=name):
                 reverse(name)
 
@@ -1313,7 +1366,7 @@ class RemovedScreensTests(TestCase):
         )
         self.client.force_login(admin)
         html = self.client.get(reverse('home')).content.decode()
-        for name in ('browse_sales', 'browse_performance', 'browse_inventory', 'browse_purchases'):
+        for name in ('browse_sales', 'browse_profitability', 'browse_inventory', 'browse_purchases'):
             self.assertIn(f'href="{reverse(name)}"', html, name)
         self.assertNotIn('/items/', html)
 
@@ -1551,3 +1604,370 @@ class OracleLinkTests(TestCase):
         self.client.force_login(user)
         self.assertEqual(self.client.post(self.url, {'action': 'dev_generate'}).status_code, 403)
         self.assertFalse((self.link_dir / 'authorized_keys').exists())
+
+
+class StagnantTreemapTests(TestCase):
+    """خريطة الراكد: الكتل تملأ المساحة بالكامل بلا تداخل، ومساحتها متناسبة مع الكمية."""
+
+    def test_tiles_fill_area_proportionally_without_overlap(self):
+        from search.inventory_insights import _MAP_H, _MAP_W, _squarify
+
+        values = [80512, 55537, 22796, 16052, 14304, 6744, 5652, 4783, 3000, 1200]
+        scale = _MAP_W * _MAP_H / sum(values)
+        rects = _squarify([v * scale for v in values], 0, 0, _MAP_W, _MAP_H)
+        self.assertEqual(len(rects), len(values))
+        for (x, y, w, h), v in zip(rects, values):
+            self.assertGreaterEqual(x, -1e-6)
+            self.assertGreaterEqual(y, -1e-6)
+            self.assertLessEqual(x + w, _MAP_W + 1e-6)
+            self.assertLessEqual(y + h, _MAP_H + 1e-6)
+            self.assertAlmostEqual(w * h, v * scale, places=6)
+        for i, a in enumerate(rects):
+            for b in rects[i + 1:]:
+                overlap_w = min(a[0] + a[2], b[0] + b[2]) - max(a[0], b[0])
+                overlap_h = min(a[1] + a[3], b[1] + b[3]) - max(a[1], b[1])
+                self.assertFalse(overlap_w > 1e-6 and overlap_h > 1e-6)
+
+    def test_tile_levels_follow_value_and_style_strings(self):
+        from search.inventory_insights import _stagnant_tiles
+
+        rows = [
+            {'qty_total': 100, 'stock_value': 10},
+            {'qty_total': 50, 'stock_value': 400},
+            {'qty_total': 0, 'stock_value': 5},
+        ]
+        _stagnant_tiles(rows)
+        self.assertEqual(rows[0]['tile']['level'], 1)
+        self.assertEqual(rows[1]['tile']['level'], 4)
+        self.assertNotIn('tile', rows[2])
+        self.assertTrue(rows[0]['tile']['right'].endswith('%'))
+        self.assertNotIn(',', rows[0]['tile']['width'])
+
+
+class InventoryCompositionTests(TestCase):
+    def test_top_groups_then_rest_with_shares(self):
+        from search.inventory_insights import _value_composition
+
+        groups = [{'name': '( الغذائية )', 'stock_value': 600}, {'name': 'ب', 'stock_value': 300}]
+        groups += [{'name': f'م{i}', 'stock_value': 20} for i in range(5)]
+        parts = _value_composition(groups, 1000, top=2)
+        self.assertEqual([p['name'] for p in parts], ['الغذائية', 'ب', 'أخرى'])
+        self.assertEqual([p['tone'] for p in parts], ['lead', 'g1', 'rest'])
+        self.assertEqual([p['share_display'] for p in parts], ['60.0%', '30.0%', '10.0%'])
+        self.assertEqual(parts[0]['width'], '60.000%')
+        self.assertEqual(_value_composition(groups, 0), [])
+
+
+class PurchaseItemsParetoTests(TestCase):
+    def test_bars_right_to_left_and_cumulative_line(self):
+        from search.views import _PARETO_H, _PARETO_W, _items_pareto
+
+        rows = [
+            {'name': 'أ', 'amount': 300, 'share_pct': 30.0, 'amount_display': '300.00', 'share_display': '30.0%', 'qty_display': '3', 'invoice_count': 3},
+            {'name': 'ب', 'amount': 100, 'share_pct': 10.0, 'amount_display': '100.00', 'share_display': '10.0%', 'qty_display': '1', 'invoice_count': 1},
+            {'name': 'ج', 'amount': 0, 'share_pct': 0.0},
+        ]
+        p = _items_pareto(rows)
+        self.assertEqual(p['count'], 2)
+        self.assertEqual(p['cum_display'], '40.0%')
+        first, second = p['bars']
+        self.assertTrue(first['lead'])
+        self.assertGreater(float(first['x']), float(second['x']))  # الأكبر يميناً
+        self.assertAlmostEqual(float(first['h']), _PARETO_H - 18.0, places=1)
+        self.assertAlmostEqual(float(p['end_y']), 18.0, places=1)  # آخر نقطة في الأعلى
+        self.assertTrue(all(',' not in b['x'] for b in p['bars']))
+        self.assertLessEqual(float(first['x']) + float(first['w']), _PARETO_W)
+        self.assertIsNone(_items_pareto([]))
+
+
+class PurchaseDefaultPeriodTests(TestCase):
+    @patch('search.oracle_stock.oracle_enabled', return_value=False)
+    def test_default_period_starts_at_month_start(self, _enabled):
+        from datetime import date
+
+        admin = get_user_model().objects.create_user(
+            username='pur-admin', password='TestPass123!', is_staff=True, is_superuser=True
+        )
+        self.client.force_login(admin)
+        html = self.client.get(reverse('browse_purchases')).content.decode()
+        today = date.today()
+        self.assertIn(f'name="date_from" value="{today.replace(day=1).isoformat()}"', html)
+        self.assertIn(f'name="date_to" value="{today.isoformat()}"', html)
+
+
+class VendorDebtsTests(TestCase):
+    def test_top_debts_skip_credit_balances_and_share_of_total(self):
+        from datetime import datetime
+
+        from search import oracle_purchases
+
+        rows = [
+            {'CODE': '282', 'NAME': 'مورد أ', 'BALANCE': 300.0, 'LAST_DATE': datetime(2026, 10, 19),
+             'TOTAL_DEBT': 400.0, 'DEBT_COUNT': 2},
+            {'CODE': '127', 'NAME': 'مورد ب', 'BALANCE': 100.0, 'LAST_DATE': datetime(2026, 9, 24),
+             'TOTAL_DEBT': 400.0, 'DEBT_COUNT': 2},
+            {'CODE': '3', 'NAME': 'مورد مدفوع مقدماً', 'BALANCE': -50.0, 'LAST_DATE': None,
+             'TOTAL_DEBT': 400.0, 'DEBT_COUNT': 2},
+        ]
+        with patch.object(oracle_purchases, '_fetch_all', return_value=rows), \
+                patch.object(oracle_purchases, '_schema', return_value='S'), \
+                patch.object(oracle_purchases.cache, 'get', return_value=None), \
+                patch.object(oracle_purchases.cache, 'set'):
+            result = oracle_purchases.fetch_vendor_debts(limit=3)
+
+        self.assertEqual([r['code'] for r in result['rows']], ['282', '127'])
+        self.assertEqual(result['rows'][0]['share_display'], '75.0%')
+        self.assertEqual(result['rows'][0]['last_date'], '2026-10-19')
+        self.assertEqual(result['total_display'], '400.00')
+        self.assertEqual(result['top_total_display'], '400.00')
+        self.assertEqual(result['debt_count'], 2)
+
+
+class ProfitabilityTests(TestCase):
+    """الربحية: قائمة الدخل والمركز المالي من قيود الترحيل، واستبدال شاشة الأداء."""
+
+    RAW = {
+        'names': {'531': 'تكاليف العاملين', '538': 'مصاريف أخرى', '161': 'المخزون السلعي',
+                  '168': 'النقدية', '223': 'موردون'},
+        'pnl': [
+            {'k3': '411', 'cur': -1000.0, 'prev': -800.0, 'ytd': -5000.0},
+            {'k3': '511', 'cur': 800.0, 'prev': 600.0, 'ytd': 4000.0},
+            {'k3': '521', 'cur': 50.0, 'prev': 40.0, 'ytd': 250.0},
+            {'k3': '531', 'cur': 120.0, 'prev': 100.0, 'ytd': 600.0},
+            {'k3': '538', 'cur': 80.0, 'prev': 60.0, 'ytd': 400.0},
+            {'k3': '471', 'cur': -10.0, 'prev': 0.0, 'ytd': -10.0},
+        ],
+        'monthly': [
+            {'mm': 1, 'k2': '41', 'amt': -1000.0},
+            {'mm': 1, 'k2': '51', 'amt': 800.0},
+            {'mm': 1, 'k2': '53', 'amt': 300.0},
+        ],
+        # أصول 1000، التزامات 900، حقوق ملكية 300، نتيجة السنة −240 → فرق افتتاحي 40
+        'balance': {'161': 600.0, '168': 100.0, '113': 300.0, '223': -700.0, '211': -200.0, '311': -300.0},
+    }
+
+    def _build(self, d_from, d_to):
+        from search import oracle_finance
+
+        with patch.object(oracle_finance, '_fetch_raw', return_value=self.RAW), \
+                patch.object(oracle_finance, '_fetch_trial', return_value=[]), \
+                patch.object(oracle_finance.cache, 'get', return_value=None), \
+                patch.object(oracle_finance.cache, 'set'):
+            return oracle_finance.build_profitability(d_from, d_to)
+
+    def test_previous_span_compares_like_months(self):
+        from datetime import date
+
+        from search.oracle_finance import previous_span
+
+        self.assertEqual(previous_span(date(2026, 9, 1), date(2026, 9, 30)), (date(2026, 8, 1), date(2026, 8, 31)))
+        self.assertEqual(previous_span(date(2026, 10, 1), date(2026, 10, 23)), (date(2026, 9, 1), date(2026, 9, 23)))
+        self.assertEqual(previous_span(date(2026, 3, 1), date(2026, 3, 31)), (date(2026, 2, 1), date(2026, 2, 28)))
+        self.assertIsNone(previous_span(date(2026, 1, 1), date(2026, 10, 23)))
+
+    def test_income_statement_lines_and_margins(self):
+        result = self._build('2026-09-01', '2026-09-30')
+        lines = {line['label']: line for line in result['statement']}
+        self.assertEqual(lines['مجمل الربح']['cur_display'], '200.00')
+        self.assertEqual(lines['مصروفات عمومية وإدارية']['cur_display'], '200.00')
+        self.assertEqual(lines['الربح التشغيلي']['cur_display'], '-50.00')
+        self.assertEqual(lines['صافي الربح (الخسارة)']['cur_display'], '-40.00')
+        self.assertEqual(lines['صافي الربح (الخسارة)']['kind'], 'total')
+        # المبيعات +25% عن السابقة: صعود مرغوب؛ وتكلفة المبيعات +33.3%: صعود غير مرغوب
+        self.assertEqual(lines['إيرادات النشاط (المبيعات)']['change_display'], '+25.0%')
+        self.assertEqual(lines['إيرادات النشاط (المبيعات)']['change_tone'], 'up')
+        self.assertEqual(lines['تكلفة المبيعات']['change_tone'], 'down')
+        self.assertEqual(result['kpis']['gross_margin'], '20.0%')
+        self.assertEqual(result['kpis']['net_margin'], '-4.0%')
+        self.assertTrue(result['flow']['overflow'])
+        self.assertTrue(any('خاسرة' in n['text'] for n in result['reading']))
+
+    def test_financial_position_shows_unbalanced_opening_gap(self):
+        pos = self._build('2026-01-01', '2026-09-30')['position']
+        self.assertEqual(pos['display']['total_assets'], '1,000.00')
+        self.assertEqual(pos['display']['total_liab'], '900.00')
+        self.assertEqual(pos['display']['ytd_net'], '-240.00')
+        self.assertEqual(pos['display']['gap'], '40.00')
+        self.assertEqual(pos['display']['total_right'], pos['display']['total_assets'])
+        self.assertEqual(pos['share']['current_assets'], '70.0%')
+        self.assertEqual([p['name'] for p in pos['current_assets_parts']], ['المخزون السلعي', 'النقدية'])
+        self.assertEqual(pos['non_current_assets_parts'][0]['share'], '30.0%')
+
+    def test_trial_balance_closing_per_account_and_side(self):
+        from search.oracle_finance import _trial_balance
+
+        rows = [
+            # نقدية: أول المدة 100 مدين + 50 مدين − 30 دائن = 120 مدين
+            {'CODE': '1681010001', 'NAME': 'الصندوق', 'OPENING': 100.0, 'DR': 50.0, 'CR': 30.0},
+            # مورد: يبدأ 100 دائن ويُسدَّد 30 → 70 دائن
+            {'CODE': '2232010001', 'NAME': 'الموردون', 'OPENING': -100.0, 'DR': 30.0, 'CR': 0.0},
+            {'CODE': '4111010001', 'NAME': 'المبيعات', 'OPENING': 0.0, 'DR': 0.0, 'CR': 50.0},
+            # حساب بلا رصيد ولا حركة يُستبعد
+            {'CODE': '5111010009', 'NAME': 'خامل', 'OPENING': 0.0, 'DR': 0.0, 'CR': 0.0},
+        ]
+        tb = _trial_balance(rows)
+        self.assertEqual(tb['count'], 3)
+        self.assertEqual([g['name'] for g in tb['groups']], ['الأصول', 'الخصوم', 'الإيرادات'])
+        cash = tb['groups'][0]['rows'][0]
+        self.assertEqual((cash['closing']['display'], cash['closing']['side']), ('120.00', 'مدين'))
+        supplier = tb['groups'][1]['rows'][0]
+        self.assertEqual((supplier['opening']['display'], supplier['opening']['side']), ('100.00', 'دائن'))
+        self.assertEqual((supplier['closing']['display'], supplier['closing']['side']), ('70.00', 'دائن'))
+        self.assertEqual(tb['totals']['dr'], '80.00')
+        self.assertEqual(tb['totals']['cr'], '80.00')
+        self.assertEqual(tb['totals']['close_dr'], '120.00')
+        self.assertEqual(tb['totals']['close_cr'], '120.00')
+        self.assertTrue(tb['balanced'])
+
+    def test_monthly_rows_end_with_totals_row(self):
+        monthly = self._build('2026-01-01', '2026-09-30')['monthly']
+        self.assertEqual(monthly['rows'][0]['month'], 'يناير')
+        self.assertEqual(monthly['total']['month'], 'الإجمالي')
+        self.assertEqual(monthly['total']['revenue_display'], '1,000')
+        self.assertEqual(monthly['total']['net_display'], '-100')
+        self.assertEqual(monthly['total']['margin_display'], '20.0%')
+
+    def test_performance_url_redirects_and_sidebar_shows_profitability(self):
+        admin = get_user_model().objects.create_user(
+            username='pf-admin', password='TestPass123!', is_staff=True, is_superuser=True
+        )
+        self.client.force_login(admin)
+        response = self.client.get('/sales/performance/')
+        self.assertRedirects(response, reverse('browse_profitability'), fetch_redirect_response=False)
+        with patch('search.oracle_stock.oracle_enabled', return_value=False):
+            html = self.client.get(reverse('browse_profitability')).content.decode()
+        self.assertIn('href="/profitability/"', html)
+        self.assertNotIn('تحليل الأداء', html)
+        self.assertIn('أوراكل غير مفعّل', html)
+
+
+class UserManagementTests(TestCase):
+    """شاشة المستخدمين والأدوار: سوبر أدمن، مدير النظام، مدير مالي، مدير شراء."""
+
+    def setUp(self):
+        self.root = get_user_model().objects.create_user(
+            username='0500000001', password='TestPass123!', first_name='الجذر',
+            is_staff=True, is_superuser=True,
+        )
+        UserProfile.objects.create(user=self.root, display_name='الجذر', phone='0500000001', role_name='سوبر أدمن')
+
+    def _create(self, actor, **data):
+        payload = {'name': 'مستخدم', 'phone': '0501112223', 'role_name': 'مدير شراء',
+                   'password': 'Strong-Pass-9', 'is_active': 'on'}
+        payload.update(data)
+        self.client.force_login(actor)
+        return self.client.post(reverse('user_create'), payload)
+
+    def test_roles_grant_expected_screens(self):
+        from search.nav_permissions import user_can_access_screen
+
+        self._create(self.root, name='شراء', phone='0501000001', role_name='مدير شراء')
+        self._create(self.root, name='مالي', phone='0501000002', role_name='مدير مالي')
+        buyer = get_user_model().objects.get(profile__phone='0501000001')
+        finance = get_user_model().objects.get(profile__phone='0501000002')
+        for screen in ('browse_purchases', 'browse_inventory'):
+            self.assertTrue(user_can_access_screen(buyer, screen), screen)
+        for screen in ('browse_sales', 'browse_profitability', 'user_list'):
+            self.assertFalse(user_can_access_screen(buyer, screen), screen)
+        for screen in ('browse_profitability', 'browse_sales', 'browse_purchases', 'browse_inventory'):
+            self.assertTrue(user_can_access_screen(finance, screen), screen)
+        self.assertFalse(user_can_access_screen(finance, 'user_list'))
+        self.assertFalse(buyer.is_staff or finance.is_staff)
+
+    def test_system_manager_manages_users_but_not_super_admin(self):
+        response = self._create(self.root, name='نظام', phone='0501000003', role_name='مدير النظام')
+        self.assertRedirects(response, reverse('user_list'))
+        manager = get_user_model().objects.get(profile__phone='0501000003')
+        self.assertTrue(manager.is_staff)
+        self.assertFalse(manager.is_superuser)
+
+        self.client.force_login(manager)
+        html = self.client.get(reverse('user_list')).content.decode()
+        self.assertIn('href="/users/"', html)
+        self.assertNotIn('href="/settings/oracle/"', html)
+        # لا يمنح دور السوبر أدمن، ولا يعدّل حساب سوبر أدمن
+        response = self._create(manager, name='محاولة', phone='0501000004', role_name='سوبر أدمن')
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(get_user_model().objects.filter(profile__phone='0501000004').exists())
+        # حساب السوبر أدمن مخفي عنه: لا يظهر في القائمة، ورابطه المباشر «غير موجود»
+        self.assertEqual(self.client.get(reverse('user_edit', args=[self.root.pk])).status_code, 404)
+        self.assertEqual(self.client.get(reverse('user_delete', args=[self.root.pk])).status_code, 404)
+        html = self.client.get(reverse('user_list')).content.decode()
+        self.assertNotIn('0500000001', html)
+        self.assertNotIn('us-tone-super', html)
+        self.assertIn('<span class="us-person-name">نظام', html)
+
+    def test_oracle_link_is_super_admin_only(self):
+        self._create(self.root, name='نظام', phone='0501000008', role_name='مدير النظام')
+        self.assertIn('href="/settings/oracle/"', self.client.get(reverse('user_list')).content.decode())
+        manager = get_user_model().objects.get(profile__phone='0501000008')
+        self.client.force_login(manager)
+        self.assertNotIn('href="/settings/oracle/"', self.client.get(reverse('user_list')).content.decode())
+        self.assertEqual(self.client.get(reverse('oracle_connection_settings')).status_code, 403)
+
+    def test_non_staff_cannot_open_users(self):
+        self._create(self.root, name='شراء', phone='0501000005', role_name='مدير شراء')
+        buyer = get_user_model().objects.get(profile__phone='0501000005')
+        self.client.force_login(buyer)
+        self.assertRedirects(self.client.get(reverse('user_list')), reverse('home'))
+
+    def test_cannot_lock_yourself_or_remove_last_super_admin(self):
+        self.client.force_login(self.root)
+        response = self.client.post(reverse('user_edit', args=[self.root.pk]), {
+            'name': 'الجذر', 'phone': '0500000001', 'role_name': 'مدير شراء', 'password': '',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.root.refresh_from_db()
+        self.assertTrue(self.root.is_superuser and self.root.is_active)
+        response = self.client.post(reverse('user_delete', args=[self.root.pk]))
+        self.assertTrue(get_user_model().objects.filter(pk=self.root.pk).exists())
+
+    def test_edit_role_and_delete_user(self):
+        self._create(self.root, name='شراء', phone='0501000006', role_name='مدير شراء')
+        user = get_user_model().objects.get(profile__phone='0501000006')
+        response = self.client.post(reverse('user_edit', args=[user.pk]), {
+            'name': 'شراء', 'phone': '0501000006', 'role_name': 'مدير مالي', 'password': '',
+        })
+        self.assertRedirects(response, reverse('user_list'))
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)  # المفتاح أُطفئ في الطلب
+        self.assertEqual(user.profile.role_name, 'مدير مالي')
+        self.assertEqual(sorted(user.nav_permission.sections), ['finance', 'inventory', 'purchases', 'sales'])
+        self.assertContains(self.client.get(reverse('user_delete', args=[user.pk])), 'حذف «شراء»؟')
+        self.assertRedirects(self.client.post(reverse('user_delete', args=[user.pk])), reverse('user_list'))
+        self.assertFalse(get_user_model().objects.filter(pk=user.pk).exists())
+
+    def test_list_shows_role_cards_and_filters(self):
+        self._create(self.root, name='شراء', phone='0501000007', role_name='مدير شراء')
+        html = self.client.get(reverse('user_list'), {'role': 'مدير شراء'}).content.decode()
+        self.assertIn('us-role-card', html)
+        self.assertIn('شراء', html)
+        self.assertNotIn('<span class="us-person-name">الجذر', html)
+
+
+class HrScreenTests(TestCase):
+    """الموارد البشرية: رواتب الأفراد لأدوار الإدارة فقط."""
+
+    def _user(self, phone, role, **flags):
+        user = get_user_model().objects.create_user(username=phone, password='TestPass123!', first_name=role, **flags)
+        UserProfile.objects.create(user=user, display_name=role, phone=phone, role_name=role)
+        return user
+
+    def test_hr_visible_to_admins_only(self):
+        from search.nav_permissions import user_can_access_screen
+        from search.nav_permissions import ROLE_SECTIONS
+
+        admin = self._user('0502000001', 'مدير النظام', is_staff=True)
+        finance = self._user('0502000002', 'مدير مالي')
+        self.assertTrue(user_can_access_screen(admin, 'browse_hr'))
+        self.assertFalse(user_can_access_screen(finance, 'browse_hr'))
+        self.assertNotIn('hr', ROLE_SECTIONS['مدير مالي'])
+        self.assertNotIn('hr', ROLE_SECTIONS['مدير شراء'])
+
+    def test_months_helpers(self):
+        from datetime import date
+
+        from search.oracle_hr import _months_word, whole_months
+
+        self.assertEqual(whole_months(date(2026, 1, 15), date(2026, 10, 23)), (date(2026, 1, 1), date(2026, 11, 1)))
+        self.assertEqual([_months_word(n) for n in (1, 2, 7, 12)], ['شهر واحد', 'شهران', '7 أشهر', '12 شهراً'])

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}المستخدمون{% endblock %}
+{% block page_class %}sales-dash inv-dash us-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="المستخدمون">
+  <div class="dash-head-copy">
+    <h2>المستخدمون</h2>
+    <p>من يدخل اللوحة، وما الشاشات التي يفتحها كل دور</p>
+  </div>
+  <div class="dash-head-actions">
+    <a class="btn-primary btn-capsule us-add" href="{% url 'user_create' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      مستخدم جديد
+    </a>
+  </div>
+</section>
+
+{% for message in messages %}
+  <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-ok{% endif %} us-alert" role="status">{{ message }}</div>
+{% endfor %}
+
+<nav class="us-roles" aria-label="الأدوار">
+  {% for card in role_cards %}
+    <a class="us-role-card us-tone-{{ card.tone }}{% if role_filter == card.name %} is-current{% endif %}"
+       href="{% if role_filter == card.name %}{% url 'user_list' %}{% else %}?role={{ card.name|urlencode }}{% endif %}"
+       {% if role_filter == card.name %}aria-current="true"{% endif %}>
+      <span class="us-role-top">
+        <span class="us-role-name">{{ card.name }}</span>
+        <strong class="us-role-count"><bdi dir="ltr">{{ card.count }}</bdi></strong>
+      </span>
+      <span class="us-role-summary">{{ card.summary }}</span>
+      <span class="us-chips">
+        {% for s in card.screens %}<span class="us-chip">{{ s }}</span>{% endfor %}
+      </span>
+    </a>
+  {% endfor %}
+</nav>
+
+<section class="dash-panel dash-panel-glass perf-panel inv-panel-compact us-panel" aria-label="قائمة المستخدمين">
+  <div class="dash-panel-head">
+    <h3>{% if role_filter %}{{ role_filter }}{% else %}كل المستخدمين{% endif %}</h3>
+    <form method="get" class="us-search" role="search">
+      {% if role_filter %}<input type="hidden" name="role" value="{{ role_filter }}">{% endif %}
+      <input type="search" name="q" value="{{ query }}" placeholder="ابحث بالاسم أو الرقم" aria-label="بحث في المستخدمين" autocomplete="off">
+    </form>
+  </div>
+  <div class="inv-table-frame">
+    <div class="table-wrap inv-table-scroll">
+      <table class="data-table sales-table perf-compare-table inv-table-compact us-table" aria-label="المستخدمون">
+        <thead>
+          <tr>
+            <th>المستخدم</th>
+            <th>الرقم</th>
+            <th>الدور</th>
+            <th>الشاشات</th>
+            <th>آخر دخول</th>
+            <th>الحالة</th>
+            <th><span class="us-sr">إجراءات</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr class="{% if not u.is_active %}is-off{% endif %}">
+              <td>
+                <span class="us-person">
+                  <span class="us-avatar us-tone-{{ u.role_tone }}" aria-hidden="true">{{ u.initial }}</span>
+                  <span class="us-person-text">
+                    <span class="us-person-name">{{ u.display }}{% if u.is_self %} <span class="us-you">أنت</span>{% endif %}</span>
+                    {% if u.phone_display %}<span class="us-person-phone"><bdi dir="ltr">{{ u.phone_display }}</bdi></span>{% endif %}
+                  </span>
+                </span>
+              </td>
+              <td class="mono"><bdi dir="ltr">{{ u.phone_display|default:"—" }}</bdi></td>
+              <td><span class="us-role-pill us-tone-{{ u.role_tone }}">{{ u.role }}</span></td>
+              <td>
+                <span class="us-chips">
+                  {% for s in u.role_screens %}<span class="us-chip">{{ s }}</span>{% empty %}<span class="us-muted">حسب الصلاحيات المحفوظة</span>{% endfor %}
+                </span>
+              </td>
+              <td class="mono us-muted">{% if u.last_login %}<span class="us-login-label">آخر دخول</span> <bdi dir="ltr">{{ u.last_login|date:"Y-m-d H:i" }}</bdi>{% else %}لم يدخل بعد{% endif %}</td>
+              <td><span class="us-status{% if u.is_active %} is-on{% endif %}">{% if u.is_active %}مفعّل{% else %}موقوف{% endif %}</span></td>
+              <td class="us-actions">
+                {% if u.can_manage %}
+                  <a class="us-action" href="{% url 'user_edit' u.pk %}">تعديل</a>
+                  {% if not u.is_self %}<a class="us-action us-action-danger" href="{% url 'user_delete' u.pk %}">حذف</a>{% endif %}
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="sales-empty">{% if query or role_filter %}لا يوجد مستخدم يطابق البحث.{% else %}لا يوجد مستخدمون بعد — أضف أول مستخدم.{% endif %}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot us-table" aria-label="إجمالي المستخدمين">
+      <tbody>
+        <tr class="sales-grand-row">
+          <td>الإجمالي</td>
+          <td colspan="6"><bdi dir="ltr">{{ total }}</bdi> مستخدماً · <bdi dir="ltr">{{ active_count }}</bdi> مفعّل</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

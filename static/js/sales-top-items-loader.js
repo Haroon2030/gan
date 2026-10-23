@@ -239,6 +239,7 @@
             msg = "انتهت مهلة التحميل — أوراكل بطيء أو غير مستجيب";
           }
           fail(msg, Date.now() - started);
+          fillRankCard(null);
           try {
             window.dispatchEvent(new Event("sales-items-done"));
           } catch (e) {

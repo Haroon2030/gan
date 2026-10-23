@@ -30,7 +30,16 @@ STAFF_ONLY: frozenset[str] = frozenset(
     }
 )
 
-# أدوار ترى كل أقسام التطبيق دون إدارة المستخدمين
+# الأدوار المعتمدة في شاشة المستخدمين
+ROLE_SUPER_ADMIN = "سوبر أدمن"
+ROLE_SYSTEM_MANAGER = "مدير النظام"
+ROLE_FINANCE_MANAGER = "مدير مالي"
+ROLE_PURCHASE_MANAGER = "مدير شراء"
+
+# أدوار الإدارة: is_staff (كل الشاشات + المستخدمين)، والسوبر أدمن is_superuser أيضاً (ربط أوراكل)
+STAFF_ROLE_NAMES: frozenset[str] = frozenset({ROLE_SUPER_ADMIN, ROLE_SYSTEM_MANAGER})
+
+# أدوار ترى كل أقسام التطبيق دون إدارة المستخدمين (أدوار سابقة تبقى مدعومة لحساباتها)
 EXECUTIVE_ROLE_NAMES: frozenset[str] = frozenset(
     {
         "رئيس تنفيذي",
@@ -38,22 +47,76 @@ EXECUTIVE_ROLE_NAMES: frozenset[str] = frozenset(
     }
 )
 
-# أدوار مدير قسم: تُمنح قسمها تلقائياً
+# أقسام كل دور غير إداري — تُمنح تلقائياً عند الحفظ
+ROLE_SECTIONS: dict[str, tuple[str, ...]] = {
+    ROLE_FINANCE_MANAGER: ("sales", "finance", "purchases", "inventory"),
+    ROLE_PURCHASE_MANAGER: ("purchases", "inventory"),
+    # أدوار سابقة
+    "مدير مشتريات": ("purchases",),
+    "مدير مبيعات": ("sales",),
+    "مدير تسعيرة": ("purchases",),
+    "مدير مخازن": ("inventory",),
+}
+
+# أدوار مدير قسم واحد (للتوافق مع نصوص الترحيب القديمة)
 SECTION_MANAGER_ROLES: dict[str, str] = {
-    "مدير مشتريات": "purchases",
-    "مدير مبيعات": "sales",
-    "مدير تسعيرة": "purchases",
-    "مدير مخازن": "inventory",
+    role: sections[0] for role, sections in ROLE_SECTIONS.items() if len(sections) == 1
 }
 
 ROLE_CHOICES: tuple[tuple[str, str], ...] = (
-    ("رئيس تنفيذي", "رئيس تنفيذي — كل الشاشات عدا المستخدمين"),
-    ("مالك", "مالك — كل الشاشات عدا المستخدمين"),
-    ("مدير مشتريات", "مدير مشتريات — إدارة المشتريات"),
-    ("مدير مبيعات", "مدير مبيعات — إدارة المبيعات"),
-    ("مدير تسعيرة", "مدير تسعيرة — إدارة التسعيرة"),
-    ("مدير مخازن", "مدير مخازن — إدارة المخزون"),
+    (ROLE_SUPER_ADMIN, "سوبر أدمن"),
+    (ROLE_SYSTEM_MANAGER, "مدير النظام"),
+    (ROLE_FINANCE_MANAGER, "مدير مالي"),
+    (ROLE_PURCHASE_MANAGER, "مدير شراء"),
 )
+
+# وصف مختصر لما يفتحه كل دور — يظهر في بطاقات الأدوار ونموذج المستخدم
+ROLE_DETAILS: dict[str, dict[str, Any]] = {
+    ROLE_SUPER_ADMIN: {
+        "tone": "super",
+        "summary": "كل الشاشات، وإدارة المستخدمين، وربط أوراكل",
+        "screens": ("كل الشاشات", "المستخدمون", "ربط أوراكل"),
+    },
+    ROLE_SYSTEM_MANAGER: {
+        "tone": "system",
+        "summary": "كل الشاشات مع إدارة المستخدمين",
+        "screens": ("كل الشاشات", "المستخدمون"),
+    },
+    ROLE_FINANCE_MANAGER: {
+        "tone": "finance",
+        "summary": "القوائم المالية، أداء المبيعات، المشتريات والموردون، أرصدة المخزون",
+        "screens": ("القوائم المالية", "المبيعات", "المشتريات", "المخزون"),
+    },
+    ROLE_PURCHASE_MANAGER: {
+        "tone": "purchase",
+        "summary": "المشتريات والموردون، أرصدة المخزون",
+        "screens": ("المشتريات", "المخزون"),
+    },
+}
+
+
+def role_flags(role_name: str) -> tuple[bool, bool]:
+    """(is_staff, is_superuser) المطلوبة لكل دور."""
+    role = str(role_name or "").strip()
+    if role == ROLE_SUPER_ADMIN:
+        return True, True
+    if role == ROLE_SYSTEM_MANAGER:
+        return True, False
+    return False, False
+
+
+def assignable_roles(actor) -> tuple[tuple[str, str], ...]:
+    """مدير النظام لا يمنح دور السوبر أدمن؛ السوبر أدمن يمنح كل الأدوار."""
+    if getattr(actor, "is_superuser", False):
+        return ROLE_CHOICES
+    return tuple(choice for choice in ROLE_CHOICES if choice[0] != ROLE_SUPER_ADMIN)
+
+
+def can_manage_user(actor, target) -> bool:
+    """مدير النظام لا يعدّل حساب سوبر أدمن ولا يحذفه."""
+    if not getattr(actor, "is_staff", False):
+        return False
+    return bool(getattr(actor, "is_superuser", False) or not getattr(target, "is_superuser", False))
 
 
 @dataclass(frozen=True)
@@ -74,22 +137,36 @@ NAV_SECTIONS: tuple[NavSection, ...] = (
         "inventory",
         "إدارة المخزون",
         (
-            NavScreen("browse_inventory", "تحليل المخزون"),
+            NavScreen("browse_inventory", "أرصدة المخزون"),
         ),
     ),
     NavSection(
         "purchases",
         "إدارة المشتريات",
         (
-            NavScreen("browse_purchases", "تحليل المشتريات"),
+            NavScreen("browse_purchases", "المشتريات والموردون"),
         ),
     ),
     NavSection(
         "sales",
         "إدارة المبيعات",
         (
-            NavScreen("browse_sales", "تحليل المبيعات"),
-            NavScreen("browse_performance", "تحليل الأداء"),
+            NavScreen("browse_sales", "أداء المبيعات"),
+        ),
+    ),
+    NavSection(
+        "finance",
+        "الإدارة المالية",
+        (
+            NavScreen("browse_profitability", "القوائم المالية"),
+        ),
+    ),
+    # رواتب الأفراد حساسة: تُمنح لأدوار الإدارة (كل الأقسام) فقط، لا لمدير مالي أو شراء
+    NavSection(
+        "hr",
+        "الموارد البشرية",
+        (
+            NavScreen("browse_hr", "الرواتب والعاملون"),
         ),
     ),
 )
@@ -135,7 +212,15 @@ def user_role_name(user) -> str:
     if user is None or not getattr(user, "is_authenticated", False):
         return ""
     profile = getattr(user, "profile", None)
-    return ((profile.role_name if profile else "") or "").strip()
+    role = ((profile.role_name if profile else "") or "").strip()
+    if role:
+        return role
+    # حسابات الإدارة بلا دور محفوظ (مثل حساب الإقلاع)
+    if getattr(user, "is_superuser", False):
+        return ROLE_SUPER_ADMIN
+    if getattr(user, "is_staff", False):
+        return ROLE_SYSTEM_MANAGER
+    return ""
 
 
 def is_executive_role(user) -> bool:
@@ -148,17 +233,17 @@ def is_executive_role(user) -> bool:
 
 
 def is_section_manager_role(user) -> bool:
-    return user_role_name(user) in SECTION_MANAGER_ROLES
+    return user_role_name(user) in ROLE_SECTIONS
 
 
 def preset_sections_for_role(role_name: str) -> list[str] | None:
     """أقسام تُمنح تلقائياً حسب الدور، أو None إن كان الدور يعتمد على الصلاحيات اليدوية."""
     role = str(role_name or "").strip()
-    if role in EXECUTIVE_ROLE_NAMES:
+    if role in EXECUTIVE_ROLE_NAMES or role in STAFF_ROLE_NAMES:
         return list(SECTION_KEYS)
-    section = SECTION_MANAGER_ROLES.get(role)
-    if section and section in SECTION_KEYS:
-        return [section]
+    sections = ROLE_SECTIONS.get(role)
+    if sections:
+        return [key for key in sections if key in SECTION_KEYS]
     return None
 
 
@@ -267,6 +352,7 @@ def build_nav_access(user) -> dict[str, Any]:
         for screen in section.screens:
             screens[screen.key] = user_can_access_screen(user, screen.key)
     return {
+        "role": user_role_name(user) or "مستخدم",
         "is_full": has_full_app_access(user),
         "is_executive": is_executive_role(user),
         "sections": sections,

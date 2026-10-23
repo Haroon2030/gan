@@ -1,188 +1,260 @@
-/* صفحة الدخول — هوية واحة خيرات البركة: أخضر داكن + برتقالي + حبر أسود */
+/* صفحة الدخول — هوية Hix.life: بطاقة واحدة فوق خلفية خضراء داكنة، والبرتقالي في الشعار فقط */
 body.login-body {
-  --wk-green: #2f6b3f;
-  --wk-green-deep: #1d4a2b;
-  --wk-green-ink: #12301c;
-  --wk-orange: #e8762b;
-  --wk-orange-dark: #cf6219;
-  --wk-ink: #1b1b1b;
-  --wk-muted: #6a6f68;
-  --wk-line: #dfe5dc;
-  --wk-cream: #f7f6f1;
-  background: var(--wk-cream);
-  color: var(--wk-ink);
+  --lg-deep: #0D2216;
+  --lg-green: #12301C;
+  --lg-green-hover: #1D4A2B;
+  --lg-orange: #E8762B;
+  --lg-ink: #142326;
+  --lg-muted: #6B7774;
+  --lg-field: #F3F5F3;
+  --lg-line: rgba(18, 48, 28, 0.1);
+  --lg-danger: #B42318;
+  background: var(--lg-deep);
+  color: var(--lg-ink);
 }
 
-.wk-shell {
+.lg-stage {
+  position: relative;
   min-height: 100dvh;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  font-family: var(--font);
+  place-items: center;
+  align-content: center;
+  gap: 22px;
+  padding: 48px 16px 32px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(60% 50% at 85% 10%, rgba(47, 107, 63, 0.55), transparent 70%),
+    radial-gradient(45% 40% at 10% 95%, rgba(232, 118, 43, 0.22), transparent 70%),
+    linear-gradient(160deg, #163A24 0%, var(--lg-green) 45%, var(--lg-deep) 100%);
 }
 
-/* اللوحة الجانبية */
-.wk-side {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(232, 118, 43, 0.18), transparent 60%),
-    linear-gradient(160deg, var(--wk-green) 0%, var(--wk-green-deep) 55%, var(--wk-green-ink) 100%);
-  color: #f1f6ef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 40px;
-}
-.wk-leaf {
+/* حرف H الكبير خلف البطاقة: ملمس للبراند لا يُقرأ كعنصر */
+.lg-art {
   position: absolute;
-  width: 520px;
-  height: 520px;
-  border-radius: 62% 38% 70% 30% / 55% 45% 55% 45%;
-  border: 1.5px solid rgba(255, 255, 255, 0.09);
+  z-index: -1;
+  width: min(92vh, 900px);
+  height: auto;
+  inset-inline-start: 50%;
+  top: 50%;
+  transform: translate(50%, -50%) rotate(-8deg);
+  fill: rgba(255, 255, 255, 0.035);
   pointer-events: none;
 }
-.wk-leaf-a { inset-block-start: -180px; inset-inline-end: -160px; transform: rotate(24deg); }
-.wk-leaf-b { inset-block-end: -220px; inset-inline-start: -200px; width: 600px; height: 600px; transform: rotate(-18deg); }
-.wk-side-body { position: relative; max-width: 420px; text-align: center; }
-.wk-logo-tile {
-  display: inline-flex;
-  padding: 26px 34px;
-  background: #fff;
+[dir="ltr"] .lg-art { transform: translate(-50%, -50%) rotate(-8deg); }
+.lg-art-rise {
+  fill: none;
+  stroke: rgba(232, 118, 43, 0.14);
+  stroke-width: 70;
+  stroke-linecap: round;
+}
+
+/* البطاقة */
+.lg-sheet {
+  width: 100%;
+  max-width: 400px;
+  padding: 34px 30px 30px;
   border-radius: 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  background: #FFFFFF;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 30px 80px rgba(3, 14, 8, 0.45),
+    0 8px 24px rgba(3, 14, 8, 0.2);
+  animation: lg-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.wk-logo-tile img { display: block; width: min(240px, 52vw); height: auto; }
-.wk-side-kicker { margin: 34px 0 8px; font-size: 1.55rem; font-weight: 800; }
-.wk-side-lead { margin: 0 auto 22px; line-height: 1.9; color: rgba(241, 246, 239, 0.82); }
-.wk-points {
-  list-style: none;
-  margin: 0 auto;
-  padding: 0;
-  display: grid;
-  gap: 10px;
-  text-align: start;
-  max-width: 300px;
-}
-.wk-points li {
-  position: relative;
-  padding-inline-start: 22px;
-  font-weight: 600;
-  color: rgba(241, 246, 239, 0.92);
-}
-.wk-points li::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0.55em;
-  width: 9px;
-  height: 9px;
-  background: var(--wk-orange);
-  border-radius: 2px 70% 2px 70%;
+@keyframes lg-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: none; }
 }
 
-/* بطاقة الدخول */
-.wk-main { display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
-.wk-card { width: 100%; max-width: 400px; }
-.wk-logo-sm { display: none; margin: 0 auto 18px; height: auto; }
-.wk-head { margin-bottom: 26px; }
-.wk-title { margin: 0 0 6px; font-size: 1.9rem; font-weight: 800; color: var(--wk-green-deep); }
-.wk-sub { margin: 0; color: var(--wk-muted); }
+.lg-brand { display: flex; justify-content: center; margin-bottom: 26px; }
+.hix-logo { display: block; height: auto; }
+.lg-logo { width: 168px; }
 
-.wk-error {
+.lg-head { margin-bottom: 22px; text-align: center; }
+.lg-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--lg-ink);
+}
+.lg-sub {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--lg-muted);
+}
+
+.lg-error {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-  padding: 12px 14px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
   border-radius: 12px;
-  background: #fdf0e7;
-  border: 1px solid #f3c9a8;
-  color: #9a3d06;
+  background: #FDECEA;
+  color: var(--lg-danger);
+  font-size: 0.88rem;
   font-weight: 600;
+  line-height: 1.5;
 }
-.wk-error svg { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-
-.wk-form { display: grid; gap: 18px; }
-.wk-field label { display: block; margin-bottom: 7px; font-weight: 700; font-size: 0.92rem; }
-.wk-input { position: relative; }
-.wk-input svg {
-  position: absolute;
-  inset-inline-start: 14px;
-  top: 50%;
-  width: 19px;
-  height: 19px;
-  transform: translateY(-50%);
-  color: var(--wk-green);
+.lg-error svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.lg-form { display: grid; gap: 16px; }
+.lg-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* مجموعة الحقول: إطار واحد، صفّان، فاصل رفيع يبدأ بعد الأيقونة */
+.lg-group {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--lg-field);
+  box-shadow: inset 0 0 0 1px var(--lg-line);
+  transition: box-shadow 0.18s ease;
+}
+.lg-group:focus-within { box-shadow: inset 0 0 0 1.5px var(--lg-green), 0 0 0 4px rgba(18, 48, 28, 0.08); }
+.lg-group.has-error { box-shadow: inset 0 0 0 1.5px rgba(180, 35, 24, 0.55); }
+.lg-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+}
+.lg-row + .lg-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline-start: 46px;
+  inset-inline-end: 0;
+  height: 1px;
+  background: var(--lg-line);
+}
+.lg-ico {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-inline: 16px 10px;
+  fill: none;
+  stroke: #7C8A86;
+  stroke-width: 1.9;
   stroke-linecap: round;
   stroke-linejoin: round;
-  pointer-events: none;
 }
-.wk-input input {
-  width: 100%;
-  height: 50px;
-  padding-inline: 44px 14px;
-  border: 1.5px solid var(--wk-line);
-  border-radius: 12px;
-  background: #fff;
+.lg-row:focus-within .lg-ico { stroke: var(--lg-green); }
+
+/* ملفات الثيم العامة تفرض حدوداً وحشواً على كل الحقول بـ !important — الحقل هنا بلا إطار داخل المجموعة */
+.lg-row input[type="text"],
+.lg-row input[type="password"] {
+  flex: 1;
+  min-width: 0;
+  height: 54px !important;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  padding-inline-end: 16px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
   font: inherit;
-  font-size: 1rem;
-  color: var(--wk-ink);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font-size: 1rem !important;
+  font-weight: 500;
+  color: var(--lg-ink) !important;
 }
-.wk-input input:focus {
-  outline: none;
-  border-color: var(--wk-green);
-  box-shadow: 0 0 0 4px rgba(47, 107, 63, 0.14);
+.lg-row input::placeholder { color: #93A09C; opacity: 1; }
+.lg-row input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 40px var(--lg-field) inset !important;
+  -webkit-text-fill-color: var(--lg-ink) !important;
 }
-/* ملفات الثيم العامة تفرض padding/حدوداً بـ !important على كل الحقول — نستعيد مساحة الأيقونة */
-.wk-input input[type="text"],
-.wk-input input[type="password"] {
-  height: 50px !important;
-  padding: 0 14px !important;
-  padding-inline-start: 44px !important;
-  border: 1.5px solid var(--wk-line) !important;
-  border-radius: 12px !important;
-}
-.wk-input input[type="text"]:focus,
-.wk-input input[type="password"]:focus {
-  border-color: var(--wk-green) !important;
-  box-shadow: 0 0 0 4px rgba(47, 107, 63, 0.14) !important;
-}
-.wk-submit {
-  margin-top: 6px;
-  height: 52px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+
+.lg-eye {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-inline-end: 6px;
+  padding: 0;
   border: 0;
-  border-radius: 12px;
-  background: linear-gradient(180deg, var(--wk-orange), var(--wk-orange-dark));
-  color: #fff;
+  border-radius: 999px;
+  background: transparent;
+  color: #7C8A86;
+  cursor: pointer;
+}
+.lg-eye:hover { background: rgba(18, 48, 28, 0.06); color: var(--lg-green); }
+.lg-eye:focus-visible { outline: 2px solid var(--lg-green); outline-offset: -4px; }
+.lg-eye svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lg-eye-hide,
+.lg-eye[aria-pressed="true"] .lg-eye-show { display: none; }
+.lg-eye[aria-pressed="true"] .lg-eye-hide { display: block; }
+
+/* زر الدخول: الإجراء الوحيد الملوّن في الصفحة */
+.lg-submit {
+  position: relative;
+  height: 52px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--lg-green);
+  color: #FFFFFF;
   font: inherit;
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(232, 118, 43, 0.28);
-  transition: transform 0.12s, box-shadow 0.15s;
+  transition: background-color 0.15s ease, transform 0.12s ease;
 }
-.wk-submit:hover { transform: translateY(-1px); box-shadow: 0 14px 28px rgba(232, 118, 43, 0.34); }
-.wk-submit:active { transform: translateY(0); }
-.wk-submit:focus-visible { outline: 3px solid rgba(47, 107, 63, 0.45); outline-offset: 2px; }
-.wk-submit svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.wk-foot { margin: 28px 0 0; text-align: center; font-size: 0.85rem; color: var(--wk-muted); }
+.lg-submit:hover { background: var(--lg-green-hover); }
+.lg-submit:active { transform: scale(0.98); }
+.lg-submit:focus-visible { outline: 3px solid rgba(18, 48, 28, 0.35); outline-offset: 3px; }
+.lg-submit-busy { display: none; }
+.lg-submit.is-busy { cursor: progress; opacity: 0.85; }
+.lg-submit.is-busy .lg-submit-label { display: none; }
+.lg-submit.is-busy .lg-submit-busy { display: inline; }
 
-@media (max-width: 900px) {
-  .wk-shell { grid-template-columns: 1fr; }
-  .wk-side { display: none; }
-  .wk-main { min-height: 100dvh; padding: 28px 20px; background: linear-gradient(180deg, #eef3ea 0, var(--wk-cream) 220px); }
-  .wk-logo-sm { display: block; width: 130px; }
-  .wk-head { text-align: center; }
-  .wk-input input { font-size: 16px; }
+.lg-foot {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: rgba(236, 243, 238, 0.62);
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .lg-stage { place-items: start center; padding-top: 28px; }
+  .lg-sheet { padding: 28px 20px 24px; border-radius: 24px; }
+  .lg-logo { width: 150px; }
+  .lg-title { font-size: 1.5rem; }
+  /* 16px يمنع تكبير iOS للصفحة عند التركيز على الحقل */
+  .lg-row input[type="text"],
+  .lg-row input[type="password"] { font-size: 16px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wk-submit, .wk-input input { transition: none; }
+  .lg-sheet { animation: none; }
+  .lg-group,
+  .lg-submit { transition: none; }
 }

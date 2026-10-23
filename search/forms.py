@@ -13,8 +13,14 @@ from django.db.models import Q
 from .models import UserProfile
 from .nav_permissions import (
     ROLE_CHOICES,
+    ROLE_PURCHASE_MANAGER,
+    ROLE_SUPER_ADMIN,
+    STAFF_ROLE_NAMES,
+    assignable_roles,
     ensure_user_nav_permission,
     preset_sections_for_role,
+    role_flags,
+    user_role_name,
 )
 
 User = get_user_model()
@@ -48,15 +54,18 @@ class AppUserForm(forms.Form):
             }
         ),
     )
+    # يُعرض كبطاقات اختيار (RadioSelect) تشرح ما يفتحه كل دور
     role_name = forms.ChoiceField(
         label='الدور',
         choices=ROLE_CHOICES,
-        initial='مدير مخازن',
-        widget=forms.Select(
-            attrs={
-                'autocomplete': 'organization-title',
-            }
-        ),
+        initial=ROLE_PURCHASE_MANAGER,
+        widget=forms.RadioSelect,
+    )
+    is_active = forms.BooleanField(
+        label='الحساب مفعّل',
+        required=False,
+        initial=True,
+        help_text='الحساب الموقوف لا يستطيع الدخول ويبقى في القائمة.',
     )
     password = forms.CharField(
         label='كلمة السر',
@@ -71,18 +80,18 @@ class AppUserForm(forms.Form):
         ),
     )
 
-    def __init__(self, *args, instance: User | None = None, **kwargs):
+    def __init__(self, *args, instance: User | None = None, actor: User | None = None, **kwargs):
         self.instance = instance
+        self.actor = actor
         super().__init__(*args, **kwargs)
         # اسمح بقيمة دور قديمة غير موجودة في القائمة
         current = ''
         if instance is not None:
-            profile = getattr(instance, 'profile', None)
-            current = ((profile.role_name if profile else '') or '').strip()
-        choices = list(ROLE_CHOICES)
+            current = user_role_name(instance)
+        choices = list(assignable_roles(actor) if actor is not None else ROLE_CHOICES)
         if current and current not in {c[0] for c in choices}:
-            choices.insert(0, (current, f'{current} (حالي)'))
-            self.fields['role_name'].choices = choices
+            choices.append((current, f'{current} (دور سابق)'))
+        self.fields['role_name'].choices = choices
         if instance is None:
             self.fields['password'].required = True
             self.fields['password'].widget.attrs['placeholder'] = 'كلمة سر (6 أحرف على الأقل)'
@@ -98,7 +107,9 @@ class AppUserForm(forms.Form):
             self.fields['phone'].initial = (
                 (profile.phone if profile else '') or ''
             ).strip()
-            self.fields['role_name'].initial = current or 'مدير مخازن'
+            self.fields['role_name'].initial = current or ROLE_PURCHASE_MANAGER
+            self.fields['is_active'].initial = instance.is_active
+
     def clean_name(self) -> str:
         name = (self.cleaned_data.get('name') or '').strip()
         if not name:
@@ -150,6 +161,27 @@ class AppUserForm(forms.Form):
             raise forms.ValidationError('اسم الدور يحتوي رموزاً غير مسموحة.')
         return role[:100]
 
+    def clean(self):
+        cleaned = super().clean()
+        role = cleaned.get('role_name') or ''
+        active = cleaned.get('is_active')
+        if role == ROLE_SUPER_ADMIN and not getattr(self.actor, 'is_superuser', False) and (
+            self.instance is None or not self.instance.is_superuser
+        ):
+            self.add_error('role_name', 'منح دور السوبر أدمن متاح للسوبر أدمن فقط.')
+        target = self.instance
+        if target is not None and self.actor is not None and target.pk == self.actor.pk:
+            # يمنع المستخدم من قفل نفسه خارج الإدارة
+            if not active:
+                self.add_error('is_active', 'لا يمكنك إيقاف حسابك.')
+            if role and role not in STAFF_ROLE_NAMES:
+                self.add_error('role_name', 'لا يمكنك إزالة صلاحية الإدارة عن حسابك.')
+        if target is not None and target.is_superuser and (role != ROLE_SUPER_ADMIN or not active):
+            others = User.objects.filter(is_superuser=True, is_active=True).exclude(pk=target.pk)
+            if not others.exists():
+                self.add_error('role_name', 'هذا آخر سوبر أدمن مفعّل؛ أضف سوبر أدمن آخر أولاً.')
+        return cleaned
+
     def clean_password(self) -> str:
         password = (self.cleaned_data.get('password') or '').strip()
         if not password:
@@ -166,26 +198,29 @@ class AppUserForm(forms.Form):
         phone = self.cleaned_data['phone']
         role_name = self.cleaned_data.get('role_name') or ''
         password = self.cleaned_data.get('password') or ''
+        is_active = bool(self.cleaned_data.get('is_active'))
         bootstrap = _bootstrap_username()
-        preserved_username = False
+        is_staff, is_superuser = role_flags(role_name)
 
         if self.instance is None:
             user = User.objects.create_user(
                 username=phone,
                 password=password,
                 first_name=name,
-                is_active=True,
+                is_active=is_active,
+                is_staff=is_staff,
+                is_superuser=is_superuser,
             )
             action = 'created'
         else:
             user = self.instance
             # حساب الإقلاع (admin) يحتفظ باسم الدخول حتى لا ينكسر APP_LOGIN_*
-            if bootstrap and user.username == bootstrap:
-                preserved_username = True
-            else:
+            if not (bootstrap and user.username == bootstrap):
                 user.username = phone
             user.first_name = name
-            user.is_active = True
+            user.is_active = is_active
+            user.is_staff = is_staff
+            user.is_superuser = is_superuser
             if password:
                 user.set_password(password)
             user.save()

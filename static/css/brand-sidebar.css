@@ -1,4 +1,4 @@
-/* الشريط الجانبي — هوية واحة خيرات البركة: أخضر زيتوني داكن + لمسة برتقالية */
+/* الشريط الجانبي — هوية جندولة: أخضر داكن + لمسة برتقالية */
 :root,
 body.theme-navy,
 body.theme-growth {
@@ -20,14 +20,25 @@ body.theme-navy .sidebar,
     linear-gradient(180deg, #1D3D28 0%, #16301F 45%, #10241A 100%) !important;
 }
 
-/* الشعار والاسم */
+/* الشعار والاسم: الشريط الموسّع يعرض شعار جندولة كاملاً، والمطوي يعرض الورقة وحدها */
 .sidebar-brand .brand-mark {
   width: 46px !important;
   height: 46px !important;
   border-radius: 12px !important;
-  background: #FFFFFF !important;
+  background: #FECF03 !important;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
   overflow: hidden;
+  place-items: center;
+}
+html:not(.sidebar-collapsed) .sidebar-brand .brand-mark {
+  display: none !important;
+}
+.sidebar-brand .brand-wordmark {
+  display: block;
+  width: auto;
+  height: 48px;
+  max-width: 100%;
+  object-fit: contain;
 }
 .sidebar-brand .brand-mark img {
   display: block;

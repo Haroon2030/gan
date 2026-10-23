@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_new %}مستخدم جديد{% else %}تعديل مستخدم{% endif %}{% endblock %}
+{% block page_class %}sales-dash inv-dash us-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="{% if is_new %}مستخدم جديد{% else %}تعديل مستخدم{% endif %}">
+  <div class="dash-head-copy">
+    <a class="us-back" href="{% url 'user_list' %}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      المستخدمون
+    </a>
+    <h2>{% if is_new %}مستخدم جديد{% else %}{{ target.display }}{% endif %}</h2>
+    <p>{% if is_new %}يدخل بالاسم أو الرقم وكلمة السر، ويرى الشاشات حسب دوره{% else %}عدّل البيانات أو الدور؛ اترك كلمة السر فارغة للإبقاء عليها{% endif %}</p>
+  </div>
+</section>
+
+{% if form.non_field_errors %}
+  <div class="alert alert-error us-alert" role="alert">{% for e in form.non_field_errors %}{{ e }} {% endfor %}</div>
+{% endif %}
+
+<form method="post" class="us-form" novalidate>
+  {% csrf_token %}
+  <section class="dash-panel dash-panel-glass us-card" aria-label="بيانات الدخول">
+    <div class="dash-panel-head"><h3>بيانات الدخول</h3></div>
+    <div class="us-fields">
+      {% for field in form.visible_fields %}
+        {% if field.name == "name" or field.name == "phone" or field.name == "password" %}
+          <div class="us-field{% if field.errors %} has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}<p class="us-error">{{ field.errors.0 }}</p>{% elif field.help_text %}<p class="us-help">{{ field.help_text }}</p>{% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+      <div class="us-field us-switch-field{% if form.is_active.errors %} has-error{% endif %}">
+        <label class="us-switch" for="{{ form.is_active.id_for_label }}">
+          {{ form.is_active }}
+          <span class="us-switch-track" aria-hidden="true"><span></span></span>
+          <span>{{ form.is_active.label }}</span>
+        </label>
+        {% if form.is_active.errors %}<p class="us-error">{{ form.is_active.errors.0 }}</p>{% else %}<p class="us-help">{{ form.is_active.help_text }}</p>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="dash-panel dash-panel-glass us-card" aria-label="الدور">
+    <div class="dash-panel-head"><h3>الدور</h3></div>
+    <fieldset class="us-role-picker">
+      <legend class="us-sr">اختر الدور</legend>
+      {% for opt in role_options %}
+        <label class="us-role-option us-tone-{{ opt.details.tone|default:'legacy' }}" for="{{ opt.radio.id_for_label }}">
+          {{ opt.radio.tag }}
+          <span class="us-role-option-body">
+            <span class="us-role-name">{{ opt.radio.choice_label }}</span>
+            <span class="us-role-summary">{{ opt.details.summary|default:"صلاحيات محفوظة من دور سابق" }}</span>
+            {% if opt.details %}<span class="us-chips">{% for s in opt.details.screens %}<span class="us-chip">{{ s }}</span>{% endfor %}</span>{% endif %}
+          </span>
+          <span class="us-role-check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+    {% if form.role_name.errors %}<p class="us-error us-error-block">{{ form.role_name.errors.0 }}</p>{% endif %}
+  </section>
+
+  <div class="us-form-actions">
+    <button type="submit" class="btn-primary btn-capsule">{% if is_new %}إضافة المستخدم{% else %}حفظ التغييرات{% endif %}</button>
+    <a class="us-cancel" href="{% url 'user_list' %}">إلغاء</a>
+    {% if not is_new and target.can_manage and not target.is_self %}
+      <a class="us-action us-action-danger us-delete-link" href="{% url 'user_delete' target.pk %}">حذف المستخدم</a>
+    {% endif %}
+  </div>
+</form>
+{% endblock %}

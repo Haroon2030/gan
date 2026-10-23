@@ -22,6 +22,7 @@
   {% endif %}
   <link rel="stylesheet" href="/static/css/theme-manara.css?v={{ app_client_version }}">
   <link rel="stylesheet" href="/static/css/brand-sidebar.css?v={{ app_client_version }}">
+  <link rel="stylesheet" href="/static/css/mobile.css?v={{ app_client_version }}">
   {% block extra_css %}{% endblock %}
   <meta name="theme-color" content="#16301F">
   <script src="/static/js/force-refresh.js?v={{ app_client_version }}"></script>
@@ -65,7 +66,7 @@
               <img src="/static/img/brand/mark.png?v={{ app_client_version }}" alt="" width="40" height="40" decoding="async">
             </span>
             <div class="brand-copy">
-              <p class="brand-sub">واحة خيرات البركة</p>
+              <img class="brand-wordmark" src="/static/img/brand/wordmark.png?v={{ app_client_version }}" alt="جندولة" width="124" height="48" decoding="async">
               <p class="brand">لوحة المعلومات</p>
             </div>
           </a>
@@ -81,15 +82,18 @@
           {% if nav_access.sections.sales %}
           <p class="sidebar-section-label">المبيعات</p>
           {% if nav_access.screens.browse_sales %}
-          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_sales' %}is-active{% endif %}" href="{% url 'browse_sales' %}" title="تحليل المبيعات">
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_sales' %}is-active{% endif %}" href="{% url 'browse_sales' %}" title="أداء المبيعات">
             <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16V9M13 16V6M18 16v-4"/></svg>
-            <span>تحليل المبيعات</span>
+            <span>أداء المبيعات</span>
           </a>
           {% endif %}
-          {% if nav_access.screens.browse_performance %}
-          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_performance' %}is-active{% endif %}" href="{% url 'browse_performance' %}" title="تحليل الأداء">
-            <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V10M18 20V4M6 20v-4"/><path d="M4 20h16"/></svg>
-            <span>تحليل الأداء</span>
+          {% endif %}
+          {% if nav_access.sections.finance %}
+          <p class="sidebar-section-label">المالية</p>
+          {% if nav_access.screens.browse_profitability %}
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_profitability' %}is-active{% endif %}" href="{% url 'browse_profitability' %}" title="القوائم المالية">
+            <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>
+            <span>القوائم المالية</span>
           </a>
           {% endif %}
           {% endif %}
@@ -99,30 +103,48 @@
           {% if nav_access.sections.inventory %}
           <p class="sidebar-section-label">المخزون</p>
           {% if nav_access.screens.browse_inventory %}
-          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_inventory' %}is-active{% endif %}" href="{% url 'browse_inventory' %}" title="تحليل المخزون">
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_inventory' %}is-active{% endif %}" href="{% url 'browse_inventory' %}" title="أرصدة المخزون">
             <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M8 16V9M12 16V7M16 16v-5M20 16V8"/><path d="M3 19h18"/></svg>
-            <span>تحليل المخزون</span>
+            <span>أرصدة المخزون</span>
           </a>
           {% endif %}
           {% endif %}
           {% if nav_access.sections.purchases %}
           <p class="sidebar-section-label">المشتريات</p>
           {% if nav_access.screens.browse_purchases %}
-          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_purchases' %}is-active{% endif %}" href="{% url 'browse_purchases' %}" title="تحليل المشتريات">
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_purchases' %}is-active{% endif %}" href="{% url 'browse_purchases' %}" title="المشتريات والموردون">
             <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M8 16V9M12 16V7M16 16v-5M20 16V8"/><path d="M3 19h18"/></svg>
-            <span>تحليل المشتريات</span>
+            <span>المشتريات والموردون</span>
           </a>
           {% endif %}
           {% endif %}
         </div>
 
-        {% if request.user.is_superuser %}
+        {% if nav_access.sections.hr %}
+        <div class="sidebar-zone" data-zone="hr">
+          <p class="sidebar-section-label">الموارد البشرية</p>
+          {% if nav_access.screens.browse_hr %}
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'browse_hr' %}is-active{% endif %}" href="{% url 'browse_hr' %}" title="الرواتب والعاملون">
+            <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 19.5c.8-3.2 3.2-4.9 6.2-4.9s5.4 1.7 6.2 4.9"/><path d="M16.5 6.5h5M16.5 10h5M17.5 13.5h4"/></svg>
+            <span>الرواتب والعاملون</span>
+          </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% if request.user.is_staff %}
         <div class="sidebar-zone" data-zone="admin">
           <p class="sidebar-section-label">إدارة</p>
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'user_list' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_edit' or request.resolver_match.url_name == 'user_delete' %}is-active{% endif %}" href="{% url 'user_list' %}" title="المستخدمون">
+            <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg>
+            <span>المستخدمون</span>
+          </a>
+          {% if request.user.is_superuser %}
           <a class="sidebar-link {% if request.resolver_match.url_name == 'oracle_connection_settings' %}is-active{% endif %}" href="{% url 'oracle_connection_settings' %}" title="ربط قاعدة بيانات أوراكل">
             <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"/><path d="M5 11.5v6c0 1.4 3.1 2.5 7 2.5"/><path d="M16 17h5M18.5 14.5l2.5 2.5-2.5 2.5"/></svg>
             <span>ربط أوراكل</span>
           </a>
+          {% endif %}
         </div>
         {% endif %}
 
@@ -138,7 +160,7 @@
           </span>
           <div class="sidebar-user-meta">
             <strong class="sidebar-user-name">{{ request.user.get_full_name|default:request.user.username }}</strong>
-            <span class="sidebar-user-role">{% if request.user.is_superuser %}مدير تنفيذي{% elif request.user.is_staff %}إدارة النظام{% else %}مستخدم منصة{% endif %}</span>
+            <span class="sidebar-user-role">{{ nav_access.role|default:"مستخدم" }}</span>
           </div>
         </div>
         <form method="post" action="{% url 'logout' %}" class="logout-form">

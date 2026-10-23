@@ -35,28 +35,28 @@ def _welcome_cards_for_user(user) -> list[dict]:
         ),
         (
             'browse_sales',
-            'المبيعات',
+            'أداء المبيعات',
             'صافي الفروع والقنوات بعد المرتجع',
             'welcome-card--sales',
             'M4 19V5M4 19h16M8 16V9M13 16V6M18 16v-4',
         ),
         (
-            'browse_performance',
-            'الأداء',
-            'مقارنة الفترات ومؤشرات التشغيل',
+            'browse_profitability',
+            'القوائم المالية',
+            'قائمة الدخل والقراءة المالية',
             'welcome-card--perf',
             'M12 20V10M18 20V4M6 20v-4M4 20h16',
         ),
         (
             'browse_inventory',
-            'تحليل المخزون',
+            'أرصدة المخزون',
             'الأرصدة وحركة المجموعات',
             'welcome-card--inv',
             'M3 7l9-4 9 4-9 4-9-4zM3 12l9 4 9-4M3 17l9 4 9-4',
         ),
         (
             'browse_purchases',
-            'تحليل المشتريات',
+            'المشتريات والموردون',
             'التوريد ودورة الموردين',
             'welcome-card--purch',
             'M6 6h15l-1.5 9H8L6 6zM9 20a1.5 1.5 0 1 0 0-0.01M18 20a1.5 1.5 0 1 0 0-0.01M6 6L5 3H2',
@@ -133,6 +133,14 @@ def _welcome_user_context(user) -> dict:
     role_html = format_html('<span class="welcome-sub-role">{}</span>', role_name)
 
     role_copy = {
+        'مدير مالي': (
+            'للإدارة المالية',
+            'تتاح لكم القوائم المالية مع أداء المبيعات والمشتريات والموردون وأرصدة المخزون.',
+        ),
+        'مدير شراء': (
+            'لإدارة الشراء',
+            'تتاح لكم شاشتا المشتريات والموردون وأرصدة المخزون.',
+        ),
         'مدير مبيعات': (
             'لإدارة المبيعات',
             'تتاح لكم لوحة المبيعات: صافي الفروع، بحث المبيعات، وتحليل الأداء ضمن صلاحياتكم.',
@@ -259,7 +267,7 @@ def home(request):
     links = {}
     for key in (
         'browse_sales',
-        'browse_performance',
+        'browse_profitability',
         'browse_purchases',
         'browse_inventory',
     ):
@@ -426,163 +434,120 @@ def _parse_sales_dates(raw_from: str | None, raw_to: str | None):
     return d_from, d_to
 
 @login_required
-
-@require_GET
-
-@never_cache
-
-@login_required
 @require_GET
 @never_cache
-def browse_performance(request):
-    """قياس الأداء — فلترة حقيقية ومقارنة فترتين."""
-    from datetime import date as date_cls
-    from datetime import datetime
-    from datetime import timedelta
+def browse_hr(request):
+    """الموارد البشرية: مسير الرواتب والمصروفات على العاملين."""
+    from datetime import date
 
+    today = date.today()
+    year_start = today.replace(month=1, day=1)
+    hr = None
     error = ''
-    insights = None
-    branches: list[dict] = []
-    groups: list[dict] = []
-    active_system = str(request.GET.get('sys') or 'pos').strip().lower()
-    if active_system not in ('pos', 'wholesale'):
-        active_system = 'pos'
-    selected_branch = str(request.GET.get('branch') or '').strip()
-    selected_group = str(request.GET.get('group') or '').strip()
-    compare_mode = str(request.GET.get('compare') or 'auto').strip().lower()
-    if compare_mode not in ('auto', 'custom'):
-        compare_mode = 'auto'
-
-    systems = [
-        {'key': 'pos', 'label': 'نقاط البيع'},
-        {'key': 'wholesale', 'label': 'الآجل'},
-    ]
-
-    def _parse_one(raw: str | None, fallback: date_cls) -> date_cls:
-        text = (raw or '').strip()
-        if not text:
-            return fallback
-        try:
-            return datetime.strptime(text[:10], '%Y-%m-%d').date()
-        except ValueError as exc:
-            raise ValidationError('صيغة التاريخ غير صحيحة.') from exc
-
     try:
+        # بلا تاريخ في الرابط: من أول السنة حتى اليوم (بالأشهر الكاملة)
         date_from, date_to = _parse_sales_dates(
-            request.GET.get('date_from'),
+            request.GET.get('date_from') or year_start.isoformat(),
             request.GET.get('date_to'),
         )
     except ValidationError as exc:
-        today = date_cls.today()
         return render(
             request,
-            'search/browse_performance.html',
+            'search/browse_hr.html',
             {
                 'date_from': (request.GET.get('date_from') or '')[:10],
                 'date_to': (request.GET.get('date_to') or '')[:10],
-                'compare_from': (request.GET.get('compare_from') or '')[:10],
-                'compare_to': (request.GET.get('compare_to') or '')[:10],
-                'default_from': today.isoformat(),
+                'default_from': year_start.isoformat(),
                 'default_to': today.isoformat(),
-                'active_system': active_system,
-                'selected_branch': selected_branch,
-                'selected_group': selected_group,
-                'compare_mode': compare_mode,
-                'systems': systems,
-                'branches': [],
-                'groups': [],
-                'insights': None,
+                'hr': None,
                 'error': str(exc),
             },
         )
 
-    span_days = (date_to - date_from).days
-    default_b_to = date_from - timedelta(days=1)
-    default_b_from = default_b_to - timedelta(days=span_days)
-    compare_from = None
-    compare_to = None
-    if compare_mode == 'custom':
-        try:
-            compare_from = _parse_one(request.GET.get('compare_from'), default_b_from)
-            compare_to = _parse_one(request.GET.get('compare_to'), default_b_to)
-            if compare_from > compare_to:
-                raise ValidationError('فترة المقارنة: تاريخ البداية بعد النهاية.')
-            if (compare_to - compare_from).days > 366:
-                raise ValidationError('فترة المقارنة القصوى سنة واحدة.')
-        except ValidationError as exc:
-            error = str(exc)
-
     try:
-        from .branches import fetch_income_branches
-        from .oracle_stock import (
-            SALES_SYSTEMS,
-            fetch_sales_group_options,
-            oracle_enabled,
-            oracle_session,
-        )
-        from .sales_insights import build_performance_insights
+        from .oracle_hr import build_hr_overview
+        from .oracle_stock import oracle_enabled, oracle_session
 
-        systems = [
-            {'key': key, 'label': conf['label']}
-            for key, conf in SALES_SYSTEMS.items()
-        ]
         if not oracle_enabled():
-            error = error or 'أوراكل غير مفعّل — لا يمكن قياس الأداء.'
-        elif not error:
+            error = 'أوراكل غير مفعّل — لا يمكن قراءة الرواتب.'
+        else:
             with oracle_session():
-                branches = sorted(
-                    fetch_income_branches(),
-                    key=lambda row: (
-                        str(row.get('name') or ''),
-                        str(row.get('code') or ''),
-                    ),
-                )
-                branch_codes = {str(row.get('code') or '') for row in branches}
-                if selected_branch and selected_branch not in branch_codes:
-                    selected_branch = ''
-                groups = fetch_sales_group_options()
-                group_codes = {g['code'] for g in groups}
-                if selected_group and selected_group not in group_codes:
-                    selected_group = ''
-                insights = build_performance_insights(
-                    date_from,
-                    date_to,
-                    system=active_system,
-                    branch_code=selected_branch,
-                    group_code=selected_group,
-                    compare_from=compare_from if compare_mode == 'custom' else None,
-                    compare_to=compare_to if compare_mode == 'custom' else None,
-                )
+                hr = build_hr_overview(date_from, date_to)
     except Exception as exc:  # noqa: BLE001
-        logger.warning('browse_performance failed: %s', exc)
-        error = f'تعذّر حساب قياس الأداء: {exc}'
-        insights = None
-
-    if compare_mode == 'custom' and compare_from and compare_to:
-        compare_from_s = compare_from.isoformat()
-        compare_to_s = compare_to.isoformat()
-    else:
-        compare_from_s = default_b_from.isoformat()
-        compare_to_s = default_b_to.isoformat()
+        logger.warning('browse_hr failed: %s', exc)
+        error = f'تعذّرت قراءة الرواتب: {exc}'
+        hr = None
 
     return render(
         request,
-        'search/browse_performance.html',
+        'search/browse_hr.html',
         {
             'date_from': date_from.isoformat(),
             'date_to': date_to.isoformat(),
-            'compare_from': compare_from_s,
-            'compare_to': compare_to_s,
-            'default_from': date_from.isoformat(),
-            'default_to': date_to.isoformat(),
-            'active_system': active_system,
-            'selected_branch': selected_branch,
-            'selected_group': selected_group,
-            'compare_mode': compare_mode,
-            'systems': systems,
-            'branches': branches,
-            'groups': groups,
-            'insights': insights,
+            'default_from': year_start.isoformat(),
+            'default_to': today.isoformat(),
+            'hr': hr,
+            'error': error,
+        },
+    )
+
+
+@login_required
+@require_GET
+@never_cache
+def browse_profitability(request):
+    """الربحية: قائمة الدخل والمركز المالي وقراءة مالية من قيود الترحيل."""
+    from datetime import date
+
+    today = date.today()
+    year_start = today.replace(month=1, day=1)
+    profit = None
+    error = ''
+    try:
+        # بلا تاريخ في الرابط: من أول السنة حتى اليوم
+        date_from, date_to = _parse_sales_dates(
+            request.GET.get('date_from') or year_start.isoformat(),
+            request.GET.get('date_to'),
+        )
+        if date_from.year != date_to.year:
+            raise ValidationError('اختر فترة داخل سنة مالية واحدة.')
+    except ValidationError as exc:
+        return render(
+            request,
+            'search/browse_profitability.html',
+            {
+                'date_from': (request.GET.get('date_from') or '')[:10],
+                'date_to': (request.GET.get('date_to') or '')[:10],
+                'default_from': year_start.isoformat(),
+                'default_to': today.isoformat(),
+                'profit': None,
+                'error': str(exc),
+            },
+        )
+
+    try:
+        from .oracle_finance import build_profitability
+        from .oracle_stock import oracle_enabled, oracle_session
+
+        if not oracle_enabled():
+            error = 'أوراكل غير مفعّل — لا يمكن قراءة القوائم المالية.'
+        else:
+            with oracle_session():
+                profit = build_profitability(date_from, date_to)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning('browse_profitability failed: %s', exc)
+        error = f'تعذّرت قراءة القوائم المالية: {exc}'
+        profit = None
+
+    return render(
+        request,
+        'search/browse_profitability.html',
+        {
+            'date_from': date_from.isoformat(),
+            'date_to': date_to.isoformat(),
+            'default_from': year_start.isoformat(),
+            'default_to': today.isoformat(),
+            'profit': profit,
             'error': error,
         },
     )
@@ -1068,6 +1033,73 @@ def browse_inventory(request):
     )
 
 
+_PARETO_W = 600.0
+_PARETO_H = 190.0
+_PARETO_PAD_TOP = 18.0
+
+
+def _purchase_table_totals(rows: list[dict]) -> dict:
+    """سطر «الإجمالي» أسفل جداول المشتريات (مثل جداول المخزون)."""
+    amount = sum(float(r.get('amount') or 0) for r in rows)
+    qty = sum(float(r.get('qty_total') or 0) for r in rows)
+    share = sum(float(r.get('share_pct') or 0) for r in rows)
+    return {
+        'invoice_count': sum(int(r.get('invoice_count') or 0) for r in rows),
+        'item_count': sum(int(r.get('item_count') or 0) for r in rows),
+        'qty_display': f'{int(round(qty)):,}' if abs(qty - round(qty)) < 1e-9 else f'{qty:,.2f}',
+        'amount_display': f'{amount:,.2f}',
+        'share_display': f'{min(share, 100.0):.1f}%',
+    }
+
+
+def _items_pareto(rows: list[dict]) -> dict | None:
+    """أعمدة الأصناف الأكثر شراء (الأكبر يميناً) مع خط تراكمي لحصتها من كل المشتريات.
+
+    الإحداثيات نصوص جاهزة لـ SVG: تعريب القالب قد يكتب الفاصلة العشرية «,».
+    """
+    items = [r for r in rows if float(r.get('amount') or 0) > 0]
+    if not items:
+        return None
+    peak = max(float(r['amount']) for r in items)
+    slot = _PARETO_W / len(items)
+    bar_w = slot * 0.7
+    plot_h = _PARETO_H - _PARETO_PAD_TOP
+    cumulative = 0.0
+    shares = []
+    for r in items:
+        cumulative += float(r.get('share_pct') or 0)
+        shares.append(cumulative)
+    cum_peak = shares[-1] or 1.0
+    bars, points = [], []
+    for i, (r, cum) in enumerate(zip(items, shares)):
+        h = max(float(r['amount']) / peak * plot_h, 1.5)
+        x = _PARETO_W - (i + 1) * slot + (slot - bar_w) / 2
+        cx = x + bar_w / 2
+        cy = _PARETO_H - cum / cum_peak * plot_h
+        bars.append(
+            {
+                'x': f'{x:.2f}',
+                'y': f'{_PARETO_H - h:.2f}',
+                'w': f'{bar_w:.2f}',
+                'h': f'{h:.2f}',
+                'lead': i == 0,
+                'title': f"{i + 1}. {r.get('name')} — {r.get('amount_display')} ({r.get('share_display')}) · "
+                f"{r.get('qty_display')} كمية · {r.get('invoice_count')} فاتورة",
+            }
+        )
+        points.append((cx, cy))
+    return {
+        'bars': bars,
+        'line': ' '.join(f'{x:.2f},{y:.2f}' for x, y in points),
+        'end_x': f'{points[-1][0]:.2f}',
+        'end_y': f'{points[-1][1]:.2f}',
+        'cum_display': f'{cum_peak:.1f}%',
+        'count': len(items),
+        'width': f'{_PARETO_W:.0f}',
+        'height': f'{_PARETO_H:.0f}',
+    }
+
+
 @login_required
 @require_GET
 @never_cache
@@ -1081,14 +1113,16 @@ def browse_purchases(request):
     selected_group = str(request.GET.get('group') or '').strip()
     selected_vendor = str(request.GET.get('vendor') or '').strip()
     dashboard = None
+    vendor_debts = None
     error = ''
     branches: list[dict] = []
     groups: list[dict] = []
     vendors: list[dict] = []
 
     try:
+        # بلا تاريخ في الرابط: من أول الشهر الحالي حتى اليوم
         date_from, date_to = _parse_sales_dates(
-            request.GET.get('date_from'),
+            request.GET.get('date_from') or month_start.isoformat(),
             request.GET.get('date_to'),
         )
     except ValidationError as exc:
@@ -1116,6 +1150,7 @@ def browse_purchases(request):
         from .oracle_purchases import (
             build_purchase_dashboard,
             fetch_purchase_vendor_options,
+            fetch_vendor_debts,
         )
         from .oracle_stock import (
             fetch_sales_group_options,
@@ -1143,10 +1178,28 @@ def browse_purchases(request):
                     group_code=selected_group,
                     vendor_code=selected_vendor,
                 )
+                # أرصدة الموردين لا تتبع الفلتر: هي ما على الشركة الآن
+                try:
+                    vendor_debts = fetch_vendor_debts(limit=20)
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning('vendor debts failed: %s', exc)
     except Exception as exc:  # noqa: BLE001
         logger.warning('browse_purchases failed: %s', exc)
         error = f'تعذّر تحليل المشتريات: {exc}'
         dashboard = None
+
+    if dashboard is not None:
+        from .inventory_insights import _value_composition
+
+        # يُحسب هنا لا في الكاش: يعمل مع النسخ المخزّنة قبل إضافته
+        groups_total = sum(max(float(r.get('amount') or 0), 0.0) for r in dashboard.get('by_group') or [])
+        dashboard = {
+            **dashboard,
+            'composition': _value_composition(dashboard.get('by_group') or [], groups_total, key='amount'),
+            'items_pareto': _items_pareto(dashboard.get('top_items') or []),
+            'vendor_totals': _purchase_table_totals(dashboard.get('by_vendor') or []),
+            'group_totals': _purchase_table_totals(dashboard.get('by_group') or []),
+        }
 
     return render(
         request,
@@ -1163,6 +1216,7 @@ def browse_purchases(request):
             'groups': groups,
             'vendors': vendors,
             'dashboard': dashboard,
+            'vendor_debts': vendor_debts,
             'error': error,
         },
     )
@@ -1296,7 +1350,7 @@ def _form_error_text(form) -> str:
 @login_required
 @never_cache
 def oracle_connection_settings(request):
-    """شاشة ربط أوراكل: اختبار بيانات الاتصال ثم حفظها وتفعيلها — لمدير النظام فقط."""
+    """شاشة ربط أوراكل: اختبار بيانات الاتصال ثم حفظها وتفعيلها — للسوبر أدمن فقط (مدير النظام لا يدخلها)."""
     from django.core.exceptions import PermissionDenied
     from django.core.exceptions import ValidationError as DjangoValidationError
     from django.http import HttpResponseBadRequest, HttpResponseNotAllowed

@@ -25,11 +25,11 @@ WIDGET_SCREENS: dict[str, tuple[str, ...]] = {
     "sales": ("browse_sales",),
     "groups": ("browse_sales",),
     "top_items": ("browse_sales",),
-    "profit": ("browse_performance",),
+    "profit": ("browse_profitability",),
     "purchases": ("browse_purchases",),
     "inventory": ("browse_inventory",),
-    # الدوران يكشف تكلفة المبيعات → يحتاج صلاحية الأداء أيضاً
-    "turnover": ("browse_inventory", "browse_performance"),
+    # الدوران يكشف تكلفة المبيعات → يحتاج صلاحية الربحية أيضاً
+    "turnover": ("browse_inventory", "browse_profitability"),
     "shortage": ("browse_inventory",),
 }
 

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}حذف مستخدم{% endblock %}
+{% block page_class %}sales-dash inv-dash us-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-panel dash-panel-glass us-card us-confirm" aria-labelledby="us-confirm-title">
+  <span class="us-avatar us-avatar-lg us-tone-{{ target.role_tone }}" aria-hidden="true">{{ target.initial }}</span>
+  <h2 id="us-confirm-title">حذف «{{ target.display }}»؟</h2>
+  {% if error %}
+    <p class="us-error us-error-block">{{ error }}</p>
+    <div class="us-form-actions us-confirm-actions">
+      <a class="btn-primary btn-capsule" href="{% url 'user_list' %}">رجوع للمستخدمين</a>
+    </div>
+  {% else %}
+    <p class="us-confirm-text">يُحذف الحساب نهائياً ولن يتمكن «{{ target.display }}» ({{ target.role }}) من الدخول. لإيقافه مؤقتاً عدّل حسابه وأطفئ «الحساب مفعّل» بدل الحذف.</p>
+    <form method="post" class="us-form-actions us-confirm-actions">
+      {% csrf_token %}
+      <button type="submit" class="btn-capsule us-btn-danger">حذف المستخدم</button>
+      <a class="us-cancel" href="{% url 'user_edit' target.pk %}">إلغاء</a>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}

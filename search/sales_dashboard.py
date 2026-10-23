@@ -737,6 +737,64 @@ def daily_range(date_from, date_to):
     return max(start, earliest), d_to
 
 
+_WEEKDAYS_SHORT_AR = ("سبت", "أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة")
+
+
+def _return_calendar(raw: list[dict]) -> dict[str, Any]:
+    """تقويم المرتجعات: أسابيع تبدأ بالسبت، ودرجة لون لكل يوم حسب قيمة مرتجعه.
+
+    النسبة = مرتجع اليوم ÷ (صافي مبيعاته + مرتجعه)، وأعلى ثلاثة أيام تحمل ترتيبها.
+    """
+    import math
+    from datetime import date
+
+    if not raw:
+        return {"weeks": [], "weekdays": _WEEKDAYS_SHORT_AR, "count": 0}
+
+    amounts = [round(float(r["return_total"]), 2) for r in raw]
+    peak = max(amounts)
+    by_date = {r["date"]: amt for r, amt in zip(raw, amounts) if amt > 0}
+    ranked = sorted(by_date, key=lambda d: (-by_date[d], d))[:3]
+    today = date.today().isoformat()
+
+    cells: list[dict | None] = []
+    first = date.fromisoformat(raw[0]["date"])
+    # السبت = 0 … الجمعة = 6 (weekday(): الاثنين = 0)
+    cells.extend([None] * ((first.weekday() + 2) % 7))
+    total = 0.0
+    for r, amount in zip(raw, amounts):
+        day = date.fromisoformat(r["date"])
+        sales_net = max(float(r["sales_total"]), 0.0)
+        _pct, rate = _share(amount, sales_net + amount)
+        level = 0 if amount <= 0 or peak <= 0 else max(1, math.ceil(amount / peak * 4))
+        total += amount
+        cells.append(
+            {
+                "date": r["date"],
+                "day": day.day,
+                "weekday": _WEEKDAYS_AR[day.weekday()],
+                "amount": amount,
+                "amount_short": f"{amount:,.0f}",
+                "amount_display": _money(amount),
+                "count": int(r["return_count"]),
+                "rate_display": rate,
+                "level": level,
+                "rank": ranked.index(r["date"]) + 1 if r["date"] in ranked else 0,
+                "is_today": r["date"] == today,
+            }
+        )
+    cells.extend([None] * (-len(cells) % 7))
+    weeks = [cells[i : i + 7] for i in range(0, len(cells), 7)]
+    top = next((c for w in weeks for c in w if c and c["rank"] == 1), None)
+    return {
+        "weeks": weeks,
+        "weekdays": _WEEKDAYS_SHORT_AR,
+        "count": sum(1 for a in amounts if a > 0),
+        "total_display": _money(total),
+        "top": top,
+    }
+
+
 def build_sales_daily(date_from, date_to, *, branch_code: str = "") -> dict[str, Any]:
     """جدول مبيعات نقاط البيع اليومية — الأحدث أولاً."""
     from datetime import date
@@ -772,9 +830,20 @@ def build_sales_daily(date_from, date_to, *, branch_code: str = "") -> dict[str,
             }
         )
     avg_day = total_sales / selling_days if selling_days else 0.0
+    best = max(raw, key=lambda r: float(r["sales_total"]), default=None)
+    best_day = None
+    if best is not None and float(best["sales_total"]) > 0:
+        best_day = {
+            "date": best["date"],
+            "weekday": _WEEKDAYS_AR[date.fromisoformat(best["date"]).weekday()],
+            "sales_total_display": _money(best["sales_total"]),
+            "invoice_count_display": f"{best['invoice_count']:,}",
+        }
     return {
         "date_from": d_from.isoformat(),
         "date_to": d_to.isoformat(),
+        "best_day": best_day,
+        "returns_calendar": _return_calendar(raw),
         "rows": rows,
         "totals": {
             "day_count": len(rows),

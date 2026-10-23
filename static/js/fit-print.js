@@ -8,8 +8,6 @@
     'table.data-table, table.sales-table, table.lm-table, table.up-table, table.nbc-table, table.wh-out-table, table.wh-exp-table, table.inv-pack-err-table, table.wqc-table, table.vt-sheet, table.vt-table, table.perf-compare-table, table.purchase-table, table.income-table, table.suppliers-table, table.assets-table';
   /* A4 landscape usable width ≈ 297mm − 12mm margins */
   var PAGE_WIDTH_PX = Math.round((297 - 12) * (96 / 25.4));
-  var PDF_ICON =
-    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>';
 
   function ensureLandscapeStyle() {
     var el = document.getElementById(STYLE_ID);
@@ -158,33 +156,6 @@
     clearTableFit();
   }
 
-  function ensurePanelPdfButtons() {
-    document.querySelectorAll('.dash-panel').forEach(function (panel) {
-      if (!panel.querySelector('table')) return;
-      var head = panel.querySelector(':scope > .dash-panel-head');
-      if (!head) head = panel.querySelector('.dash-panel-head');
-      if (!head) return;
-      if (head.querySelector('.dash-pdf-btn, .js-fit-print, .vpc-print-btn, .lm-pdf-btn, .up-pdf-btn')) {
-        return;
-      }
-
-      var actions = head.querySelector('.dash-panel-head-actions');
-      if (!actions) {
-        actions = document.createElement('div');
-        actions.className = 'dash-panel-head-actions';
-        head.appendChild(actions);
-      }
-
-      var btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'dash-pdf-btn dash-pdf-btn-sm js-fit-print';
-      btn.setAttribute('data-print-scope', 'panel');
-      btn.setAttribute('title', 'حفظ هذا الجدول PDF');
-      btn.innerHTML = PDF_ICON + ' PDF';
-      actions.appendChild(btn);
-    });
-  }
-
   function onClick(ev) {
     var btn = ev.target.closest(BTN);
     if (!btn) return;
@@ -194,10 +165,6 @@
       fitVisibleTables();
       window.print();
     }, 40);
-  }
-
-  function boot() {
-    ensurePanelPdfButtons();
   }
 
   document.addEventListener('click', onClick);
@@ -210,9 +177,4 @@
   });
   window.addEventListener('afterprint', cleanup);
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
 })();

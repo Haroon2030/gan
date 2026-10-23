@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}تسجيل الدخول — غرفة القرار{% endblock %}
+{% block title %}تسجيل الدخول — Hix.life{% endblock %}
 {% block body_theme %}{% endblock %}
 {% block body_class %}login-body{% endblock %}
 {% block page_class %}login-page{% endblock %}
@@ -11,82 +11,97 @@
 {% endblock %}
 
 {% block content %}
-<section class="wk-shell" aria-labelledby="wk-title">
-  <aside class="wk-side" aria-hidden="true">
-    <span class="wk-leaf wk-leaf-a"></span>
-    <span class="wk-leaf wk-leaf-b"></span>
-    <div class="wk-side-body">
-      <div class="wk-logo-tile">
-        <img src="{% static 'img/brand/logo.png' %}?v={{ app_client_version }}" alt="" width="276" height="232" decoding="async" fetchpriority="high">
+<section class="lg-stage" aria-labelledby="lg-title">
+  {# خلفية البراند: حرف H كبير خافت (عمودان + خط صاعد) خلف البطاقة #}
+  <svg class="lg-art" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+    <rect x="120" y="70" width="110" height="460" rx="55"/>
+    <rect x="370" y="70" width="110" height="460" rx="55"/>
+    <path class="lg-art-rise" d="M175 380 L425 225"/>
+  </svg>
+
+  <div class="lg-sheet">
+    <div class="lg-brand">
+      {% include "brand/hix_logo.html" with cls="lg-logo" %}
+    </div>
+
+    <header class="lg-head">
+      <h1 id="lg-title" class="lg-title">مرحباً بعودتك</h1>
+      <p class="lg-sub">سجّل الدخول إلى لوحة المؤشرات</p>
+    </header>
+
+    {% if error or form.errors %}
+      <div class="lg-error" role="alert">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/></svg>
+        <span>{% if error %}{{ error }}{% else %}الاسم أو كلمة المرور غير صحيحة. حاول مرة أخرى.{% endif %}</span>
       </div>
-      <p class="wk-side-kicker">غرفة القرار</p>
-      <p class="wk-side-lead">من البيانات إلى قرار الإدارة — مبيعات، مخزون، مشتريات وأداء في صورة تنفيذية واحدة.</p>
-      <ul class="wk-points">
-        <li>قراءة تنفيذية للدخل والأداء</li>
-        <li>ربحية الفروع والقنوات</li>
-        <li>كفاءة المخزون والتوريد</li>
-      </ul>
-    </div>
-  </aside>
+    {% endif %}
 
-  <div class="wk-main">
-    <div class="wk-card">
-      <img class="wk-logo-sm" src="{% static 'img/brand/logo.png' %}?v={{ app_client_version }}" alt="واحة خيرات البركة" width="130" height="109">
+    <form method="post" action="{% url 'login' %}" class="lg-form" novalidate data-login-form>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
 
-      <header class="wk-head">
-        <h1 id="wk-title" class="wk-title">تسجيل الدخول</h1>
-        <p class="wk-sub">ادخل إلى لوحة المؤشرات التنفيذية</p>
-      </header>
-
-      {% if error %}
-        <div class="wk-error" role="alert">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-          <span>{{ error }}</span>
+      {# مجموعة حقول بأسلوب iOS: صفّان داخل إطار واحد بفاصل رفيع #}
+      <div class="lg-group{% if error or form.errors %} has-error{% endif %}">
+        <div class="lg-row">
+          <label class="lg-sr" for="id_username">الاسم أو الرقم</label>
+          <svg class="lg-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.3-3.3 3.8-5 7-5s5.7 1.7 7 5"/></svg>
+          <input id="id_username" name="username" type="text" autocomplete="username" maxlength="150" required autofocus
+                 placeholder="الاسم أو الرقم" value="{{ form.username.value|default:'' }}" enterkeyhint="next" autocapitalize="off" spellcheck="false">
         </div>
-      {% elif form.errors %}
-        <div class="wk-error" role="alert">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
-          <span>اسم المستخدم أو كلمة المرور غير صحيحة.</span>
+        <div class="lg-row">
+          <label class="lg-sr" for="id_password">كلمة المرور</label>
+          <svg class="lg-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>
+          <input id="id_password" name="password" type="password" autocomplete="current-password" required
+                 placeholder="كلمة المرور" value="" enterkeyhint="go">
+          <button type="button" class="lg-eye" aria-label="إظهار كلمة المرور" aria-pressed="false" data-toggle-password>
+            <svg class="lg-eye-show" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="lg-eye-hide" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.6A9.7 9.7 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3 3.7M6.4 6.9C3.9 8.6 2.5 12 2.5 12S6 18.5 12 18.5c1.6 0 3-.4 4.2-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+          </button>
         </div>
-      {% endif %}
+      </div>
 
-      <form method="post" action="{% url 'login' %}" class="wk-form" novalidate>
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next }}">
-
-        <div class="wk-field">
-          <label for="id_username">الاسم أو الرقم</label>
-          <div class="wk-input">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <input id="id_username" name="username" type="text" autocomplete="username" maxlength="150" required autofocus placeholder=" " value="" enterkeyhint="next" autocapitalize="off" spellcheck="false">
-          </div>
-        </div>
-
-        <div class="wk-field">
-          <label for="id_password">كلمة المرور</label>
-          <div class="wk-input">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            <input id="id_password" name="password" type="password" autocomplete="current-password" required placeholder=" " value="" enterkeyhint="go">
-          </div>
-        </div>
-
-        <button type="submit" class="wk-submit">
-          <span>دخول</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-        </button>
-      </form>
-
-      <p class="wk-foot">واحة خيرات البركة</p>
-    </div>
+      <button type="submit" class="lg-submit" data-submit>
+        <span class="lg-submit-label">دخول</span>
+        <span class="lg-submit-busy" aria-hidden="true">جارٍ الدخول…</span>
+      </button>
+    </form>
   </div>
+
+  <p class="lg-foot"><span dir="ltr">Hix.life</span> · من البيانات إلى القرار</p>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+(function () {
+  // على الجوال: بلا تركيز تلقائي حتى لا تقفز لوحة المفاتيح فوق البطاقة
   if (window.matchMedia("(max-width: 900px)").matches) {
     var field = document.getElementById("id_username");
     if (field) field.removeAttribute("autofocus");
   }
+
+  var toggle = document.querySelector("[data-toggle-password]");
+  var password = document.getElementById("id_password");
+  if (toggle && password) {
+    toggle.addEventListener("click", function () {
+      var show = password.type === "password";
+      password.type = show ? "text" : "password";
+      toggle.setAttribute("aria-pressed", show ? "true" : "false");
+      toggle.setAttribute("aria-label", show ? "إخفاء كلمة المرور" : "إظهار كلمة المرور");
+      password.focus();
+    });
+  }
+
+  // زر واحد لكل محاولة: يمنع الضغط المزدوج ويُظهر أن الطلب قيد التنفيذ
+  var form = document.querySelector("[data-login-form]");
+  var submit = document.querySelector("[data-submit]");
+  if (form && submit) {
+    form.addEventListener("submit", function () {
+      submit.classList.add("is-busy");
+      submit.setAttribute("aria-busy", "true");
+      submit.disabled = true;
+    });
+  }
+})();
 </script>
 {% endblock %}

@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+
+{% block title %}القوائم المالية{% endblock %}
+{% block page_class %}sales-dash purchase-dash inv-dash pf-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="القوائم المالية">
+  <div class="dash-head-copy">
+    <h2>القوائم المالية</h2>
+    <p>قائمة الدخل والمركز المالي من القيود المرحّلة في الحسابات، مع قراءة لما تقوله الأرقام</p>
+  </div>
+</section>
+
+{% if error %}
+  <div class="alert alert-error" role="status">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <span>{{ error }}</span>
+  </div>
+{% endif %}
+
+{% if profit %}
+  <section class="inv-strip pf-strip" aria-label="ملخص الربحية">
+    <div class="inv-strip-figures">
+      <div class="inv-strip-main">
+        <span class="inv-strip-label" title="{{ profit.period_label }}">{% if profit.kpis.net < 0 %}صافي الخسارة{% else %}صافي الربح{% endif %}</span>
+        <strong class="inv-strip-value{% if profit.kpis.net < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ profit.kpis.net_display }}</bdi></strong>
+      </div>
+      <div class="inv-strip-sides">
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">المبيعات</span>
+          <strong class="inv-strip-qty"><bdi dir="ltr">{{ profit.kpis.revenue_display }}</bdi></strong>
+        </div>
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">هامش مجمل الربح</span>
+          <strong class="inv-strip-qty"><bdi dir="ltr">{{ profit.kpis.gross_margin }}</bdi></strong>
+        </div>
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">هامش صافي الربح</span>
+          <strong class="inv-strip-qty{% if profit.kpis.net < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ profit.kpis.net_margin }}</bdi></strong>
+        </div>
+      </div>
+    </div>
+    <div class="pf-flow" role="img" aria-label="أين تذهب المبيعات{% for s in profit.flow.segments %}، {{ s.label }} {{ s.share }}{% endfor %}">
+      <div class="pf-flow-bar">
+        {% for s in profit.flow.segments %}
+          <span class="pf-flow-seg pf-{{ s.tone }}" style="width: {{ s.width }};" title="{{ s.label }} — {{ s.share }} من المبيعات"></span>
+        {% endfor %}
+      </div>
+      <span class="pf-flow-mark" style="inset-inline-start: {{ profit.flow.revenue_mark }};"><i>المبيعات</i></span>
+    </div>
+    <ul class="inv-strip-keys pf-flow-keys" aria-hidden="true">
+      {% for s in profit.flow.segments %}
+        <li><i class="pf-{{ s.tone }}"></i>{{ s.label }} <bdi dir="ltr">{{ s.share }}</bdi></li>
+      {% endfor %}
+      {% if profit.flow.overflow %}<li class="pf-flow-over">التكاليف تتجاوز خط المبيعات</li>{% endif %}
+    </ul>
+  </section>
+{% endif %}
+
+<form method="get" action="{% url 'browse_profitability' %}" class="purchase-filter pf-filter dash-panel-glass" role="search">
+  <div class="field">
+    <label for="pf-from">من</label>
+    <input id="pf-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+  </div>
+  <div class="field">
+    <label for="pf-to">إلى</label>
+    <input id="pf-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
+  </div>
+  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+  {% if profit %}
+    <p class="pf-filter-note">{% if profit.prev_label %}المقارنة مع {{ profit.prev_label }}{% else %}اختر شهراً لمقارنته بالشهر السابق{% endif %}</p>
+  {% endif %}
+</form>
+
+{% if profit %}
+  <div class="pf-main">
+  <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel pf-statement-panel" aria-label="قائمة الدخل">
+      <div class="dash-panel-head">
+        <h3>قائمة الدخل</h3>
+        <span class="result-pill">{{ profit.period_label }}</span>
+      </div>
+      <div class="inv-table-frame">
+        <div class="table-wrap inv-table-scroll">
+          <table class="data-table sales-table perf-compare-table inv-table-compact pf-statement" aria-label="قائمة الدخل">
+            <thead>
+              <tr>
+                <th>البند</th>
+                <th class="inv-col-cost">الفترة</th>
+                {% if profit.prev_label %}
+                  <th>السابقة</th>
+                  <th>التغير</th>
+                {% endif %}
+                <th class="inv-col-share">من المبيعات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for l in profit.statement %}
+                <tr class="pf-row pf-row--{{ l.kind }}">
+                  <td class="inv-cell-clip" title="{{ l.label }}">{{ l.label }}</td>
+                  <td class="mono inv-col-cost{% if l.negative %} is-loss{% endif %}"><bdi dir="ltr">{{ l.cur_display }}</bdi></td>
+                  {% if profit.prev_label %}
+                    <td class="mono"><bdi dir="ltr">{{ l.prev_display }}</bdi></td>
+                    <td class="mono pf-change{% if l.change_tone %} is-{{ l.change_tone }}{% endif %}"><bdi dir="ltr">{{ l.change_display }}</bdi></td>
+                  {% endif %}
+                  <td class="mono inv-col-share"><bdi dir="ltr">{{ l.of_revenue }}</bdi></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+  </section>
+
+      <section class="dash-panel dash-panel-glass purchase-panel pf-reading-panel" aria-label="القراءة المالية">
+        <div class="dash-panel-head">
+          <h3>القراءة المالية</h3>
+        </div>
+        <ul class="pf-reading">
+          {% for n in profit.reading %}
+            <li class="{% if n.tone %}is-{{ n.tone }}{% endif %}">{{ n.text }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      <section class="dash-panel dash-panel-glass purchase-panel pf-ratios-panel" aria-label="المؤشرات المالية">
+        <div class="dash-panel-head">
+          <h3>المؤشرات المالية</h3>
+        </div>
+        <dl class="pf-ratios">
+          {% for r in profit.ratios %}
+            <div class="pf-ratio{% if r.tone %} is-{{ r.tone }}{% endif %}">
+              <dt>{{ r.label }}</dt>
+              <dd><bdi dir="ltr">{{ r.display }}</bdi></dd>
+            </div>
+          {% endfor %}
+        </dl>
+      </section>
+  </div>
+
+  <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel pf-monthly-panel" aria-label="الربحية الشهرية">
+    <div class="dash-panel-head">
+      <h3>الربحية الشهرية</h3>
+      <span class="result-pill">من أول السنة</span>
+    </div>
+    <div class="inv-table-frame">
+      <div class="table-wrap inv-table-scroll">
+        <table class="data-table sales-table perf-compare-table inv-table-compact pf-monthly" aria-label="الربحية الشهرية">
+          <thead>
+            <tr>
+              <th>الشهر</th>
+              <th class="inv-col-cost">المبيعات</th>
+              <th class="inv-col-qty">مجمل الربح</th>
+              <th class="inv-col-share">الهامش</th>
+              <th>المصروفات</th>
+              <th>الصافي</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in profit.monthly.rows %}
+              <tr>
+                <td>{{ m.month }}</td>
+                <td class="mono inv-col-cost"><bdi dir="ltr">{{ m.revenue_display }}</bdi></td>
+                <td class="mono inv-col-qty"><bdi dir="ltr">{{ m.gross_display }}</bdi></td>
+                <td class="mono inv-col-share"><bdi dir="ltr">{{ m.margin_display }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ m.opex_display }}</bdi></td>
+                <td class="mono pf-net{% if m.net_negative %} is-loss{% endif %}"><bdi dir="ltr">{{ m.net_display }}</bdi></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="sales-empty">لا توجد قيود مرحّلة هذه السنة.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% with t=profit.monthly.total %}
+        {% if t %}
+          <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-monthly" aria-label="إجمالي الأشهر">
+            <tbody>
+              <tr class="sales-grand-row">
+                <td>{{ t.month }}</td>
+                <td class="mono inv-col-cost"><bdi dir="ltr">{{ t.revenue_display }}</bdi></td>
+                <td class="mono inv-col-qty"><bdi dir="ltr">{{ t.gross_display }}</bdi></td>
+                <td class="mono inv-col-share"><bdi dir="ltr">{{ t.margin_display }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ t.opex_display }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ t.net_display }}</bdi></td>
+              </tr>
+            </tbody>
+          </table>
+        {% endif %}
+      {% endwith %}
+    </div>
+  </section>
+
+  {% with p=profit.position %}
+  <section class="purchase-grid pf-position-grid" aria-label="المركز المالي كما في {{ date_to }}">
+    <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel" aria-label="الأصول">
+      <div class="dash-panel-head">
+        <h3>المركز المالي: الأصول</h3>
+        <span class="result-pill">كما في {{ date_to }}</span>
+      </div>
+      <div class="inv-table-frame">
+        <div class="table-wrap inv-table-scroll">
+          <table class="data-table sales-table perf-compare-table inv-table-compact pf-statement pf-position" aria-label="الأصول">
+            <thead><tr><th>البند</th><th class="inv-col-cost">الرصيد</th><th class="inv-col-share">من الأصول</th></tr></thead>
+            <tbody>
+              <tr class="pf-row pf-row--subtotal"><td>الأصول المتداولة</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.current_assets }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.current_assets }}</bdi></td></tr>
+              {% for part in p.current_assets_parts %}
+                <tr class="pf-row pf-row--detail"><td class="inv-cell-clip" title="{{ part.name }}">{{ part.name }}</td><td class="mono inv-col-cost{% if part.amount < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ part.amount_display }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ part.share }}</bdi></td></tr>
+              {% endfor %}
+              <tr class="pf-row pf-row--subtotal"><td>الأصول غير المتداولة</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.non_current_assets }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.non_current_assets }}</bdi></td></tr>
+              {% for part in p.non_current_assets_parts %}
+                <tr class="pf-row pf-row--detail"><td class="inv-cell-clip" title="{{ part.name }}">{{ part.name }}</td><td class="mono inv-col-cost{% if part.amount < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ part.amount_display }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ part.share }}</bdi></td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-position" aria-label="إجمالي الأصول">
+          <tbody>
+            <tr class="sales-grand-row"><td>إجمالي الأصول</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.total_assets }}</bdi></td><td class="mono inv-col-share">100.0%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel" aria-label="الالتزامات وحقوق الملكية">
+      <div class="dash-panel-head">
+        <h3>الالتزامات وحقوق الملكية</h3>
+        <span class="result-pill">كما في {{ date_to }}</span>
+      </div>
+      <div class="inv-table-frame">
+        <div class="table-wrap inv-table-scroll">
+          <table class="data-table sales-table perf-compare-table inv-table-compact pf-statement pf-position" aria-label="الالتزامات وحقوق الملكية">
+            <thead><tr><th>البند</th><th class="inv-col-cost">الرصيد</th><th class="inv-col-share">من الأصول</th></tr></thead>
+            <tbody>
+              <tr class="pf-row pf-row--subtotal"><td>الالتزامات المتداولة</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.current_liab }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.current_liab }}</bdi></td></tr>
+              {% for part in p.current_liab_parts %}
+                <tr class="pf-row pf-row--detail"><td class="inv-cell-clip" title="{{ part.name }}">{{ part.name }}</td><td class="mono inv-col-cost{% if part.amount < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ part.amount_display }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ part.share }}</bdi></td></tr>
+              {% endfor %}
+              <tr class="pf-row pf-row--subtotal"><td>الالتزامات غير المتداولة</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.non_current_liab }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.non_current_liab }}</bdi></td></tr>
+              <tr class="pf-row pf-row--subtotal"><td>حقوق الملكية</td><td class="mono inv-col-cost{% if p.equity < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ p.display.equity }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.equity }}</bdi></td></tr>
+              <tr class="pf-row pf-row--detail"><td>نتيجة السنة حتى تاريخه</td><td class="mono inv-col-cost{% if p.ytd_net < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ p.display.ytd_net }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.ytd_net }}</bdi></td></tr>
+              {% if p.gap > 0.005 or p.gap < -0.005 %}
+                <tr class="pf-row pf-row--detail pf-gap" title="قيد أول المدة غير متوازن — غالباً أرباح أو خسائر سنة سابقة لم تُقفل في حقوق الملكية"><td>فرق قيد أول المدة</td><td class="mono inv-col-cost{% if p.gap < 0 %} is-loss{% endif %}"><bdi dir="ltr">{{ p.display.gap }}</bdi></td><td class="mono inv-col-share"><bdi dir="ltr">{{ p.share.gap }}</bdi></td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+        <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-position" aria-label="إجمالي الالتزامات وحقوق الملكية">
+          <tbody>
+            <tr class="sales-grand-row"><td>الإجمالي</td><td class="mono inv-col-cost"><bdi dir="ltr">{{ p.display.total_right }}</bdi></td><td class="mono inv-col-share">100.0%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+  {% endwith %}
+
+  {% with tb=profit.trial %}
+  <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel pf-trial-panel" aria-label="ميزان المراجعة بالأرصدة">
+    <div class="dash-panel-head">
+      <div>
+        <h3>ميزان المراجعة بالأرصدة</h3>
+        <p class="pf-trial-meta">الرصيد النهائي لكل حساب تحليلي حتى {{ date_to }} — حسابات الإيرادات والمصروفات تبدأ من صفر أول السنة</p>
+      </div>
+      <div class="dash-panel-head-actions">
+        <input class="pf-trial-search" type="search" placeholder="ابحث باسم الحساب أو رقمه" aria-label="بحث في الحسابات" data-trial-filter autocomplete="off">
+        <span class="result-pill"><bdi dir="ltr">{{ tb.count }}</bdi> حساباً</span>
+      </div>
+    </div>
+    <div class="inv-table-frame">
+      <div class="table-wrap inv-table-scroll">
+        <table class="data-table sales-table perf-compare-table inv-table-compact pf-statement pf-trial" aria-label="ميزان المراجعة">
+          <thead>
+            <tr>
+              <th>الحساب</th>
+              <th>رصيد أول المدة</th>
+              <th class="inv-col-qty">حركة مدين</th>
+              <th class="inv-col-cost">حركة دائن</th>
+              <th class="inv-col-share">الرصيد النهائي</th>
+            </tr>
+          </thead>
+          {% for g in tb.groups %}
+            <tbody data-trial-group>
+              <tr class="pf-row pf-row--subtotal pf-trial-group">
+                <td>{{ g.name }} <small>(<bdi dir="ltr">{{ g.count }}</bdi>)</small></td>
+                <td></td>
+                <td class="mono inv-col-qty"><bdi dir="ltr">{{ g.dr_display }}</bdi></td>
+                <td class="mono inv-col-cost"><bdi dir="ltr">{{ g.cr_display }}</bdi></td>
+                <td class="mono inv-col-share"><bdi dir="ltr">{{ g.closing.display }}</bdi> <span class="pf-side">{{ g.closing.side }}</span></td>
+              </tr>
+              {% for r in g.rows %}
+                <tr class="pf-row pf-row--detail" data-trial-row="{{ r.code }} {{ r.name }}">
+                  <td class="inv-cell-clip" title="{{ r.code }} — {{ r.name }}"><span class="pf-acc-code"><bdi dir="ltr">{{ r.code }}</bdi></span> {{ r.name }}</td>
+                  <td class="mono"><bdi dir="ltr">{{ r.opening.display }}</bdi> <span class="pf-side">{{ r.opening.side }}</span></td>
+                  <td class="mono inv-col-qty"><bdi dir="ltr">{{ r.dr_display }}</bdi></td>
+                  <td class="mono inv-col-cost"><bdi dir="ltr">{{ r.cr_display }}</bdi></td>
+                  <td class="mono inv-col-share pf-closing"><bdi dir="ltr">{{ r.closing.display }}</bdi> <span class="pf-side">{{ r.closing.side }}</span></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          {% endfor %}
+        </table>
+        <p class="sales-empty pf-trial-empty" hidden>لا يوجد حساب يطابق البحث.</p>
+      </div>
+      <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-trial" aria-label="إجمالي ميزان المراجعة">
+        <tbody>
+          <tr class="sales-grand-row">
+            <td>الإجمالي</td>
+            <td class="mono">م <bdi dir="ltr">{{ tb.totals.open_dr }}</bdi><br>د <bdi dir="ltr">{{ tb.totals.open_cr }}</bdi></td>
+            <td class="mono inv-col-qty"><bdi dir="ltr">{{ tb.totals.dr }}</bdi></td>
+            <td class="mono inv-col-cost"><bdi dir="ltr">{{ tb.totals.cr }}</bdi></td>
+            <td class="mono inv-col-share">م <bdi dir="ltr">{{ tb.totals.close_dr }}</bdi><br>د <bdi dir="ltr">{{ tb.totals.close_cr }}</bdi></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    {% if not tb.balanced %}
+      <p class="pf-trial-note">حركات الفترة متوازنة (المدين = الدائن). فرق الأرصدة النهائية <bdi dir="ltr">{{ tb.close_gap }}</bdi> مصدره قيد أول المدة غير المتوازن — يراجعه المحاسب في إقفال السنة السابقة.</p>
+    {% endif %}
+  </section>
+  {% endwith %}
+
+  <p class="pf-source">المصدر: القيود المرحّلة في الحسابات العامة. القراءة تحليلية لدعم القرار ولا تغني عن مراجعة المحاسب.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // تصفية ميزان المراجعة باسم الحساب أو رقمه؛ تُخفى المجموعة التي لا يبقى فيها حساب
+  var input = document.querySelector("[data-trial-filter]");
+  if (!input) return;
+  var empty = document.querySelector(".pf-trial-empty");
+  input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase();
+    var shown = 0;
+    document.querySelectorAll("[data-trial-group]").forEach(function (group) {
+      var visible = 0;
+      group.querySelectorAll("[data-trial-row]").forEach(function (row) {
+        var match = !q || row.getAttribute("data-trial-row").toLowerCase().indexOf(q) !== -1;
+        row.hidden = !match;
+        if (match) visible += 1;
+      });
+      group.hidden = visible === 0;
+      shown += visible;
+    });
+    if (empty) empty.hidden = shown !== 0;
+  });
+})();
+</script>
+{% endblock %}

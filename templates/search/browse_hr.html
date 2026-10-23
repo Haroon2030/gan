@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}الرواتب والعاملون{% endblock %}
+{% block page_class %}sales-dash purchase-dash inv-dash pf-dash hr-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="الرواتب والعاملون">
+  <div class="dash-head-copy">
+    <h2>الرواتب والعاملون</h2>
+    <p>مسير الرواتب والمصروفات على العاملين — شهرياً وحسب كل موظف</p>
+  </div>
+</section>
+
+{% if error %}
+  <div class="alert alert-error" role="status">
+    <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+    <span>{{ error }}</span>
+  </div>
+{% endif %}
+
+{% if hr %}
+  <section class="inv-strip" aria-label="ملخص الرواتب">
+    <div class="inv-strip-figures">
+      <div class="inv-strip-main">
+        <span class="inv-strip-label" title="{{ hr.period_label }}">إجمالي الاستحقاق</span>
+        <strong class="inv-strip-value"><bdi dir="ltr">{{ hr.kpis.gross_display }}</bdi></strong>
+      </div>
+      <div class="inv-strip-sides">
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">الصافي بعد الاستقطاع</span>
+          <strong class="inv-strip-qty"><bdi dir="ltr">{{ hr.kpis.net_display }}</bdi></strong>
+        </div>
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">العاملون</span>
+          <strong class="inv-strip-qty"><bdi dir="ltr">{{ hr.kpis.emp_count }}</bdi></strong>
+        </div>
+        <div class="inv-strip-side">
+          <span class="inv-strip-label">متوسط الراتب الشهري</span>
+          <strong class="inv-strip-qty"><bdi dir="ltr">{{ hr.kpis.avg_display }}</bdi></strong>
+        </div>
+      </div>
+    </div>
+    <div class="inv-strip-bar" role="img" aria-label="الراتب الأساسي مقابل البدلات{% for p in hr.composition %}، {{ p.label }} {{ p.share }}{% endfor %}">
+      {% for p in hr.composition %}
+        <span class="inv-strip-seg hr-seg-{{ p.tone }}" style="width: {{ p.width }};" title="{{ p.label }} — {{ p.share }}"></span>
+      {% endfor %}
+    </div>
+    <ul class="inv-strip-keys" aria-hidden="true">
+      {% for p in hr.composition %}
+        <li><i class="hr-seg-{{ p.tone }}"></i>{{ p.label }} <bdi dir="ltr">{{ p.share }}</bdi></li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+<form method="get" action="{% url 'browse_hr' %}" class="purchase-filter pf-filter dash-panel-glass" role="search">
+  <div class="field">
+    <label for="hr-from">من</label>
+    <input id="hr-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+  </div>
+  <div class="field">
+    <label for="hr-to">إلى</label>
+    <input id="hr-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
+  </div>
+  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+  {% if hr %}<p class="pf-filter-note">بالأشهر الكاملة: من <bdi dir="ltr">{{ hr.period_from }}</bdi> إلى <bdi dir="ltr">{{ hr.period_to }}</bdi></p>{% endif %}
+</form>
+
+{% if hr %}
+  <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel hr-monthly-panel" aria-label="الرواتب شهرياً">
+    <div class="dash-panel-head">
+      <h3>الرواتب شهرياً</h3>
+      <span class="result-pill"><bdi dir="ltr">{{ hr.monthly.payroll_months }}</bdi> أشهر مسير</span>
+    </div>
+    <div class="inv-table-frame">
+      <div class="table-wrap inv-table-scroll">
+        <table class="data-table sales-table perf-compare-table inv-table-compact pf-monthly" aria-label="الرواتب شهرياً">
+          <colgroup><col class="hr-col-month"><col><col><col><col><col><col><col></colgroup>
+          <thead>
+            <tr>
+              <th>الشهر</th>
+              <th>العاملون</th>
+              <th class="inv-col-qty">الأساسي</th>
+              <th class="inv-col-cost">البدلات</th>
+              <th>الإجمالي</th>
+              <th>الاستقطاع</th>
+              <th class="inv-col-share">الصافي</th>
+              <th>تكلفة الحسابات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in hr.monthly.rows %}
+              <tr{% if not m.has_payroll %} class="hr-row-nopay" title="لا مسير رواتب لهذا الشهر — القيمة من قيود الحسابات"{% endif %}>
+                <td>{{ m.month }}</td>
+                {% if m.has_payroll %}
+                  <td class="mono"><bdi dir="ltr">{{ m.emps }}</bdi></td>
+                  <td class="mono inv-col-qty"><bdi dir="ltr">{{ m.basic }}</bdi></td>
+                  <td class="mono inv-col-cost"><bdi dir="ltr">{{ m.allow }}</bdi></td>
+                  <td class="mono"><bdi dir="ltr">{{ m.gross }}</bdi></td>
+                  <td class="mono"><bdi dir="ltr">{{ m.ded }}</bdi></td>
+                  <td class="mono inv-col-share"><bdi dir="ltr">{{ m.net }}</bdi></td>
+                {% else %}
+                  <td class="mono hr-dash-cell" colspan="6">لا مسير رواتب</td>
+                {% endif %}
+                <td class="mono"><bdi dir="ltr">{{ m.gl }}</bdi></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8" class="sales-empty">لا توجد رواتب أو قيود في هذه الفترة.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if hr.monthly.total %}
+        <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-monthly" aria-label="إجمالي الأشهر">
+          <colgroup><col class="hr-col-month"><col><col><col><col><col><col><col></colgroup>
+          <tbody>
+            <tr class="sales-grand-row">
+              <td>الإجمالي</td>
+              <td></td>
+              <td class="mono inv-col-qty"><bdi dir="ltr">{{ hr.monthly.total.basic }}</bdi></td>
+              <td class="mono inv-col-cost"><bdi dir="ltr">{{ hr.monthly.total.allow }}</bdi></td>
+              <td class="mono"><bdi dir="ltr">{{ hr.monthly.total.gross }}</bdi></td>
+              <td class="mono"><bdi dir="ltr">{{ hr.monthly.total.ded }}</bdi></td>
+              <td class="mono inv-col-share"><bdi dir="ltr">{{ hr.monthly.total.net }}</bdi></td>
+              <td class="mono"><bdi dir="ltr">{{ hr.monthly.total.gl }}</bdi></td>
+            </tr>
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="purchase-grid pf-insights hr-insights" aria-label="القراءة والمصروفات على العاملين">
+    <section class="dash-panel dash-panel-glass purchase-panel pf-reading-panel" aria-label="القراءة">
+      <div class="dash-panel-head"><h3>القراءة</h3></div>
+      <ul class="pf-reading">
+        {% for n in hr.reading %}
+          <li class="{% if n.tone %}is-{{ n.tone }}{% endif %}">{{ n.text }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel hr-gl-panel" aria-label="المصروفات على العاملين من الحسابات">
+      <div class="dash-panel-head">
+        <div>
+          <h3>المصروفات على العاملين</h3>
+          <p class="purchase-debts-meta">من حسابات «تكاليف العاملين» في القيود</p>
+        </div>
+        <span class="result-pill"><bdi dir="ltr">{{ hr.gl.rows|length }}</bdi> حساباً</span>
+      </div>
+      <div class="inv-table-frame">
+        <div class="table-wrap inv-table-scroll">
+          <table class="data-table sales-table perf-compare-table inv-table-compact" aria-label="حسابات تكاليف العاملين">
+            <thead>
+              <tr><th>الحساب</th><th class="inv-col-cost">المبلغ</th><th class="inv-col-share">الحصة</th></tr>
+            </thead>
+            <tbody>
+              {% for r in hr.gl.rows %}
+                <tr>
+                  <td class="inv-cell-clip" title="{{ r.code }} — {{ r.name }}">
+                    {{ r.name }}
+                    <span class="hr-bar" aria-hidden="true"><i style="width: {{ r.width }};"></i></span>
+                  </td>
+                  <td class="mono inv-col-cost"><bdi dir="ltr">{{ r.amount }}</bdi></td>
+                  <td class="mono inv-col-share"><bdi dir="ltr">{{ r.share }}</bdi></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="3" class="sales-empty">لا قيود لتكاليف العاملين في هذه الفترة.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if hr.gl.total %}
+          <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot" aria-label="إجمالي مصروفات العاملين">
+            <tbody>
+              <tr class="sales-grand-row">
+                <td>الإجمالي</td>
+                <td class="mono inv-col-cost"><bdi dir="ltr">{{ hr.gl.total }}</bdi></td>
+                <td class="mono inv-col-share">100.0%</td>
+              </tr>
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </section>
+  </section>
+
+  <section class="dash-panel dash-panel-glass perf-panel inv-panel-compact purchase-panel pf-trial-panel hr-emp-panel" aria-label="الرواتب حسب الموظف">
+    <div class="dash-panel-head">
+      <div>
+        <h3>الرواتب حسب الموظف</h3>
+        <p class="pf-trial-meta">مجموع الفترة لكل موظف ورد في المسير، الأعلى صافياً أولاً</p>
+      </div>
+      <div class="dash-panel-head-actions">
+        <input class="pf-trial-search" type="search" placeholder="ابحث باسم الموظف أو رقمه" aria-label="بحث في الموظفين" data-emp-filter autocomplete="off">
+        <span class="result-pill"><bdi dir="ltr">{{ hr.employees.rows|length }}</bdi> موظفاً</span>
+      </div>
+    </div>
+    <div class="inv-table-frame">
+      <div class="table-wrap inv-table-scroll">
+        <table class="data-table sales-table perf-compare-table inv-table-compact pf-trial hr-emp-table" aria-label="الرواتب حسب الموظف">
+          <colgroup><col class="hr-col-name"><col><col><col><col><col><col><col><col><col class="hr-col-status"></colgroup>
+          <thead>
+            <tr>
+              <th>الموظف</th>
+              <th>المباشرة</th>
+              <th>الأشهر</th>
+              <th class="inv-col-qty">الأساسي</th>
+              <th class="inv-col-cost">البدلات</th>
+              <th>الاستقطاع</th>
+              <th>الإجمالي</th>
+              <th class="inv-col-share">الصافي</th>
+              <th>متوسط شهري</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in hr.employees.rows %}
+              <tr data-emp-row="{{ e.no }} {{ e.name }}">
+                <td class="inv-cell-clip" title="{{ e.name }}"><span class="pf-acc-code"><bdi dir="ltr">{{ e.no }}</bdi></span> {{ e.name }}</td>
+                <td class="mono"><bdi dir="ltr">{{ e.start|default:"—" }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ e.months }}</bdi></td>
+                <td class="mono inv-col-qty"><bdi dir="ltr">{{ e.basic }}</bdi></td>
+                <td class="mono inv-col-cost"><bdi dir="ltr">{{ e.allow }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ e.ded }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ e.gross }}</bdi></td>
+                <td class="mono inv-col-share pf-closing"><bdi dir="ltr">{{ e.net }}</bdi></td>
+                <td class="mono"><bdi dir="ltr">{{ e.avg }}</bdi></td>
+                <td><span class="hr-status{% if e.left %} is-left{% endif %}">{{ e.status }}</span></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="10" class="sales-empty">لا موظفين في المسير خلال هذه الفترة.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="sales-empty pf-trial-empty" hidden>لا يوجد موظف يطابق البحث.</p>
+      </div>
+      {% if hr.employees.total %}
+        <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot pf-trial hr-emp-table" aria-label="إجمالي الموظفين">
+          <colgroup><col class="hr-col-name"><col><col><col><col><col><col><col><col><col class="hr-col-status"></colgroup>
+          <tbody>
+            <tr class="sales-grand-row">
+              <td>الإجمالي</td>
+              <td></td>
+              <td></td>
+              <td class="mono inv-col-qty"><bdi dir="ltr">{{ hr.employees.total.basic }}</bdi></td>
+              <td class="mono inv-col-cost"><bdi dir="ltr">{{ hr.employees.total.allow }}</bdi></td>
+              <td class="mono"><bdi dir="ltr">{{ hr.employees.total.ded }}</bdi></td>
+              <td class="mono"><bdi dir="ltr">{{ hr.employees.total.gross }}</bdi></td>
+              <td class="mono inv-col-share"><bdi dir="ltr">{{ hr.employees.total.net }}</bdi></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </section>
+
+  <p class="pf-source">المصدر: مسير الرواتب في نظام الموارد البشرية، وقيود حسابات تكاليف العاملين. أرقام الأفراد سرّية — الاطلاع لأدوار الإدارة فقط.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // تصفية جدول الموظفين باسم الموظف أو رقمه
+  var input = document.querySelector("[data-emp-filter]");
+  if (!input) return;
+  var rows = document.querySelectorAll("[data-emp-row]");
+  var empty = document.querySelector(".hr-emp-panel .pf-trial-empty");
+  input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase();
+    var shown = 0;
+    rows.forEach(function (row) {
+      var match = !q || row.getAttribute("data-emp-row").toLowerCase().indexOf(q) !== -1;
+      row.hidden = !match;
+      if (match) shown += 1;
+    });
+    if (empty) empty.hidden = shown !== 0;
+  });
+})();
+</script>
+{% endblock %}

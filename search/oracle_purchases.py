@@ -13,7 +13,6 @@ from django.http import HttpResponse
 from .oracle_stock import (
     OracleStockError,
     _as_date,
-    _branch_names,
     _fetch_all,
     _schema,
     fetch_sales_group_options,
@@ -54,32 +53,6 @@ def _attach_rank_bars(
         bar = (value / peak * 100.0) if peak else 0.0
         row["bar_pct"] = round(bar, 1)
     return rows
-
-
-def _request_user_chart_rows(rows: list[dict]) -> list[dict]:
-    counts = [int(r.get("REQUEST_COUNT") or 0) for r in rows]
-    max_requests = max(counts, default=0) or 1
-    total_requests = sum(counts) or 1
-    output: list[dict] = []
-    for row in rows:
-        count = int(row.get("REQUEST_COUNT") or 0)
-        share = count / total_requests * 100.0
-        output.append(
-            {
-                "code": str(row.get("USER_CODE") or "").strip(),
-                "name": str(
-                    row.get("USER_NAME") or row.get("USER_CODE") or ""
-                ).strip(),
-                "request_count": count,
-                "item_count": int(row.get("ITEM_COUNT") or 0),
-                "branch_count": int(row.get("BRANCH_COUNT") or 0),
-                "qty_display": _qty(row.get("QTY_TOTAL") or 0),
-                "bar_pct": round(count / max_requests * 100.0, 1),
-                "share_pct": round(share, 1),
-                "share_display": f"{share:.1f}%",
-            }
-        )
-    return output
 
 
 def _base_params(date_from, date_to) -> dict[str, Any]:
@@ -182,6 +155,66 @@ def _detail_filters(
         filters.append(f"TO_CHAR({prefix}.V_CODE) = :vendor")
         params["vendor"] = vendor
     return " AND ".join(filters), params
+
+
+def fetch_vendor_debts(limit: int = 10) -> dict:
+    """الموردون الأعلى مديونية الآن: دائن − مدين لحسابات الموردين في قيود الترحيل.
+
+    AC_DTL_TYP = 4 هو نوع تفصيل «مورد» في Onyx، ويشمل رصيد أول المدة (DOC_TYPE 0).
+    """
+    cache_key = f"purchases:vendor_debts:v1:{int(limit)}"
+    cached = cache.get(cache_key)
+    if isinstance(cached, dict):
+        return cached
+
+    schema = _schema()
+    rows = _fetch_all(
+        f"""
+        SELECT b.CODE, NVL(v.V_A_NAME, b.CODE) AS NAME, b.BALANCE, b.LAST_DATE,
+               SUM(CASE WHEN b.BALANCE > 0 THEN b.BALANCE END) OVER () AS TOTAL_DEBT,
+               COUNT(CASE WHEN b.BALANCE > 0 THEN 1 END) OVER () AS DEBT_COUNT
+        FROM (
+            SELECT TO_CHAR(p.AC_CODE_DTL) AS CODE,
+                   ROUND(SUM(NVL(p.CR_AMT, 0) - NVL(p.DR_AMT, 0)), 2) AS BALANCE,
+                   MAX(p.DOC_DATE) AS LAST_DATE
+            FROM {schema}.IAS_POST_DTL p
+            WHERE p.AC_DTL_TYP = 4
+              AND p.AC_CODE_DTL IS NOT NULL
+            GROUP BY TO_CHAR(p.AC_CODE_DTL)
+        ) b
+        LEFT JOIN {schema}.V_DETAILS v ON TO_CHAR(v.V_CODE) = b.CODE
+        ORDER BY b.BALANCE DESC
+        FETCH FIRST :lim ROWS ONLY
+        """,
+        {"lim": int(limit)},
+    )
+    total = float((rows[0] if rows else {}).get("TOTAL_DEBT") or 0)
+    items = []
+    for row in rows:
+        balance = float(row.get("BALANCE") or 0)
+        if balance <= 0:
+            break
+        share = balance / total * 100.0 if total else 0.0
+        last = row.get("LAST_DATE")
+        items.append(
+            {
+                "code": str(row.get("CODE") or "").strip(),
+                "name": str(row.get("NAME") or "").strip(),
+                "balance_display": _money(balance),
+                "share_display": f"{share:.1f}%",
+                "last_date": last.date().isoformat() if hasattr(last, "date") else "",
+            }
+        )
+    top_total = sum(max(float(r.get("BALANCE") or 0), 0.0) for r in rows)
+    result = {
+        "rows": items,
+        "total_display": _money(total),
+        "debt_count": int((rows[0] if rows else {}).get("DEBT_COUNT") or 0),
+        "top_total_display": _money(top_total),
+        "top_share_display": f"{top_total / total * 100:.1f}%" if total else "0.0%",
+    }
+    cache.set(cache_key, result, _CACHE_TTL)
+    return result
 
 
 def fetch_purchase_vendor_options(date_from, date_to) -> list[dict]:
@@ -362,36 +395,6 @@ def build_purchase_dashboard(
     )
     item_count = int((qty_rows[0] if qty_rows else {}).get("ITEM_COUNT") or 0)
 
-    branch_rows = _fetch_all(
-        f"""
-        SELECT CODE,
-               SUM(INVOICE_COUNT) AS INVOICE_COUNT,
-               SUM(VENDOR_COUNT) AS VENDOR_COUNT,
-               ROUND(SUM(AMOUNT), 2) AS AMOUNT
-        FROM (
-            SELECT NVL(TO_CHAR(m.BRN_NO), '(بلا)') AS CODE,
-                   COUNT(DISTINCT m.BILL_SER) AS INVOICE_COUNT,
-                   COUNT(DISTINCT TO_CHAR(m.V_CODE)) AS VENDOR_COUNT,
-                   ROUND(SUM(NVL(m.BILL_AMT, 0) + NVL(m.VAT_AMT, 0)), 2) AS AMOUNT
-            FROM {schema}.IAS_PI_BILL_MST m
-            WHERE {" AND ".join(pi_filters)}
-            GROUP BY NVL(TO_CHAR(m.BRN_NO), '(بلا)')
-            UNION ALL
-            SELECT NVL(TO_CHAR(r.BRN_NO), '(بلا)') AS CODE,
-                   0 AS INVOICE_COUNT,
-                   0 AS VENDOR_COUNT,
-                   ROUND(-SUM(NVL(r.BILL_AMT, 0) + NVL(r.VAT_AMT, 0)), 2) AS AMOUNT
-            FROM {schema}.IAS_PR_BILL_MST r
-            WHERE {" AND ".join(pr_filters)}
-            GROUP BY NVL(TO_CHAR(r.BRN_NO), '(بلا)')
-        )
-        GROUP BY CODE
-        HAVING ROUND(SUM(AMOUNT), 2) <> 0
-        ORDER BY AMOUNT DESC
-        """,
-        {**pi_params, **pr_params},
-    )
-
     vendor_rows = _fetch_all(
         f"""
         SELECT CODE,
@@ -527,72 +530,6 @@ def build_purchase_dashboard(
         {**detail_params, **ret_detail_params},
     )
 
-    request_filters = [
-        "p.PR_DATE >= :d_from",
-        "p.PR_DATE < :d_to_excl",
-        "p.AD_U_ID IS NOT NULL",
-        "NVL(p.INACTIVE, 0) = 0",
-    ]
-    request_params = _base_params(d_from, d_to)
-    if branch:
-        request_filters.append("TO_CHAR(p.BRN_NO) = :branch")
-        request_params["branch"] = branch
-    if vendor:
-        request_filters.append("TO_CHAR(p.V_CODE) = :vendor")
-        request_params["vendor"] = vendor
-    if group:
-        request_filters.append("TO_CHAR(i.G_CODE) = :group_code")
-        request_params["group_code"] = group
-
-    request_user_rows = _fetch_all(
-        f"""
-        SELECT TO_CHAR(p.AD_U_ID) AS USER_CODE,
-               MAX(NVL(u.U_A_NAME, NVL(u.U_E_NAME, TO_CHAR(p.AD_U_ID)))) AS USER_NAME,
-               COUNT(
-                 DISTINCT TO_CHAR(p.PR_TYPE) || ':' || TO_CHAR(p.PR_SER)
-               ) AS REQUEST_COUNT,
-               COUNT(DISTINCT TO_CHAR(d.I_CODE)) AS ITEM_COUNT,
-               COUNT(DISTINCT TO_CHAR(p.BRN_NO)) AS BRANCH_COUNT,
-               ROUND(SUM(NVL(d.I_QTY, 0)), 2) AS QTY_TOTAL
-        FROM {schema}.P_REQUEST p
-        JOIN {schema}.P_REQUEST_DETAIL d
-          ON d.PR_TYPE = p.PR_TYPE
-         AND d.PR_NO = p.PR_NO
-         AND d.PR_SER = p.PR_SER
-        JOIN {schema}.IAS_ITM_MST i ON i.I_CODE = d.I_CODE
-        LEFT JOIN {schema}.USER_R u ON u.U_ID = p.AD_U_ID
-        WHERE {" AND ".join(request_filters)}
-        GROUP BY TO_CHAR(p.AD_U_ID)
-        ORDER BY REQUEST_COUNT DESC, QTY_TOTAL DESC
-        FETCH FIRST 20 ROWS ONLY
-        """,
-        request_params,
-    )
-
-    request_group_rows = _fetch_all(
-        f"""
-        SELECT NVL(TO_CHAR(i.G_CODE), '(بلا)') AS GROUP_CODE,
-               COUNT(
-                 DISTINCT TO_CHAR(p.PR_TYPE) || ':' || TO_CHAR(p.PR_SER)
-               ) AS REQUEST_COUNT,
-               COUNT(DISTINCT TO_CHAR(d.I_CODE)) AS ITEM_COUNT,
-               COUNT(DISTINCT TO_CHAR(p.BRN_NO)) AS BRANCH_COUNT,
-               ROUND(SUM(NVL(d.I_QTY, 0)), 2) AS QTY_TOTAL
-        FROM {schema}.P_REQUEST p
-        JOIN {schema}.P_REQUEST_DETAIL d
-          ON d.PR_TYPE = p.PR_TYPE
-         AND d.PR_NO = p.PR_NO
-         AND d.PR_SER = p.PR_SER
-        JOIN {schema}.IAS_ITM_MST i ON i.I_CODE = d.I_CODE
-        WHERE {" AND ".join(request_filters)}
-        GROUP BY NVL(TO_CHAR(i.G_CODE), '(بلا)')
-        ORDER BY REQUEST_COUNT DESC, QTY_TOTAL DESC
-        FETCH FIRST 20 ROWS ONLY
-        """,
-        request_params,
-    )
-
-    branch_names = _branch_names()
     group_names = {
         str(row.get("code") or "").strip(): str(row.get("name") or "").strip()
         for row in fetch_sales_group_options()
@@ -650,23 +587,9 @@ def build_purchase_dashboard(
             "average_amount": average,
             "average_display": _money(average),
         },
-        "by_branch": amount_rows(branch_rows, names=branch_names),
         "by_vendor": amount_rows(vendor_rows),
         "by_group": amount_rows(group_rows, names=group_names),
         "top_items": _attach_rank_bars(amount_rows(item_rows)),
-        "top_request_users": _request_user_chart_rows(request_user_rows),
-        "top_request_groups": [
-            {
-                "code": code,
-                "name": group_names.get(code) or code,
-                "request_count": int(row.get("REQUEST_COUNT") or 0),
-                "item_count": int(row.get("ITEM_COUNT") or 0),
-                "branch_count": int(row.get("BRANCH_COUNT") or 0),
-                "qty_display": _qty(row.get("QTY_TOTAL") or 0),
-            }
-            for row in request_group_rows
-            for code in [str(row.get("GROUP_CODE") or "").strip() or "(بلا)"]
-        ],
     }
     cache.set(cache_key, result, _CACHE_TTL)
     return result

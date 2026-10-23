@@ -1,24 +1,16 @@
 {% extends "base.html" %}
 {% load money_fmt %}
 
-{% block title %}تحليل المبيعات{% endblock %}
+{% block title %}أداء المبيعات{% endblock %}
 {% block page_class %}sales-dash sales-overview-dash{% endblock %}
 {% block body_class %}sales-dash-body{% endblock %}
 
 {% block content %}
-<section class="dash-head" aria-label="تحليل المبيعات">
+<section class="dash-head" aria-label="أداء المبيعات">
   <div class="dash-head-copy">
-    <h2>تحليل المبيعات</h2>
+    <h2>أداء المبيعات</h2>
     <p>أرقام صافية بعد المرتجع · مبيعات أونكس للفترة · نقاط البيع · الآجل · المجموعات</p>
   </div>
-  {% if dashboard %}
-  <div class="dash-head-actions">
-    <button type="button" class="dash-pdf-btn js-fit-print" title="حفظ PDF بنفس ألوان الصفحة">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
-      PDF
-    </button>
-  </div>
-  {% endif %}
 </section>
 
 {% if error %}
@@ -63,6 +55,21 @@
       <strong class="dash-kpi-value" title="{{ dashboard.ranks.top_visit_branch.code }}">{{ dashboard.ranks.top_visit_branch.name }}</strong>
       <span class="dash-kpi-hint mono">{{ dashboard.ranks.top_visit_branch.value_display }} فاتورة · {{ dashboard.ranks.top_visit_branch.hint }}</span>
     </article>
+    <article class="dash-kpi-card dash-kpi-glass dash-kpi-glass-total dash-kpi-ranked"{% if daily %} title="من {{ daily.date_from }} إلى {{ daily.date_to }}"{% endif %}>
+      <span class="dash-kpi-label">
+        <span class="dash-kpi-ico dash-kpi-ico-total" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 13.2l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2-1.45-1.4 2-.3z"/></svg>
+        </span>
+        أكثر يوم مبيعاً
+      </span>
+      {% if daily.best_day %}
+        <strong class="dash-kpi-value">{{ daily.best_day.weekday }} <bdi dir="ltr" class="mono">{{ daily.best_day.date }}</bdi></strong>
+        <span class="dash-kpi-hint mono">{% money daily.best_day.sales_total_display %} · {{ daily.best_day.invoice_count_display }} فاتورة</span>
+      {% else %}
+        <strong class="dash-kpi-value">—</strong>
+        <span class="dash-kpi-hint mono">لا بيانات</span>
+      {% endif %}
+    </article>
     <article class="dash-kpi-card dash-kpi-glass dash-kpi-glass-item-ret dash-kpi-ranked" id="sales-rank-item-card">
       <span class="dash-kpi-label">
         <span class="dash-kpi-ico dash-kpi-ico-item-ret" aria-hidden="true">
@@ -103,7 +110,7 @@
       {% endfor %}
     </select>
   </div>
-  <button type="submit" class="btn-primary">تحليل المبيعات</button>
+  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
 </form>
 
 {% if dashboard %}
@@ -286,66 +293,55 @@
         </div>
       </section>
 
-      <section class="dash-panel dash-panel-glass sales-ov-panel sales-ov-returns" aria-label="الفروع الأكثر مرتجعاً">
+      <section class="dash-panel dash-panel-glass sales-ov-panel sales-ov-returns" aria-label="تقويم المرتجعات">
         <div class="dash-panel-head">
           <div>
-            <h3>الفروع الأكثر مرتجعاً</h3>
-            <p class="sales-ov-sub">نسبة المرتجع من مبيعات الفرع (مبيعات + مرتجع) · إجمالي {% money dashboard.top_returns.total_display %}</p>
+            <h3>تقويم المرتجعات</h3>
+            <p class="sales-ov-sub">
+              {% if daily %}من <bdi dir="ltr">{{ daily.date_from }}</bdi> إلى <bdi dir="ltr">{{ daily.date_to }}</bdi> · إجمالي {% money daily.returns_calendar.total_display %}{% else %}مرتجع نقاط البيع يوماً بيوم{% endif %}
+            </p>
           </div>
-          <span class="result-pill">{{ dashboard.top_returns.count }}</span>
+          <span class="result-pill" title="أيام فيها مرتجع">{{ daily.returns_calendar.count|default:0 }}</span>
         </div>
-        {{ dashboard.top_returns.rows|json_script:"sales-returns-data" }}
-        <div id="sales-returns-board" class="branch-donut sales-returns-donut" hidden></div>
-        <p id="sales-returns-empty" class="sales-empty"{% if dashboard.top_returns.rows %} hidden{% endif %}>
-          لا مرتجعات في الفترة.
-        </p>
+        {% if daily and daily.returns_calendar.count %}
+          <div class="ret-cal" role="grid" aria-label="مرتجع كل يوم — كلما اشتد اللون زاد المرتجع">
+            <div class="ret-cal-row ret-cal-head" role="row">
+              {% for wd in daily.returns_calendar.weekdays %}<span role="columnheader">{{ wd }}</span>{% endfor %}
+            </div>
+            {% for week in daily.returns_calendar.weeks %}
+              <div class="ret-cal-row" role="row">
+                {% for c in week %}
+                  {% if c %}
+                    <div role="gridcell" tabindex="0"
+                      class="ret-cal-cell lv-{{ c.level }}{% if c.is_today %} is-today{% endif %}"
+                      title="{{ c.weekday }} {{ c.date }} — مرتجع {{ c.amount_display }} · {{ c.count }} فاتورة · {{ c.rate_display }} من مبيعات اليوم"
+                      aria-label="{{ c.weekday }} {{ c.date }}: مرتجع {{ c.amount_display }}، {{ c.count }} فاتورة">
+                      <span class="ret-cal-day">{{ c.day }}</span>
+                      {% if c.rank %}<span class="ret-cal-rank" aria-hidden="true">{{ c.rank }}</span>{% endif %}
+                      {% if c.amount %}<span class="ret-cal-amt">{{ c.amount_short }}</span>{% endif %}
+                    </div>
+                  {% else %}
+                    <div role="gridcell" class="ret-cal-cell is-out" aria-hidden="true"></div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="ret-cal-foot">
+            {% with top=daily.returns_calendar.top %}
+              {% if top %}<p class="ret-cal-top">الأعلى: <strong>{{ top.weekday }} {{ top.day }}</strong> — {% money top.amount_display %} في {{ top.count }} فاتورة ({{ top.rate_display }} من مبيعاته)</p>{% endif %}
+            {% endwith %}
+            <div class="ret-cal-scale" aria-hidden="true"><span>أقل</span><i class="lv-1"></i><i class="lv-2"></i><i class="lv-3"></i><i class="lv-4"></i><span>أكثر</span></div>
+          </div>
+        {% else %}
+          <p class="sales-empty">{% if daily %}لا مرتجعات في الفترة.{% else %}{{ daily_error|default:"المرتجعات اليومية غير متاحة من الأرقام المحفوظة." }}{% endif %}</p>
+        {% endif %}
       </section>
     </div>
 
     {% if items_api_url %}{{ items_api_url|json_script:"sales-items-url" }}{% endif %}
     {% if users_api_url %}{{ users_api_url|json_script:"sales-users-url" }}{% endif %}
-    <div class="sales-ov-items-row" aria-label="أصناف الإرجاع وأكثر المستخدمين بيعاً">
-      <section
-        class="dash-panel dash-panel-glass sales-ov-panel sales-ov-items"
-        id="sales-items-panel"
-        aria-label="أعلى أصناف الإرجاع"
-      >
-        <div class="dash-panel-head">
-          <div>
-            <h3>أعلى أصناف الإرجاع</h3>
-            <p class="sales-ov-sub" id="sales-items-sub">نقاط البيع · جاري التحميل…</p>
-          </div>
-          <span class="result-pill" id="sales-items-pill">…</span>
-        </div>
-        <div class="table-wrap sales-ov-scroll">
-          <table class="data-table sales-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>الصنف</th>
-                <th>فواتير المرتجع</th>
-                <th>الكمية</th>
-                <th class="sales-col-cost">قيمة المرتجع</th>
-                <th class="sales-col-share">الحصة</th>
-              </tr>
-            </thead>
-            <tbody id="sales-items-body">
-              <tr>
-                <td colspan="6" class="sales-empty sales-ov-loading">جاري تحميل أعلى أصناف الإرجاع…</td>
-              </tr>
-            </tbody>
-            <tfoot id="sales-items-foot" hidden>
-              <tr class="sales-grand-row">
-                <td colspan="2">الإجمالي</td>
-                <td class="mono sales-col-inv" id="sales-items-tot-inv">0</td>
-                <td class="mono" id="sales-items-tot-qty">0</td>
-                <td class="mono sales-amt sales-col-cost" id="sales-items-tot-sales">0.00</td>
-                <td class="mono sales-col-share">100%</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </section>
+    <div class="sales-ov-items-row sales-ov-items-row--single" aria-label="أكثر المستخدمين بيعاً">
 
       <section
         class="dash-panel dash-panel-glass sales-ov-panel sales-ov-users"
@@ -401,7 +397,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="/static/js/sales-returns-donut.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-groups-loader.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-top-items-loader.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-top-users-loader.js?v={{ app_client_version }}" defer></script>
