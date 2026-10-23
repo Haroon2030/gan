@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 
 from django import forms
@@ -25,10 +24,6 @@ from .nav_permissions import (
 
 User = get_user_model()
 _PHONE_RE = re.compile(r'^[0-9+\-\s]{7,20}$')
-
-
-def _bootstrap_username() -> str:
-    return (os.environ.get('APP_LOGIN_USERNAME') or '').strip()
 
 
 class AppUserForm(forms.Form):
@@ -140,13 +135,10 @@ class AppUserForm(forms.Form):
             qs = qs.exclude(user_id=self.instance.pk)
         if qs.exists():
             raise forms.ValidationError('هذا الرقم مستخدم مسبقاً.')
-        # لا تتعارض مع username لحساب آخر (غير حساب الإقلاع)
-        bootstrap = _bootstrap_username()
+        # لا تتعارض مع username لحساب آخر
         other = User.objects.filter(username=phone)
         if self.instance is not None:
             other = other.exclude(pk=self.instance.pk)
-        if bootstrap:
-            other = other.exclude(username=bootstrap)
         if other.exists():
             raise forms.ValidationError('هذا الرقم مستخدم كمُعرّف دخول مسبقاً.')
         return phone
@@ -199,7 +191,6 @@ class AppUserForm(forms.Form):
         role_name = self.cleaned_data.get('role_name') or ''
         password = self.cleaned_data.get('password') or ''
         is_active = bool(self.cleaned_data.get('is_active'))
-        bootstrap = _bootstrap_username()
         is_staff, is_superuser = role_flags(role_name)
 
         if self.instance is None:
@@ -214,9 +205,7 @@ class AppUserForm(forms.Form):
             action = 'created'
         else:
             user = self.instance
-            # حساب الإقلاع (admin) يحتفظ باسم الدخول حتى لا ينكسر APP_LOGIN_*
-            if not (bootstrap and user.username == bootstrap):
-                user.username = phone
+            user.username = phone
             user.first_name = name
             user.is_active = is_active
             user.is_staff = is_staff

@@ -99,41 +99,33 @@ class AuthenticationTests(TestCase):
         self.assertTrue(user.is_staff)
         self.assertTrue(UserProfile.objects.filter(user=user).exists())
 
-    def test_changing_env_password_recovers_bootstrap_login(self):
-        with patch.dict(
-            'os.environ',
-            {'APP_LOGIN_USERNAME': 'admin', 'APP_LOGIN_PASSWORD': 'OldPassword123!'},
-        ):
+    def test_bootstrap_runs_only_when_no_users_exist(self):
+        env = {'APP_LOGIN_USERNAME': 'admin', 'APP_LOGIN_PASSWORD': 'OldPassword123!'}
+        with patch.dict('os.environ', env):
             call_command('ensure_app_user')
-
-        with patch.dict(
-            'os.environ',
-            {'APP_LOGIN_USERNAME': 'admin', 'APP_LOGIN_PASSWORD': 'TestPass123!'},
-        ):
-            call_command('ensure_app_user')
-
         user = get_user_model().objects.get(username='admin')
-        self.assertTrue(user.check_password('TestPass123!'))
-        self.assertTrue(self.client.login(username='admin', password='TestPass123!'))
+        self.assertTrue(user.is_superuser)
 
-    def test_ui_created_user_password_survives_bootstrap(self):
-        staff = get_user_model().objects.create_user(
-            username='0501111111',
-            password='StaffPass123!',
-            is_staff=True,
-        )
-        UserProfile.objects.create(
-            user=staff, display_name='مشرف', phone='0501111111'
-        )
+        # بعد التغيير من شاشة المستخدمين لا يعيد الأمر كلمة السر ولا الصلاحيات
+        user.set_password('ChangedInUi123!')
+        user.is_active = False
+        user.is_superuser = False
+        user.save()
+        with patch.dict('os.environ', env):
+            call_command('ensure_app_user')
+        user.refresh_from_db()
+        self.assertTrue(user.check_password('ChangedInUi123!'))
+        self.assertFalse(user.is_active)
+        self.assertFalse(user.is_superuser)
 
+    def test_bootstrap_skips_when_other_users_exist(self):
+        get_user_model().objects.create_user(username='0501111111', password='StaffPass123!')
         with patch.dict(
             'os.environ',
             {'APP_LOGIN_USERNAME': 'admin', 'APP_LOGIN_PASSWORD': 'TestPass123!'},
         ):
             call_command('ensure_app_user')
-
-        staff.refresh_from_db()
-        self.assertTrue(staff.check_password('StaffPass123!'))
+        self.assertFalse(get_user_model().objects.filter(username='admin').exists())
 
     def test_login_accepts_phone_number(self):
         user = get_user_model().objects.create_user(
