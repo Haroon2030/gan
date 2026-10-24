@@ -8,7 +8,9 @@ from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.dispatch import receiver
 from django.utils import timezone
 
-from .models import UserActivitySession
+from datetime import timedelta
+
+from .models import UserActivitySession, UserScreenView
 
 logger = logging.getLogger('search')
 
@@ -59,6 +61,8 @@ def record_user_login(sender, request, user, **kwargs):
             session_key=session_key[:40],
             source='web',
         )
+        # الاحتفاظ بسجل الشاشات 90 يوماً فقط
+        UserScreenView.objects.filter(viewed_at__lt=timezone.now() - timedelta(days=90)).delete()
     except Exception:
         logger.exception('failed to record login activity')
 

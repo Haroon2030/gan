@@ -56,6 +56,31 @@ class UserActivitySession(models.Model):
         return f'{self.user_name} @ {self.login_at}'
 
 
+class UserScreenView(models.Model):
+    """شاشة فتحها المستخدم أثناء جلسته (للتتبع في شاشة النشاط)."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='screen_views',
+        verbose_name='المستخدم',
+    )
+    session_key = models.CharField('مفتاح الجلسة', max_length=40, blank=True, default='', db_index=True)
+    screen_key = models.CharField('مفتاح الشاشة', max_length=64)
+    screen_label = models.CharField('الشاشة', max_length=120)
+    viewed_at = models.DateTimeField('وقت الفتح', db_index=True)
+
+    class Meta:
+        verbose_name = 'فتح شاشة'
+        verbose_name_plural = 'شاشات مفتوحة'
+        ordering = ['-viewed_at']
+
+    def __str__(self) -> str:
+        return f'{self.screen_label} @ {self.viewed_at}'
+
+
 class UserNavPermission(models.Model):
     """صلاحيات أقسام الشريط: أقسام ممنوحة + شاشات فرعية محجوبة."""
 

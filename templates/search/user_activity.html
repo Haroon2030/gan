@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}سجل النشاط{% endblock %}
+{% block page_class %}sales-dash inv-dash us-dash{% endblock %}
+{% block body_class %}sales-dash-body{% endblock %}
+
+{% block content %}
+<section class="dash-head" aria-label="سجل النشاط">
+  <div class="dash-head-copy">
+    <h2>سجل النشاط</h2>
+    <p>من دخل ومتى خرج، وما الشاشات التي فتحها في كل جلسة</p>
+  </div>
+</section>
+
+<nav class="us-roles" aria-label="ملخص النشاط">
+  {% for card in cards %}
+    <article class="us-role-card us-tone-{{ card.tone }}">
+      <span class="us-role-top">
+        <span class="us-role-name">{{ card.name }}</span>
+        <strong class="us-role-count"><bdi dir="ltr">{{ card.count }}</bdi></strong>
+      </span>
+      <span class="us-role-summary">{{ card.summary }}</span>
+    </article>
+  {% endfor %}
+</nav>
+
+<section class="dash-panel dash-panel-glass perf-panel inv-panel-compact us-panel" aria-label="جلسات المستخدمين">
+  <div class="dash-panel-head">
+    <h3>الجلسات</h3>
+    <form method="get" class="us-search us-activity-filter" role="search">
+      <input type="search" name="q" value="{{ query }}" placeholder="ابحث بالاسم أو الرقم" aria-label="بحث في الجلسات" autocomplete="off">
+      <label class="us-date"><span>من</span><input type="date" name="date_from" value="{{ date_from }}"></label>
+      <label class="us-date"><span>إلى</span><input type="date" name="date_to" value="{{ date_to }}"></label>
+      <button type="submit" class="us-action">تطبيق</button>
+    </form>
+  </div>
+  <div class="inv-table-frame">
+    <div class="table-wrap inv-table-scroll">
+      <table class="data-table sales-table perf-compare-table inv-table-compact us-table" aria-label="جلسات المستخدمين">
+        <thead>
+          <tr>
+            <th>المستخدم</th>
+            <th>الدور</th>
+            <th>الدخول</th>
+            <th>الخروج</th>
+            <th>المدة</th>
+            <th>الجهاز</th>
+            <th>الشاشات التي فتحها</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+            <tr>
+              <td>
+                <span class="us-person">
+                  <span class="us-avatar us-tone-{{ r.tone }}" aria-hidden="true">{{ r.initial }}</span>
+                  <span class="us-person-text">
+                    <span class="us-person-name">{{ r.user_name }}</span>
+                    {% if r.user_phone %}<span class="us-muted"><bdi dir="ltr">{{ r.user_phone }}</bdi></span>{% endif %}
+                  </span>
+                </span>
+              </td>
+              <td><span class="us-role-pill us-tone-{{ r.tone }}">{{ r.role }}</span></td>
+              <td class="mono"><bdi dir="ltr">{{ r.login_at|date:"Y-m-d H:i" }}</bdi></td>
+              <td class="mono">
+                {% if r.logout_at %}
+                  <bdi dir="ltr">{{ r.logout_at|date:"Y-m-d H:i" }}</bdi>
+                {% elif r.is_online %}
+                  <span class="us-status is-on">متصل الآن</span>
+                {% else %}
+                  <span class="us-muted">لم يسجّل خروجاً</span>
+                {% endif %}
+              </td>
+              <td class="us-muted">{{ r.duration }}</td>
+              <td class="us-muted">{{ r.device }}{% if r.ip_address %}<br><bdi dir="ltr">{{ r.ip_address }}</bdi>{% endif %}</td>
+              <td>
+                <span class="us-chips">
+                  {% for label, n in r.screens %}<span class="us-chip">{{ label }}{% if n > 1 %} <bdi dir="ltr">×{{ n }}</bdi>{% endif %}</span>{% empty %}<span class="us-muted">لم يفتح شاشة</span>{% endfor %}
+                </span>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7" class="sales-empty">لا توجد جلسات في هذه الفترة.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <table class="data-table sales-table perf-compare-table inv-table-compact inv-table-foot us-table" aria-label="إجمالي الجلسات">
+      <tbody>
+        <tr class="sales-grand-row">
+          <td>الإجمالي</td>
+          <td colspan="6"><bdi dir="ltr">{{ rows|length }}</bdi> جلسة{% if truncated %} (أحدث 200 فقط — ضيّق الفترة أو ابحث بالاسم){% endif %}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

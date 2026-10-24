@@ -39,6 +39,7 @@ urlpatterns = [
     path('sales/performance/', RedirectView.as_view(pattern_name='browse_profitability', permanent=False)),
     path('users/', views_users.user_list, name='user_list'),
     path('users/new/', views_users.user_create, name='user_create'),
+    path('users/activity/', views_users.user_activity, name='user_activity'),
     path('users/<int:pk>/', views_users.user_edit, name='user_edit'),
     path('users/<int:pk>/delete/', views_users.user_delete, name='user_delete'),
     path(

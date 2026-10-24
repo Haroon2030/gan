@@ -23623,3 +23623,18 @@ a.btn-primary.btn-capsule:focus-visible { outline: 3px solid rgba(47, 107, 63, 0
 .hr-dash .hr-col-month { width: 7.5rem; }
 .hr-dash .hr-col-name { width: 16rem; }
 .hr-dash .hr-col-status { width: 8.5rem; }
+
+/* سجل النشاط: بطاقات الملخص ثابتة (ليست روابط) وحقول الفلتر */
+.us-roles > article.us-role-card { cursor: default; }
+.us-activity-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.us-date { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--us-muted, #68777A); }
+.us-date input[type="date"] {
+  min-height: 2.15rem;
+  border: 1px solid #E3E8E9;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  background: #F6F8F7;
+  font: inherit;
+  color: inherit;
+}
+.us-activity-filter button.us-action { border: 0; cursor: pointer; font: inherit; }

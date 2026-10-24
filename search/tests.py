@@ -1980,3 +1980,46 @@ class SafeSessionMiddlewareTests(TestCase):
         with patch.object(SessionMiddleware, 'process_response', side_effect=SessionInterrupted('x')):
             response = SafeSessionMiddleware(lambda r: None).process_response(request, None)
         self.assertEqual(response.status_code, 401)
+
+
+class UserActivityTests(TestCase):
+    def _user(self, phone, role, **flags):
+        user = get_user_model().objects.create_user(username=phone, password='TestPass123!', first_name=role, **flags)
+        UserProfile.objects.create(user=user, display_name=role, phone=phone, role_name=role)
+        return user
+
+    def test_login_and_screen_views_are_recorded(self):
+        from search.models import UserActivitySession, UserScreenView
+
+        self._user('0503000001', 'مدير مالي')
+        self.client.login(username='0503000001', password='TestPass123!')
+        self.client.get('/purchases/')
+        self.client.get('/purchases/')  # نفس الشاشة خلال دقيقة: لا تتكرر
+        self.client.get('/inventory/')
+
+        labels = list(UserScreenView.objects.order_by('viewed_at').values_list('screen_label', flat=True))
+        self.assertEqual(labels, ['المشتريات والموردون', 'أرصدة المخزون'])
+
+    def test_activity_screen_is_staff_only(self):
+        self._user('0503000002', 'مدير مالي')
+        self.client.login(username='0503000002', password='TestPass123!')
+        self.assertEqual(self.client.get('/users/activity/').status_code, 302)
+
+    def test_activity_screen_is_superuser_only(self):
+        manager = self._user('0503000003', 'مدير النظام', is_staff=True)
+        self.client.login(username=manager.username, password='TestPass123!')
+        self.assertEqual(self.client.get('/users/activity/').status_code, 302)
+
+    def test_activity_screen_lists_sessions_for_superuser(self):
+        root = self._user('0503000004', 'سوبر أدمن', is_staff=True, is_superuser=True)
+        worker = self._user('0503000005', 'مدير شراء')
+
+        c = self.client_class()
+        c.login(username=worker.username, password='TestPass123!')
+        c.get('/purchases/')
+
+        self.client.login(username=root.username, password='TestPass123!')
+        response = self.client.get('/users/activity/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'مدير شراء')
+        self.assertContains(response, 'المشتريات والموردون')

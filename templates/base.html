@@ -141,6 +141,12 @@
             <span>المستخدمون</span>
           </a>
           {% if request.user.is_superuser %}
+          <a class="sidebar-link {% if request.resolver_match.url_name == 'user_activity' %}is-active{% endif %}" href="{% url 'user_activity' %}" title="سجل النشاط">
+            <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+            <span>سجل النشاط</span>
+          </a>
+          {% endif %}
+          {% if request.user.is_superuser %}
           <a class="sidebar-link {% if request.resolver_match.url_name == 'oracle_connection_settings' %}is-active{% endif %}" href="{% url 'oracle_connection_settings' %}" title="ربط قاعدة بيانات أوراكل">
             <svg class="sidebar-ico" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6"/><path d="M5 11.5v6c0 1.4 3.1 2.5 7 2.5"/><path d="M16 17h5M18.5 14.5l2.5 2.5-2.5 2.5"/></svg>
             <span>ربط أوراكل</span>

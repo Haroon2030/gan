@@ -177,3 +177,69 @@ class NavPermissionMiddleware:
                 messages.error(request, 'لا تملك صلاحية فتح هذه الشاشة.')
                 return redirect('home')
         return self.get_response(request)
+
+
+class ScreenTrackingMiddleware:
+    """يسجّل الشاشات التي يفتحها المستخدم (للعرض في شاشة النشاط)."""
+
+    # أكثر من ذلك بين فتحين متتاليين لنفس الشاشة يُحسب فتحاً جديداً
+    DEDUPE_SECONDS = 60
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        try:
+            self._track(request, response)
+        except Exception:
+            import logging
+
+            logging.getLogger('search').exception('failed to record screen view')
+        return response
+
+    def _track(self, request, response) -> None:
+        user = getattr(request, 'user', None)
+        if (
+            request.method != 'GET'
+            or response.status_code != 200
+            or user is None
+            or not getattr(user, 'is_authenticated', False)
+            or 'text/html' not in (response.get('Content-Type') or '')
+            or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        ):
+            return
+
+        from django.urls import Resolver404, resolve
+        from django.utils import timezone
+
+        from .models import UserScreenView
+        from .nav_permissions import screen_label
+
+        try:
+            url_name = resolve(request.path_info).url_name
+        except Resolver404:
+            return
+        label = screen_label(url_name)
+        if not label:
+            return
+
+        session = getattr(request, 'session', None)
+        if session is None:
+            return
+        now = timezone.now()
+        last = session.get('_last_screen') or []
+        if (
+            len(last) == 2
+            and last[0] == url_name
+            and now.timestamp() - float(last[1]) < self.DEDUPE_SECONDS
+        ):
+            return
+        session['_last_screen'] = [url_name, now.timestamp()]
+        UserScreenView.objects.create(
+            user=user,
+            session_key=(session.session_key or '')[:40],
+            screen_key=url_name[:64],
+            screen_label=label[:120],
+            viewed_at=now,
+        )

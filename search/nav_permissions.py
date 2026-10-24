@@ -172,7 +172,17 @@ NAV_SECTIONS: tuple[NavSection, ...] = (
 )
 
 # شاشات مقصورة على السوبر أدمن حالياً
-SUPERUSER_ONLY_SCREENS: frozenset[str] = frozenset({"browse_hr"})
+SUPERUSER_ONLY_SCREENS: frozenset[str] = frozenset({"browse_hr", "user_activity"})
+
+# شاشات خارج أقسام الشريط تظهر في سجل النشاط
+EXTRA_SCREEN_LABELS: dict[str, str] = {
+    "home": "لوحة المؤشرات",
+    "user_list": "المستخدمون",
+    "user_create": "مستخدم جديد",
+    "user_edit": "تعديل مستخدم",
+    "user_activity": "سجل النشاط",
+    "oracle_connection_settings": "ربط أوراكل",
+}
 
 SECTION_KEYS: tuple[str, ...] = tuple(s.key for s in NAV_SECTIONS)
 ALL_SCREEN_KEYS: frozenset[str] = frozenset(
@@ -187,6 +197,18 @@ _SCREEN_TO_SECTION: dict[str, str] = {
 for alias, parent in SCREEN_ALIASES.items():
     if parent in _SCREEN_TO_SECTION:
         _SCREEN_TO_SECTION[alias] = _SCREEN_TO_SECTION[parent]
+
+
+def screen_label(url_name: str | None) -> str:
+    """اسم الشاشة المعروض في سجل النشاط، أو نص فارغ إن لم تكن شاشة تُتتبَّع."""
+    key = normalize_screen_key(url_name)
+    if key in EXTRA_SCREEN_LABELS:
+        return EXTRA_SCREEN_LABELS[key]
+    for section in NAV_SECTIONS:
+        for screen in section.screens:
+            if screen.key == key:
+                return screen.label
+    return ""
 
 
 def normalize_screen_key(url_name: str | None) -> str:

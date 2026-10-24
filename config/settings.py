@@ -147,6 +147,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'search.middleware.NavPermissionMiddleware',
+    'search.middleware.ScreenTrackingMiddleware',
     # بعد الجلسة/CSRF حتى لا تُقرأ جسم POST قبل التحقق
     'search.middleware.SqlInjectionGuardMiddleware',
     'search.middleware.RateLimitMiddleware',
