@@ -526,7 +526,7 @@ def _get_pool():
     user, password, dsn = _oracle_dsn()
     opts = _connect_kwargs()
     expire_time = max(1, int(_cfg().get("POOL_EXPIRE_TIME") or 4))
-    pool_max = max(8, int(_cfg().get("POOL_MAX") or 12))
+    pool_max = max(1, int(_cfg().get("POOL_MAX") or 12))
     ping_interval = int(_cfg().get("POOL_PING_INTERVAL") or 30)
     # بصمة كلمة المرور: تغييرها من شاشة الربط يعيد إنشاء المجمّع في كل العمليات
     password_digest = hashlib.sha256(password.encode("utf-8")).hexdigest()
