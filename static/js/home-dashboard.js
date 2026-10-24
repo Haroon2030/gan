@@ -170,6 +170,11 @@
       credentials: "same-origin",
       headers: { Accept: "application/json" },
     }).then(function (res) {
+      // الجلسة تغيّرت (دخول/خروج) أثناء التحميل: أعد تحميل الصفحة بدل عرض خطأ
+      if (res.status === 401) {
+        window.location.reload();
+        throw new Error("انتهت الجلسة.");
+      }
       return res
         .json()
         .catch(function () { return { ok: false, error: "استجابة غير متوقعة." }; })

@@ -1965,3 +1965,18 @@ class HrScreenTests(TestCase):
 
         self.assertEqual(whole_months(date(2026, 1, 15), date(2026, 10, 23)), (date(2026, 1, 1), date(2026, 11, 1)))
         self.assertEqual([_months_word(n) for n in (1, 2, 7, 12)], ['شهر واحد', 'شهران', '7 أشهر', '12 شهراً'])
+
+
+class SafeSessionMiddlewareTests(TestCase):
+    def test_interrupted_session_returns_401_json_for_ajax(self):
+        from django.contrib.sessions.exceptions import SessionInterrupted
+        from django.contrib.sessions.middleware import SessionMiddleware
+        from django.test import RequestFactory
+
+        from config.session_middleware import SafeSessionMiddleware
+
+        request = RequestFactory().get('/home/api/widget/trend/', HTTP_ACCEPT='application/json')
+        request.session = None
+        with patch.object(SessionMiddleware, 'process_response', side_effect=SessionInterrupted('x')):
+            response = SafeSessionMiddleware(lambda r: None).process_response(request, None)
+        self.assertEqual(response.status_code, 401)

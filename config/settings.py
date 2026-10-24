@@ -141,7 +141,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'search.middleware.SecurityHeadersMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    'config.session_middleware.SafeSessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
