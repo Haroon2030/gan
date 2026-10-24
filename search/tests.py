@@ -2030,9 +2030,9 @@ class HomeWidgetCacheTests(TestCase):
         from django.core.cache import cache
 
         # لا نمسح الكاش كله: نحذف مفاتيح هذه الاختبارات فقط
-        cache.delete_many([f'home:v2:{n}:a' for n in ('t_fresh', 't_stale', 't_fail')])
+        cache.delete_many([f'home:v3:{n}:a' for n in ('t_closed', 't_live')])
 
-    def test_fresh_value_is_served_without_rebuilding(self):
+    def test_live_widgets_are_never_cached(self):
         from search import home_dashboard as hd
 
         calls = []
@@ -2041,55 +2041,28 @@ class HomeWidgetCacheTests(TestCase):
             calls.append(1)
             return {'n': len(calls)}
 
-        first = hd.cached_widget('t_fresh', ('a',), 300, build)
-        second = hd.cached_widget('t_fresh', ('a',), 300, build)
+        self.assertEqual(hd.cached_widget('t_live', ('a',), hd.LIVE_TTL, build), {'n': 1})
+        self.assertEqual(hd.cached_widget('t_live', ('a',), hd.LIVE_TTL, build), {'n': 2})
+
+    def test_closed_period_is_cached(self):
+        from search import home_dashboard as hd
+
+        calls = []
+
+        def build():
+            calls.append(1)
+            return {'n': len(calls)}
+
+        first = hd.cached_widget('t_closed', ('a',), hd.CLOSED_TTL, build)
+        second = hd.cached_widget('t_closed', ('a',), hd.CLOSED_TTL, build)
         self.assertEqual(first, second)
         self.assertEqual(len(calls), 1)
 
-    def test_stale_value_is_served_immediately_and_refreshed_in_background(self):
-        import time
-
-        from django.core.cache import cache
+    def test_today_period_uses_live_ttl(self):
+        from datetime import date, timedelta
 
         from search import home_dashboard as hd
 
-        calls = []
-
-        def build():
-            calls.append(1)
-            return {'n': len(calls)}
-
-        hd.cached_widget('t_stale', ('a',), 300, build)
-        key = 'home:v2:t_stale:a'
-        entry = cache.get(key)
-        entry['t'] = time.time() - 1000  # أقدم من الصلاحية
-        cache.set(key, entry, 3600)
-
-        served = hd.cached_widget('t_stale', ('a',), 300, build)
-        self.assertEqual(served, {'n': 1})  # القديم فوراً
-
-        for _ in range(50):
-            if cache.get(key)['v'] == {'n': 2}:
-                break
-            time.sleep(0.05)
-        self.assertEqual(cache.get(key)['v'], {'n': 2})
-
-    def test_failed_refresh_keeps_stale_value(self):
-        import time
-
-        from django.core.cache import cache
-
-        from search import home_dashboard as hd
-
-        hd.cached_widget('t_fail', ('a',), 300, lambda: {'ok': 1})
-        key = 'home:v2:t_fail:a'
-        entry = cache.get(key)
-        entry['t'] = time.time() - 1000
-        cache.set(key, entry, 3600)
-
-        def boom():
-            raise RuntimeError('oracle down')
-
-        self.assertEqual(hd.cached_widget('t_fail', ('a',), 300, boom), {'ok': 1})
-        time.sleep(0.3)
-        self.assertEqual(cache.get(key)['v'], {'ok': 1})
+        today = date.today()
+        self.assertEqual(hd._ttl_for(today, today), 0)
+        self.assertEqual(hd._ttl_for(today - timedelta(days=1), today), hd.CLOSED_TTL)
