@@ -2023,3 +2023,73 @@ class UserActivityTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'مدير شراء')
         self.assertContains(response, 'المشتريات والموردون')
+
+
+class HomeWidgetCacheTests(TestCase):
+    def setUp(self):
+        from django.core.cache import cache
+
+        # لا نمسح الكاش كله: نحذف مفاتيح هذه الاختبارات فقط
+        cache.delete_many([f'home:v2:{n}:a' for n in ('t_fresh', 't_stale', 't_fail')])
+
+    def test_fresh_value_is_served_without_rebuilding(self):
+        from search import home_dashboard as hd
+
+        calls = []
+
+        def build():
+            calls.append(1)
+            return {'n': len(calls)}
+
+        first = hd.cached_widget('t_fresh', ('a',), 300, build)
+        second = hd.cached_widget('t_fresh', ('a',), 300, build)
+        self.assertEqual(first, second)
+        self.assertEqual(len(calls), 1)
+
+    def test_stale_value_is_served_immediately_and_refreshed_in_background(self):
+        import time
+
+        from django.core.cache import cache
+
+        from search import home_dashboard as hd
+
+        calls = []
+
+        def build():
+            calls.append(1)
+            return {'n': len(calls)}
+
+        hd.cached_widget('t_stale', ('a',), 300, build)
+        key = 'home:v2:t_stale:a'
+        entry = cache.get(key)
+        entry['t'] = time.time() - 1000  # أقدم من الصلاحية
+        cache.set(key, entry, 3600)
+
+        served = hd.cached_widget('t_stale', ('a',), 300, build)
+        self.assertEqual(served, {'n': 1})  # القديم فوراً
+
+        for _ in range(50):
+            if cache.get(key)['v'] == {'n': 2}:
+                break
+            time.sleep(0.05)
+        self.assertEqual(cache.get(key)['v'], {'n': 2})
+
+    def test_failed_refresh_keeps_stale_value(self):
+        import time
+
+        from django.core.cache import cache
+
+        from search import home_dashboard as hd
+
+        hd.cached_widget('t_fail', ('a',), 300, lambda: {'ok': 1})
+        key = 'home:v2:t_fail:a'
+        entry = cache.get(key)
+        entry['t'] = time.time() - 1000
+        cache.set(key, entry, 3600)
+
+        def boom():
+            raise RuntimeError('oracle down')
+
+        self.assertEqual(hd.cached_widget('t_fail', ('a',), 300, boom), {'ok': 1})
+        time.sleep(0.3)
+        self.assertEqual(cache.get(key)['v'], {'ok': 1})

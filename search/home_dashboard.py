@@ -10,12 +10,19 @@
 
 from __future__ import annotations
 
+import logging
+import threading
+import time
 from datetime import date, datetime, timedelta
 from typing import Any, Callable
 
 from django.core.cache import cache
 
-HOME_CACHE_PREFIX = "home:v1"
+logger = logging.getLogger("search")
+
+HOME_CACHE_PREFIX = "home:v2"
+# بعد انتهاء صلاحية الودجت نعرض نسخته القديمة فوراً (حتى هذه المدة) ونجدّدها في الخلفية
+STALE_GRACE = 6 * 3600
 LIVE_TTL = 300
 CLOSED_TTL = 6 * 3600
 RECENT_TTL = 60
@@ -118,25 +125,59 @@ def _ttl_for(d_to: date, today: date | None = None) -> int:
     return LIVE_TTL if d_to >= today else CLOSED_TTL
 
 
+_refreshing: set[str] = set()
+_refresh_lock = threading.Lock()
+
+
+def _store(key: str, value: dict, ttl: int) -> None:
+    try:
+        cache.set(key, {"_swr": 1, "t": time.time(), "v": value}, ttl + STALE_GRACE)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _refresh_async(key: str, ttl: int, builder: Callable[[], dict]) -> None:
+    """تجديد ودجت قديم في الخلفية — عملية واحدة لكل مفتاح، وإن فشل تبقى النسخة القديمة."""
+    with _refresh_lock:
+        if key in _refreshing:
+            return
+        _refreshing.add(key)
+
+    def job() -> None:
+        try:
+            _store(key, builder(), ttl)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("home widget refresh failed (%s): %s", key, exc)
+        finally:
+            with _refresh_lock:
+                _refreshing.discard(key)
+
+    threading.Thread(target=job, name="home-widget-refresh", daemon=True).start()
+
+
 def cached_widget(
     name: str,
     key_parts: tuple[Any, ...],
     ttl: int,
     builder: Callable[[], dict],
 ) -> dict:
-    """كاش قصير فوق كاش الدوال الأصلية (بعضها يتجاوز الكاش لفترة اليوم)."""
+    """كاش الودجت: الطازج يُعاد فوراً، والقديم يُعاد فوراً ويُجدَّد في الخلفية.
+
+    الطلب الأول فقط (بلا نسخة) ينتظر أوراكل؛ بعده تفتح الرئيسية فوراً حتى لو
+    كانت القاعدة بطيئة أو متعثرة لحظياً.
+    """
     key = ":".join([HOME_CACHE_PREFIX, name, *[str(p) for p in key_parts]])
     try:
-        hit = cache.get(key)
+        entry = cache.get(key)
     except Exception:  # noqa: BLE001
-        hit = None
-    if hit is not None:
-        return hit
+        entry = None
+    if isinstance(entry, dict) and entry.get("_swr"):
+        if time.time() - float(entry.get("t") or 0) < ttl:
+            return entry["v"]
+        _refresh_async(key, ttl, builder)
+        return entry["v"]
     value = builder()
-    try:
-        cache.set(key, value, ttl)
-    except Exception:  # noqa: BLE001
-        pass
+    _store(key, value, ttl)
     return value
 
 
