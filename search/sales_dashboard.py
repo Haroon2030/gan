@@ -601,7 +601,7 @@ def _cached_branch_totals(date_from, date_to, system: str) -> list[dict] | None:
     )
 
     key = (
-        f"sales:branches:v9:{system}:{_as_date(date_from).isoformat()}:"
+        f"sales:branches:v10:{system}:{_as_date(date_from).isoformat()}:"
         f"{_as_date(date_to).isoformat()}:"
         f"r{int(not _skip_mst_returns(date_from, date_to))}"
     )
@@ -951,7 +951,7 @@ def peek_sales_groups(
     raw_total = round(sum(float(r.get("sales_total") or 0) for r in raw), 2)
     if not by_branch and raw:
         br_key = (
-            f"sales:branches:v9:pos:{_as_date(date_from).isoformat()}:"
+            f"sales:branches:v10:pos:{_as_date(date_from).isoformat()}:"
             f"{_as_date(date_to).isoformat()}:"
             f"r{int(not _skip_mst_returns(date_from, date_to))}"
         )

@@ -1862,9 +1862,9 @@ def _fetch_pos_branch_totals(date_from, date_to) -> list[dict]:
         SELECT
             p.BRN_NO AS BRANCH_CODE,
             COUNT(DISTINCT p.BILL_NO) AS INVOICE_COUNT,
-            ROUND(SUM(NVL(p.BILL_AMT, 0)), 2) AS NET_TOTAL,
+            ROUND(SUM(NVL(p.BILL_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS NET_TOTAL,
             ROUND(SUM(NVL(p.VAT_AMT, 0)), 2) AS VAT_TOTAL,
-            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0)), 2) AS GROSS_TOTAL
+            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS GROSS_TOTAL
         FROM {pos}.IAS_POS_BILL_MST p
         WHERE p.BILL_DATE >= :d_from AND p.BILL_DATE < :d_to_excl
           AND {hung}
@@ -1920,7 +1920,7 @@ def fetch_pos_daily_totals(date_from, date_to, branch_code: str = "") -> list[di
     brn = _norm_brn_code(branch_code)
     with_returns = not _skip_mst_returns(d_from, d_to)
     cache_key = (
-        f"sales:daily:v1:pos:{d_from.isoformat()}:{d_to.isoformat()}:{brn}:r{int(with_returns)}"
+        f"sales:daily:v3:pos:{d_from.isoformat()}:{d_to.isoformat()}:{brn}:r{int(with_returns)}"
     )
     if d_to < date.today():
         cached = _sales_cache_get(cache_key)
@@ -1942,7 +1942,7 @@ def fetch_pos_daily_totals(date_from, date_to, branch_code: str = "") -> list[di
         SELECT
             TRUNC(p.BILL_DATE) AS DAY,
             COUNT(DISTINCT TO_CHAR(p.BRN_NO) || ':' || TO_CHAR(p.BILL_NO)) AS INVOICE_COUNT,
-            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0)), 2) AS GROSS_TOTAL
+            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS GROSS_TOTAL
         FROM {pos}.IAS_POS_BILL_MST p
         WHERE p.BILL_DATE >= :d_from AND p.BILL_DATE < :d_to_excl
           AND {_hung_ok("p")}
@@ -2071,7 +2071,7 @@ def fetch_branch_sales_totals(date_from, date_to, system: str = "pos") -> list[d
     if not oracle_enabled():
         raise OracleStockError("أوراكل غير مفعّل.")
     cache_key = (
-        f"sales:branches:v9:{system}:{_as_date(date_from).isoformat()}:"
+        f"sales:branches:v10:{system}:{_as_date(date_from).isoformat()}:"
         f"{_as_date(date_to).isoformat()}:r{int(not _skip_mst_returns(date_from, date_to))}"
     )
     # فترة تنتهي اليوم: لا تُعرض أرقام كاش قديمة مكان الحيّ
@@ -2415,7 +2415,7 @@ def fetch_sales_mst_bundle(
     fast_split = False
     lim = max(1, min(int(top_users_limit or 8), 50))
     cache_key = (
-        f"sales:mst_bundle:v8:{system}:{_as_date(date_from).isoformat()}:"
+        f"sales:mst_bundle:v9:{system}:{_as_date(date_from).isoformat()}:"
         f"{_as_date(date_to).isoformat()}:L{int(light)}:u{lim}:r{int(not skip_ret)}:f{int(fast_split)}"
     )
     cached = _sales_cache_get(cache_key)
@@ -2435,9 +2435,9 @@ def fetch_sales_mst_bundle(
               TO_CHAR(p.BRN_NO) AS BRANCH_CODE,
               CAST(NULL AS VARCHAR2(40)) AS USER_CODE,
               COUNT(*) AS INVOICE_COUNT,
-              ROUND(SUM(NVL(p.BILL_AMT, 0)), 2) AS NET_TOTAL,
+              ROUND(SUM(NVL(p.BILL_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS NET_TOTAL,
               ROUND(SUM(NVL(p.VAT_AMT, 0)), 2) AS VAT_TOTAL,
-              ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0)), 2) AS GROSS_TOTAL,
+              ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS GROSS_TOTAL,
               COUNT(DISTINCT NVL(TO_CHAR(p.MACHINE_NO), TO_CHAR(p.CASH_NO))) AS DEVICE_COUNT,
               COUNT(DISTINCT p.AD_U_ID) AS SELLER_COUNT
             FROM {pos}.IAS_POS_BILL_MST p
@@ -2544,7 +2544,7 @@ def fetch_sales_mst_bundle(
 
     # مزامنة كاش الفروع المنفصل لواجهات أخرى
     br_cache = (
-        f"sales:branches:v9:{system}:{_as_date(date_from).isoformat()}:"
+        f"sales:branches:v10:{system}:{_as_date(date_from).isoformat()}:"
         f"{_as_date(date_to).isoformat()}:r{int(not skip_ret)}"
     )
     _sales_cache_set(br_cache, branches, date_from=date_from, date_to=date_to)
@@ -2622,9 +2622,9 @@ def _fetch_pos_daily_totals(date_from, date_to, branch_code: str = "") -> list[d
         SELECT
             TRUNC(p.BILL_DATE) AS SALE_DAY,
             COUNT(*) AS INVOICE_COUNT,
-            ROUND(SUM(NVL(p.BILL_AMT, 0)), 2) AS NET_TOTAL,
+            ROUND(SUM(NVL(p.BILL_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS NET_TOTAL,
             ROUND(SUM(NVL(p.VAT_AMT, 0)), 2) AS VAT_TOTAL,
-            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0)), 2) AS GROSS_TOTAL
+            ROUND(SUM(NVL(p.BILL_AMT, 0) + NVL(p.VAT_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS GROSS_TOTAL
         FROM {pos}.IAS_POS_BILL_MST p
         WHERE p.BILL_DATE >= :d_from AND p.BILL_DATE < :d_to_excl
           AND NVL(p.HUNG, 0) = 0
@@ -2775,7 +2775,7 @@ def fetch_daily_sales_totals(
     brn = str(branch_code or "").strip()
     fast = _skip_mst_returns(date_from, date_to)
     cache_key = (
-        f"sales:daily:v2:{system}:{_as_date(date_from).isoformat()}:"
+        f"sales:daily:v3:{system}:{_as_date(date_from).isoformat()}:"
         f"{_as_date(date_to).isoformat()}:{brn}:{'fast' if fast else 'net'}"
     )
     cached = _sales_cache_get(cache_key)
@@ -5774,7 +5774,7 @@ def fetch_top_sales_users(
               SELECT
                   TO_CHAR(p.AD_U_ID) AS USER_CODE,
                   COUNT(*) AS INVOICE_COUNT,
-                  ROUND(SUM(NVL(p.BILL_AMT, 0)), 2) AS NET_TOTAL,
+                  ROUND(SUM(NVL(p.BILL_AMT, 0) - NVL(p.DISC_AMT, 0)), 2) AS NET_TOTAL,
                   ROUND(SUM(NVL(p.VAT_AMT, 0)), 2) AS VAT_TOTAL
               FROM {pos}.IAS_POS_BILL_MST p
               WHERE p.BILL_DATE >= :d_from AND p.BILL_DATE < :d_to_excl

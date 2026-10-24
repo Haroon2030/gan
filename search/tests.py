@@ -2030,7 +2030,7 @@ class HomeWidgetCacheTests(TestCase):
         from django.core.cache import cache
 
         # لا نمسح الكاش كله: نحذف مفاتيح هذه الاختبارات فقط
-        cache.delete_many([f'home:v3:{n}:a' for n in ('t_closed', 't_live')])
+        cache.delete_many([f'home:v4:{n}:a' for n in ('t_closed', 't_live')])
 
     def test_live_widgets_are_never_cached(self):
         from search import home_dashboard as hd

@@ -15,7 +15,7 @@ from typing import Any, Callable
 
 from django.core.cache import cache
 
-HOME_CACHE_PREFIX = "home:v3"
+HOME_CACHE_PREFIX = "home:v4"
 # الأرقام الحية (تشمل اليوم) لا تُكاش أبداً
 LIVE_TTL = 0
 CLOSED_TTL = 6 * 3600
