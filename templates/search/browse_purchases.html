@@ -53,43 +53,44 @@
   </section>
 {% endif %}
 
-<form method="get" action="{% url 'browse_purchases' %}" class="purchase-filter dash-panel-glass" role="search">
-  <div class="field">
-    <label for="purchase-from">من</label>
-    <input id="purchase-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+<form method="get" action="{% url 'browse_purchases' %}" class="sf dash-panel-glass" role="search" data-sales-filter>
+  {% include "search/_sf_quick.html" %}
+  <div class="sf-controls">
+    {% include "search/_sf_range.html" with uid="purchase" %}
+    <label class="sf-select" for="purchase-branch">
+      <span>الفرع</span>
+      <select id="purchase-branch" name="branch">
+        <option value="">كل الفروع</option>
+        {% for row in branches %}
+          <option value="{{ row.code }}" {% if row.code == selected_branch %}selected{% endif %}>{{ row.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sf-select" for="purchase-group">
+      <span>المجموعة</span>
+      <select id="purchase-group" name="group">
+        <option value="">كل المجموعات</option>
+        {% for row in groups %}
+          <option value="{{ row.code }}" {% if row.code == selected_group %}selected{% endif %}>{{ row.code }}- {{ row.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sf-select" for="purchase-vendor">
+      <span>المورد</span>
+      <select id="purchase-vendor" name="vendor">
+        <option value="">كل الموردين</option>
+        {% for row in vendors %}
+          <option value="{{ row.code }}" {% if row.code == selected_vendor %}selected{% endif %}>{{ row.name }} · {{ row.code }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <div class="sf-actions">
+      <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+      {% if selected_branch or selected_group or selected_vendor %}
+        <a class="sf-clear" href="?date_from={{ date_from|default:default_from }}&amp;date_to={{ date_to|default:default_to }}">مسح الفلاتر</a>
+      {% endif %}
+    </div>
   </div>
-  <div class="field">
-    <label for="purchase-to">إلى</label>
-    <input id="purchase-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
-  </div>
-  <div class="field">
-    <label for="purchase-branch">الفرع</label>
-    <select id="purchase-branch" name="branch">
-      <option value="">كل الفروع</option>
-      {% for row in branches %}
-        <option value="{{ row.code }}" {% if row.code == selected_branch %}selected{% endif %}>{{ row.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="field">
-    <label for="purchase-group">المجموعة</label>
-    <select id="purchase-group" name="group">
-      <option value="">كل المجموعات</option>
-      {% for row in groups %}
-        <option value="{{ row.code }}" {% if row.code == selected_group %}selected{% endif %}>{{ row.code }}- {{ row.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="field purchase-vendor-field">
-    <label for="purchase-vendor">المورد</label>
-    <select id="purchase-vendor" name="vendor">
-      <option value="">كل الموردين</option>
-      {% for row in vendors %}
-        <option value="{{ row.code }}" {% if row.code == selected_vendor %}selected{% endif %}>{{ row.name }} · {{ row.code }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
 </form>
 
 {% if dashboard %}
@@ -278,6 +279,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/sales-filter.js?v={{ app_client_version }}" defer></script>
 <script>
 (function () {
   function ready(fn) {

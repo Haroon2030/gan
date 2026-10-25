@@ -83,34 +83,39 @@
   </section>
 {% endif %}
 
-<form method="get" action="{% url 'browse_sales' %}" class="sales-ov-filter dash-panel-glass" role="search">
-  <div class="field">
-    <label for="sales-from">من</label>
-    <input id="sales-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+<form method="get" action="{% url 'browse_sales' %}" class="sf dash-panel-glass" role="search" data-sales-filter>
+  {% include "search/_sf_quick.html" %}
+
+  <div class="sf-controls">
+    {% include "search/_sf_range.html" with uid="sales" %}
+
+    <label class="sf-select" for="sales-branch">
+      <span>الفرع</span>
+      <select id="sales-branch" name="branch">
+        <option value="">كل الفروع</option>
+        {% for b in branches %}
+          <option value="{{ b.code }}" {% if b.code == selected_branch %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="sf-select" for="sales-group">
+      <span>المجموعة</span>
+      <select id="sales-group" name="group">
+        <option value="">كل المجموعات</option>
+        {% for g in groups %}
+          <option value="{{ g.code }}" {% if g.code == selected_group %}selected{% endif %}>{{ g.code }}- {{ g.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <div class="sf-actions">
+      <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+      {% if selected_branch or selected_group %}
+        <a class="sf-clear" href="?date_from={{ date_from|default:default_from }}&amp;date_to={{ date_to|default:default_to }}">مسح الفلاتر</a>
+      {% endif %}
+    </div>
   </div>
-  <div class="field">
-    <label for="sales-to">إلى</label>
-    <input id="sales-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
-  </div>
-  <div class="field">
-    <label for="sales-branch">الفرع</label>
-    <select id="sales-branch" name="branch">
-      <option value="">كل الفروع</option>
-      {% for b in branches %}
-        <option value="{{ b.code }}" {% if b.code == selected_branch %}selected{% endif %}>{{ b.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="field">
-    <label for="sales-group">المجموعة</label>
-    <select id="sales-group" name="group">
-      <option value="">كل المجموعات</option>
-      {% for g in groups %}
-        <option value="{{ g.code }}" {% if g.code == selected_group %}selected{% endif %}>{{ g.code }}- {{ g.name }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
 </form>
 
 {% if dashboard %}
@@ -123,45 +128,46 @@
         </div>
         <span class="result-pill">{{ dashboard.pos.branches|length }}</span>
       </div>
-      <div class="table-wrap sales-ov-scroll">
-        <table class="data-table sales-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>الفرع</th>
-              <th>الفواتير</th>
-              <th>المرتجع</th>
-              <th>المبيعات</th>
-              <th>الحصة</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in dashboard.pos.branches %}
-              <tr{% if row.no_sales %} class="sales-zero-row"{% endif %}>
-                <td class="mono">{{ forloop.counter }}</td>
-                <td title="{{ row.branch_code }}">{{ row.branch_name }}</td>
-                <td class="mono sales-col-inv">{{ row.invoice_count_display }}</td>
-                <td class="mono">{% money row.return_total_display %}</td>
-                <td class="mono sales-amt">{% money row.sales_total_display %}</td>
-                <td class="mono sales-col-share">{{ row.share_display }}</td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="6" class="sales-empty">لا مبيعات نقاط بيع في الفترة.</td></tr>
-            {% endfor %}
-          </tbody>
-          {% if dashboard.pos.branches %}
-            <tfoot>
-              <tr class="sales-grand-row">
-                <td colspan="2">الإجمالي</td>
-                <td class="mono sales-col-inv">{{ dashboard.pos.totals.invoice_count_display }}</td>
-                <td class="mono">{% money dashboard.pos.totals.return_total_display %}</td>
-                <td class="mono sales-amt">{% money dashboard.pos.totals.sales_total_display %}</td>
-                <td class="mono sales-col-share">100%</td>
-              </tr>
-            </tfoot>
-          {% endif %}
-        </table>
-      </div>
+      <ol class="brk-list" aria-label="ترتيب الفروع حسب المبيعات">
+        {% for row in dashboard.pos_active %}
+          <li class="brk-row{% if forloop.first %} is-lead{% endif %}">
+            <span class="brk-rank" aria-hidden="true">{{ forloop.counter }}</span>
+            <div class="brk-body">
+              <div class="brk-top">
+                <span class="brk-name" title="{{ row.branch_code }}">{{ row.branch_name }}</span>
+                <strong class="brk-amt">{% money row.sales_total_display %}</strong>
+              </div>
+              <div class="brk-bar" role="img" aria-label="حصة {{ row.branch_name }} {{ row.share_display }} من المبيعات"><i style="width: {{ row.bar_width }};"></i></div>
+              <div class="brk-meta">
+                <span><bdi dir="ltr">{{ row.invoice_count_display }}</bdi> فاتورة</span>
+                {% if row.avg_basket %}<span>متوسط الفاتورة <bdi dir="ltr">{{ row.avg_basket_display }}</bdi></span>{% endif %}
+                <span class="brk-return{% if row.return_total %} has-return{% endif %}">مرتجع <bdi dir="ltr">{{ row.return_total_display }}</bdi></span>
+                <span class="brk-share"><bdi dir="ltr">{{ row.share_display }}</bdi></span>
+              </div>
+            </div>
+          </li>
+        {% empty %}
+          <li class="brk-empty">لا مبيعات نقاط بيع في الفترة.</li>
+        {% endfor %}
+      </ol>
+
+      {% if dashboard.pos_silent %}
+        <details class="brk-silent">
+          <summary>
+            <span><bdi dir="ltr">{{ dashboard.pos_silent|length }}</bdi> فروع بلا مبيعات في الفترة</span>
+          </summary>
+          <p>{% for row in dashboard.pos_silent %}<span class="brk-chip" title="{{ row.branch_code }}">{{ row.branch_name }}</span>{% endfor %}</p>
+        </details>
+      {% endif %}
+
+      {% if dashboard.pos.branches %}
+        <div class="brk-total">
+          <span>الإجمالي</span>
+          <span><bdi dir="ltr">{{ dashboard.pos.totals.invoice_count_display }}</bdi> فاتورة</span>
+          <span>مرتجع {% money dashboard.pos.totals.return_total_display %}</span>
+          <strong>{% money dashboard.pos.totals.sales_total_display %}</strong>
+        </div>
+      {% endif %}
     </section>
 
     <section class="dash-panel dash-panel-glass sales-ov-panel sales-daily" aria-label="مبيعات نقاط البيع اليومية">
@@ -176,47 +182,42 @@
         </div>
         {% if daily %}<span class="result-pill" title="أيام فيها مبيعات">{{ daily.totals.selling_days }}</span>{% endif %}
       </div>
-      <div class="table-wrap sales-ov-scroll">
-        <table class="data-table sales-table">
-          <thead>
-            <tr>
-              <th>اليوم</th>
-              <th>التاريخ</th>
-              <th>الفواتير</th>
-              <th>المرتجع</th>
-              <th>المبيعات</th>
-              <th>الحصة</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if daily %}
-              {% for row in daily.rows %}
-                <tr class="{% if row.no_sales %}sales-zero-row{% endif %}{% if row.is_today %} sales-today-row{% endif %}">
-                  <td>{{ row.weekday }}{% if row.is_today %} <span class="sales-today-tag">اليوم</span>{% endif %}</td>
-                  <td class="mono"><bdi dir="ltr">{{ row.date }}</bdi></td>
-                  <td class="mono sales-col-inv">{{ row.invoice_count_display }}</td>
-                  <td class="mono">{% money row.return_total_display %}</td>
-                  <td class="mono sales-amt">{% money row.sales_total_display %}</td>
-                  <td class="mono sales-col-share">{{ row.share_display }}</td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr><td colspan="6" class="sales-empty">{{ daily_error|default:"المبيعات اليومية غير متاحة من الأرقام المحفوظة." }}</td></tr>
-            {% endif %}
-          </tbody>
-          {% if daily and daily.rows %}
-            <tfoot>
-              <tr class="sales-grand-row">
-                <td colspan="2">الإجمالي · متوسط اليوم {% money daily.totals.avg_day_display %}</td>
-                <td class="mono sales-col-inv">{{ daily.totals.invoice_count_display }}</td>
-                <td class="mono">{% money daily.totals.return_total_display %}</td>
-                <td class="mono sales-amt">{% money daily.totals.sales_total_display %}</td>
-                <td class="mono sales-col-share">100%</td>
-              </tr>
-            </tfoot>
-          {% endif %}
-        </table>
-      </div>
+      <ol class="dly-list" aria-label="المبيعات يوماً بيوم">
+        {% for row in daily.rows %}
+          <li class="dly-row{% if row.is_today %} is-today{% endif %}{% if row.is_best %} is-best{% endif %}{% if row.is_weekend %} is-weekend{% endif %}{% if row.no_sales %} is-zero{% endif %}">
+            <div class="dly-date" title="{{ row.date }}">
+              <strong><bdi dir="ltr">{{ row.day_num }}</bdi></strong>
+              <span>{{ row.weekday }}</span>
+            </div>
+            <div class="dly-body">
+              <div class="dly-top">
+                <span class="dly-amt">{% money row.sales_total_display %}</span>
+                <span class="dly-tags">
+                  {% if row.is_today %}<em class="dly-tag is-today">اليوم</em>{% endif %}
+                  {% if row.is_best %}<em class="dly-tag is-best">★ الأعلى</em>{% endif %}
+                </span>
+              </div>
+              <div class="dly-bar" role="img" aria-label="{{ row.weekday }} {{ row.md }}: {{ row.share_display }} من مبيعات الفترة"><i style="width: {{ row.bar_width }};"></i></div>
+              <div class="dly-meta">
+                <span><bdi dir="ltr">{{ row.invoice_count_display }}</bdi> فاتورة</span>
+                <span class="{% if row.return_count %}has-return{% endif %}">مرتجع <bdi dir="ltr">{{ row.return_total_display }}</bdi></span>
+                <span class="dly-share"><bdi dir="ltr">{{ row.share_display }}</bdi></span>
+              </div>
+            </div>
+          </li>
+        {% empty %}
+          <li class="brk-empty">لا مبيعات في هذه الفترة.</li>
+        {% endfor %}
+      </ol>
+      {% if daily.rows %}
+        <div class="brk-total">
+          <span>الإجمالي · <bdi dir="ltr">{{ daily.totals.selling_days }}</bdi> يوم بيع</span>
+          <span><bdi dir="ltr">{{ daily.totals.invoice_count_display }}</bdi> فاتورة</span>
+          <span>مرتجع {% money daily.totals.return_total_display %}</span>
+          <span>متوسط اليوم {% money daily.totals.avg_day_display %}</span>
+          <strong>{% money daily.totals.sales_total_display %}</strong>
+        </div>
+      {% endif %}
     </section>
 
     <div class="sales-ov-bottom" aria-label="المجموعات والمرتجعات">
@@ -248,48 +249,37 @@
             <span class="result-pill" id="sales-groups-pill">{% if dashboard.groups_pending %}…{% else %}{{ dashboard.groups.rows|length }}{% endif %}</span>
           </div>
         </div>
-        <div class="table-wrap sales-ov-scroll">
-          <table class="data-table sales-table">
-            <thead>
-              <tr id="sales-groups-head-row">
-                <th>#</th>
-                <th id="sales-groups-col-name">{% if selected_group %}الفرع{% else %}المجموعة{% endif %}</th>
-                <th>الفواتير</th>
-                <th>الكمية</th>
-                <th class="sales-col-amt">المبيعات</th>
-                <th class="sales-col-share" id="sales-groups-col-extra">{% if selected_group %}متوسط السلة{% else %}الحصة{% endif %}</th>
-              </tr>
-            </thead>
-            <tbody id="sales-groups-body">
-              {% if dashboard.groups_pending %}
-                <tr id="sales-groups-loading">
-                  <td colspan="6" class="sales-empty sales-ov-loading">جاري تحميل مبيعات المجموعات…</td>
-                </tr>
-              {% else %}
-                {% for row in dashboard.groups.rows %}
-                  <tr>
-                    <td class="mono">{{ forloop.counter }}</td>
-                    <td title="{{ row.code|default:row.group_code }}">{{ row.name|default:row.group_name }}</td>
-                    <td class="mono sales-col-inv">{{ row.invoice_count_display }}</td>
-                    <td class="mono">{{ row.qty_display }}</td>
-                    <td class="mono sales-amt sales-col-amt">{% money row.sales_total_display %}</td>
-                    <td class="mono sales-col-share">{% if selected_group %}{% money row.avg_basket_display %}{% else %}{{ row.share_display }}{% endif %}</td>
-                  </tr>
-                {% empty %}
-                  <tr><td colspan="6" class="sales-empty">لا مبيعات مجموعات في الفترة.</td></tr>
-                {% endfor %}
-              {% endif %}
-            </tbody>
-            <tfoot id="sales-groups-foot"{% if dashboard.groups_pending or not dashboard.groups.rows %} hidden{% endif %}>
-              <tr class="sales-grand-row">
-                <td colspan="2">الإجمالي</td>
-                <td class="mono sales-col-inv" id="sales-groups-tot-inv">{{ dashboard.groups.totals.invoice_count_display }}</td>
-                <td class="mono" id="sales-groups-tot-qty">{{ dashboard.groups.totals.qty_display }}</td>
-                <td class="mono sales-amt sales-col-amt" id="sales-groups-tot-sales">{% money dashboard.groups.totals.sales_total_display %}</td>
-                <td class="mono sales-col-share" id="sales-groups-tot-extra">{% if selected_group %}{% money dashboard.groups.totals.avg_basket_display %}{% else %}100%{% endif %}</td>
-              </tr>
-            </tfoot>
-          </table>
+        <ol class="dly-list grp-list" id="sales-groups-body" aria-label="المبيعات حسب {% if selected_group %}الفرع{% else %}المجموعة{% endif %}">
+          {% if dashboard.groups_pending %}
+            <li class="brk-empty sales-ov-loading" id="sales-groups-loading">جاري تحميل مبيعات المجموعات…</li>
+          {% else %}
+            {% for row in dashboard.groups.rows %}
+              <li class="dly-row grp-row{% if forloop.first %} is-best{% endif %}">
+                <div class="dly-date grp-rank"><strong><bdi dir="ltr">{{ forloop.counter }}</bdi></strong></div>
+                <div class="dly-body">
+                  <div class="dly-top">
+                    <span class="brk-name" title="{{ row.code|default:row.group_code }}">{{ row.name|default:row.group_name }}</span>
+                    <strong class="brk-amt">{% money row.sales_total_display %}</strong>
+                  </div>
+                  <div class="dly-bar"><i style="width: {{ row.bar_width|default:'0%' }};"></i></div>
+                  <div class="dly-meta">
+                    <span><bdi dir="ltr">{{ row.invoice_count_display }}</bdi> فاتورة</span>
+                    <span>كمية <bdi dir="ltr">{{ row.qty_display }}</bdi></span>
+                    <span class="dly-share">{% if selected_group %}متوسط السلة {% money row.avg_basket_display %}{% else %}<bdi dir="ltr">{{ row.share_display }}</bdi>{% endif %}</span>
+                  </div>
+                </div>
+              </li>
+            {% empty %}
+              <li class="brk-empty">لا مبيعات مجموعات في الفترة.</li>
+            {% endfor %}
+          {% endif %}
+        </ol>
+        <div class="brk-total" id="sales-groups-foot"{% if dashboard.groups_pending or not dashboard.groups.rows %} hidden{% endif %}>
+          <span>الإجمالي</span>
+          <span><bdi dir="ltr" id="sales-groups-tot-inv">{{ dashboard.groups.totals.invoice_count_display }}</bdi> فاتورة</span>
+          <span>كمية <bdi dir="ltr" id="sales-groups-tot-qty">{{ dashboard.groups.totals.qty_display }}</bdi></span>
+          <span id="sales-groups-tot-extra">{% if selected_group %}متوسط السلة {% money dashboard.groups.totals.avg_basket_display %}{% else %}100%{% endif %}</span>
+          <strong id="sales-groups-tot-sales">{% money dashboard.groups.totals.sales_total_display %}</strong>
         </div>
       </section>
 
@@ -397,6 +387,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/sales-filter.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-groups-loader.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-top-items-loader.js?v={{ app_client_version }}" defer></script>
 <script src="/static/js/sales-top-users-loader.js?v={{ app_client_version }}" defer></script>

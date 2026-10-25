@@ -161,9 +161,7 @@
     setStatus("loading", "جاري التحميل…");
     if (body) {
       body.innerHTML =
-        '<tr><td colspan="6" class="sales-empty sales-ov-loading">' +
-        esc(msg) +
-        "</td></tr>";
+        '<li class="brk-empty sales-ov-loading">' + esc(msg) + "</li>";
     }
     if (sub) sub.textContent = "نقاط البيع · " + msg;
     if (pill) pill.textContent = "…";
@@ -173,10 +171,10 @@
     setStatus("error", "غير مكتمل");
     if (body) {
       body.innerHTML =
-        '<tr><td colspan="6" class="sales-empty">' +
+        '<li class="brk-empty">' +
         esc(msg) +
         ' <button type="button" class="btn-primary sales-groups-retry" style="margin-inline-start:0.5rem">إعادة المحاولة</button>' +
-        "</td></tr>";
+        "</li>";
       var btn = body.querySelector(".sales-groups-retry");
       if (btn) {
         btn.addEventListener("click", function () {
@@ -236,10 +234,10 @@
       if (body) {
         if (warn) {
           body.innerHTML =
-            '<tr><td colspan="6" class="sales-empty">' +
+            '<li class="brk-empty">' +
             esc(warn) +
             ' <button type="button" class="btn-primary sales-groups-retry" style="margin-inline-start:0.5rem">إعادة المحاولة</button>' +
-            "</td></tr>";
+            "</li>";
           var retryBtn = body.querySelector(".sales-groups-retry");
           if (retryBtn) {
             retryBtn.addEventListener("click", function () {
@@ -249,7 +247,7 @@
           setStatus("warming", "جارٍ الإكمال…");
         } else {
           body.innerHTML =
-            '<tr><td colspan="6" class="sales-empty">لا مبيعات مجموعات في الفترة.</td></tr>';
+            '<li class="brk-empty">لا مبيعات مجموعات في الفترة.</li>';
           setStatus("ready", "مكتمل");
         }
       }
@@ -270,6 +268,11 @@
     if (colName) colName.textContent = byBranch ? "الفرع" : "المجموعة";
     if (colExtra) colExtra.textContent = byBranch ? "متوسط السلة" : "الحصة";
 
+    // الشريط نسبة إلى أعلى صف، فيظهر الفرق بين المجموعات بنظرة
+    var maxShare = 0;
+    rows.forEach(function (row) {
+      maxShare = Math.max(maxShare, Number(row.share_pct) || 0);
+    });
     var html = "";
     rows.forEach(function (row, i) {
       var label = byBranch
@@ -279,31 +282,22 @@
         ? row.branch_code || row.code || ""
         : row.group_code || row.code || "";
       var extra = byBranch
-        ? moneyHtml(row.avg_basket_display || "0.00")
-        : esc(row.share_display);
+        ? "متوسط السلة " + moneyHtml(row.avg_basket_display || "0.00")
+        : '<bdi dir="ltr">' + esc(row.share_display) + "</bdi>";
+      var width = maxShare
+        ? Math.max(0, Math.min(100, ((Number(row.share_pct) || 0) / maxShare) * 100)).toFixed(1) + "%"
+        : "0%";
       html +=
-        "<tr>" +
-        '<td class="mono">' +
-        (i + 1) +
-        "</td>" +
-        '<td title="' +
-        esc(code) +
-        '">' +
-        esc(label) +
-        "</td>" +
-        '<td class="mono sales-col-inv">' +
-        esc(row.invoice_count_display) +
-        "</td>" +
-        '<td class="mono">' +
-        esc(row.qty_display) +
-        "</td>" +
-        '<td class="mono sales-amt sales-col-amt">' +
-        moneyHtml(row.sales_total_display) +
-        "</td>" +
-        '<td class="mono sales-col-share">' +
-        extra +
-        "</td>" +
-        "</tr>";
+        '<li class="dly-row grp-row' + (i === 0 ? " is-best" : "") + '">' +
+        '<div class="dly-date grp-rank"><strong><bdi dir="ltr">' + (i + 1) + "</bdi></strong></div>" +
+        '<div class="dly-body">' +
+        '<div class="dly-top"><span class="brk-name" title="' + esc(code) + '">' + esc(label) + "</span>" +
+        '<strong class="brk-amt">' + moneyHtml(row.sales_total_display) + "</strong></div>" +
+        '<div class="dly-bar"><i style="width: ' + width + ';"></i></div>' +
+        '<div class="dly-meta"><span><bdi dir="ltr">' + esc(row.invoice_count_display) + "</bdi> فاتورة</span>" +
+        '<span>كمية <bdi dir="ltr">' + esc(row.qty_display) + "</bdi></span>" +
+        '<span class="dly-share">' + extra + "</span></div>" +
+        "</div></li>";
     });
     if (body) body.innerHTML = html;
     if (totInv) totInv.textContent = totals.invoice_count_display || "0";
@@ -312,7 +306,7 @@
     var totExtra = document.getElementById("sales-groups-tot-extra");
     if (totExtra) {
       totExtra.innerHTML = byBranch
-        ? moneyHtml(totals.avg_basket_display || "0.00")
+        ? "متوسط السلة " + moneyHtml(totals.avg_basket_display || "0.00")
         : "100%";
     }
     if (foot) foot.hidden = false;

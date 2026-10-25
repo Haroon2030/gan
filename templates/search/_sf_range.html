@@ -1,0 +1,14 @@
+{# نطاق التاريخ للفلتر الموحّد: كبسولة بتاريخين. يلزم uid لتمييز المعرّفات #}
+<div class="sf-range" role="group" aria-label="نطاق التاريخ">
+  <label class="sf-date" for="{{ uid }}-from">
+    <span>من</span>
+    <input id="{{ uid }}-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+  </label>
+  <span class="sf-range-sep" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>
+  </span>
+  <label class="sf-date" for="{{ uid }}-to">
+    <span>إلى</span>
+    <input id="{{ uid }}-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
+  </label>
+</div>

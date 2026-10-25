@@ -657,6 +657,20 @@ def browse_sales(request):
             error = f'تعذّر تحليل المبيعات: {exc}'
             dashboard = None
 
+    # شريط الحصة لكل فرع: يُحسب هنا نصاً ("43.5%") حتى لا تفسده فاصلة الأرقام في القالب
+    if dashboard is not None:
+        branches = (dashboard.get('pos') or {}).get('branches') or []
+        for row in branches:
+            pct = max(0.0, min(float(row.get('share_pct') or 0), 100.0))
+            row['bar_width'] = f'{pct:.1f}%'
+        group_rows = (dashboard.get('groups') or {}).get('rows') or []
+        top_share = max((float(r.get('share_pct') or 0) for r in group_rows), default=0.0)
+        for row in group_rows:
+            pct = (float(row.get('share_pct') or 0) / top_share * 100) if top_share else 0.0
+            row['bar_width'] = f'{max(0.0, min(pct, 100.0)):.1f}%'
+        dashboard['pos_active'] = [r for r in branches if not r.get('no_sales')]
+        dashboard['pos_silent'] = [r for r in branches if r.get('no_sales')]
+
     daily = None
     daily_error = ''
     if dashboard is not None and not dashboard.get('from_cache'):

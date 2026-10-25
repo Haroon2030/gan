@@ -54,17 +54,17 @@
   </section>
 {% endif %}
 
-<form method="get" action="{% url 'browse_hr' %}" class="purchase-filter pf-filter dash-panel-glass" role="search">
-  <div class="field">
-    <label for="hr-from">من</label>
-    <input id="hr-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+<form method="get" action="{% url 'browse_hr' %}" class="sf dash-panel-glass" role="search" data-sales-filter>
+  {% include "search/_sf_quick.html" %}
+  <div class="sf-controls">
+    {% include "search/_sf_range.html" with uid="hr" %}
+    <div class="sf-actions">
+      <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+    </div>
+    {% if hr %}
+      <p class="sf-note">الرواتب بالأشهر الكاملة: من <bdi dir="ltr">{{ hr.period_from }}</bdi> إلى <bdi dir="ltr">{{ hr.period_to }}</bdi></p>
+    {% endif %}
   </div>
-  <div class="field">
-    <label for="hr-to">إلى</label>
-    <input id="hr-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
-  </div>
-  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
-  {% if hr %}<p class="pf-filter-note">بالأشهر الكاملة: من <bdi dir="ltr">{{ hr.period_from }}</bdi> إلى <bdi dir="ltr">{{ hr.period_to }}</bdi></p>{% endif %}
 </form>
 
 {% if hr %}
@@ -263,6 +263,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/sales-filter.js?v={{ app_client_version }}" defer></script>
 <script>
 (function () {
   // تصفية جدول الموظفين باسم الموظف أو رقمه

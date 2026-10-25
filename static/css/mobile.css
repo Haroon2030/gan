@@ -277,3 +277,17 @@
     justify-content: center;
   }
 }
+
+/* فلتر المبيعات على الجوال: الفترات تُمرَّر أفقياً، والتاريخان متجاوران، والباقي بعرض كامل */
+@media (max-width: 600px) {
+  .sf { padding: 0.8rem; }
+  .sf-quick { width: 100%; }
+  .sf-controls { display: grid; grid-template-columns: 1fr; gap: 0.6rem; }
+  .sf-range { width: 100%; }
+  .sf-range .sf-date { flex: 1; min-width: 0; }
+  .sf-select { width: 100%; }
+  .sf-date input, .sf-select select { font-size: 16px !important; }
+  .sf-actions { margin-inline-start: 0; flex-direction: column-reverse; align-items: stretch; }
+  .sf-actions .btn-capsule { width: 100%; }
+  .sf-clear { text-align: center; padding: 0.4rem 0; }
+}

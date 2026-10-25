@@ -47,19 +47,19 @@
   </section>
 {% endif %}
 
-<form method="get" action="{% url 'browse_inventory' %}" class="perf-filter dash-panel-glass inv-filter" role="search" id="inv-filter-form">
-  <div class="perf-filter-grid">
-    <div class="field">
-      <label for="inv-branch">الفرع</label>
+<form method="get" action="{% url 'browse_inventory' %}" class="sf dash-panel-glass inv-filter" role="search" id="inv-filter-form">
+  <div class="sf-controls">
+    <label class="sf-select" for="inv-branch">
+      <span>الفرع</span>
       <select id="inv-branch" name="branch">
         <option value="">كل الفروع</option>
         {% for b in branches %}
           <option value="{{ b.code }}" {% if b.code == selected_branch %}selected{% endif %}>{{ b.name }}</option>
         {% endfor %}
       </select>
-    </div>
-    <div class="field">
-      <label for="inv-warehouse">المخزن</label>
+    </label>
+    <label class="sf-select" for="inv-warehouse">
+      <span>المخزن</span>
       <select
         id="inv-warehouse"
         name="warehouse"
@@ -77,19 +77,22 @@
           >{{ w.name }} · {{ w.code }}</option>
         {% endfor %}
       </select>
-    </div>
-    <div class="field">
-      <label for="inv-group">المجموعة</label>
+    </label>
+    <label class="sf-select" for="inv-group">
+      <span>المجموعة</span>
       <select id="inv-group" name="group">
         <option value="">كل المجموعات</option>
         {% for g in groups %}
           <option value="{{ g.code }}" {% if g.code == selected_group %}selected{% endif %}>{{ g.code }}- {{ g.name }}</option>
         {% endfor %}
       </select>
+    </label>
+    <div class="sf-actions">
+      <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+      {% if selected_branch or selected_warehouse or selected_group %}
+        <a class="sf-clear" href="{% url 'browse_inventory' %}">مسح الفلاتر</a>
+      {% endif %}
     </div>
-  </div>
-  <div class="perf-filter-actions">
-    <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
   </div>
 </form>
 

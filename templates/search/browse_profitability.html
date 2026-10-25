@@ -58,19 +58,17 @@
   </section>
 {% endif %}
 
-<form method="get" action="{% url 'browse_profitability' %}" class="purchase-filter pf-filter dash-panel-glass" role="search">
-  <div class="field">
-    <label for="pf-from">من</label>
-    <input id="pf-from" type="date" name="date_from" value="{{ date_from|default:default_from }}" required>
+<form method="get" action="{% url 'browse_profitability' %}" class="sf dash-panel-glass" role="search" data-sales-filter>
+  {% include "search/_sf_quick.html" %}
+  <div class="sf-controls">
+    {% include "search/_sf_range.html" with uid="pf" %}
+    <div class="sf-actions">
+      <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
+    </div>
+    {% if profit %}
+      <p class="sf-note">{% if profit.prev_label %}المقارنة مع <bdi dir="ltr">{{ profit.prev_label }}</bdi>{% else %}اختر شهراً لمقارنته بالشهر السابق{% endif %}</p>
+    {% endif %}
   </div>
-  <div class="field">
-    <label for="pf-to">إلى</label>
-    <input id="pf-to" type="date" name="date_to" value="{{ date_to|default:default_to }}" required>
-  </div>
-  <button type="submit" class="btn-primary btn-capsule">تطبيق</button>
-  {% if profit %}
-    <p class="pf-filter-note">{% if profit.prev_label %}المقارنة مع {{ profit.prev_label }}{% else %}اختر شهراً لمقارنته بالشهر السابق{% endif %}</p>
-  {% endif %}
 </form>
 
 {% if profit %}
@@ -325,6 +323,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="/static/js/sales-filter.js?v={{ app_client_version }}" defer></script>
 <script>
 (function () {
   // تصفية ميزان المراجعة باسم الحساب أو رقمه؛ تُخفى المجموعة التي لا يبقى فيها حساب

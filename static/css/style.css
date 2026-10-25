@@ -23638,3 +23638,237 @@ a.btn-primary.btn-capsule:focus-visible { outline: 3px solid rgba(47, 107, 63, 0
   color: inherit;
 }
 .us-activity-filter button.us-action { border: 0; cursor: pointer; font: inherit; }
+
+/* مبيعات نقاط البيع: ترتيب الفروع بشريط الحصة بدل الجدول، وطيّ الفروع الصامتة */
+.brk-list { list-style: none; margin: 0; padding: 0.4rem 1rem 0.2rem; display: grid; }
+.brk-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #EEF1F2;
+}
+.brk-row:last-child { border-bottom: 0; }
+.brk-rank {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #EEF1F2;
+  color: #4B5B5E;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.brk-row.is-lead .brk-rank { background: #E8762B; color: #FFFFFF; }
+.brk-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.brk-name { font-size: 1rem; font-weight: 800; color: #142326; }
+.brk-amt { font-size: 1.05rem; font-weight: 800; color: #12301C; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.brk-bar {
+  height: 8px;
+  margin: 0.5rem 0 0.45rem;
+  border-radius: 999px;
+  background: #EEF1EE;
+  overflow: hidden;
+}
+.brk-bar i { display: block; height: 100%; min-width: 4px; border-radius: inherit; background: #2F6B3F; }
+.brk-row.is-lead .brk-bar i { background: linear-gradient(90deg, #2F6B3F, #E8762B); }
+.brk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #68777A;
+}
+.brk-share { margin-inline-start: auto; color: #117C77; font-weight: 800; }
+.brk-return.has-return { color: #B42318; }
+.brk-empty { padding: 1.2rem 0; text-align: center; color: #68777A; }
+.brk-silent { margin: 0.2rem 1rem 0; border-top: 1px dashed #DCE3E1; padding: 0.6rem 0; }
+.brk-silent summary { cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #68777A; list-style: none; }
+.brk-silent summary::-webkit-details-marker { display: none; }
+.brk-silent summary::before { content: "＋ "; color: #2F6B3F; }
+.brk-silent[open] summary::before { content: "－ "; }
+.brk-silent p { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0.6rem 0 0; }
+.brk-chip { padding: 0.15rem 0.7rem; border-radius: 999px; background: #F1F4F3; color: #4B5B5E; font-size: 0.74rem; font-weight: 600; }
+.brk-total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 1.1rem;
+  margin: 0.4rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 14px 14px;
+  background: #117C77;
+  color: #FFFFFF;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.brk-total > strong { margin-inline-start: auto; font-size: 1.05rem; font-weight: 800; }
+
+/* ===== فلتر المبيعات الجديد: فترات سريعة + نطاق تاريخ بكبسولة + قوائم بتسمية ===== */
+.sf {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0.4rem 0 0.9rem;
+  padding: 0.9rem 1rem 1rem;
+  border-radius: 16px;
+}
+.sf-quick {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: #EEF1EE;
+  scrollbar-width: none;
+}
+.sf-quick::-webkit-scrollbar { display: none; }
+.sf-chip {
+  flex: none;
+  min-height: 36px;
+  padding: 0 0.95rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #4B5B5E;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sf-chip:hover { background: rgba(47, 107, 63, 0.1); color: #2F6B3F; }
+.sf-chip.is-on { background: #2F6B3F; color: #FFFFFF; box-shadow: 0 2px 8px rgba(18, 48, 28, 0.25); }
+.sf-chip:focus-visible { outline: 2px solid rgba(47, 107, 63, 0.5); outline-offset: 2px; }
+.sf-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.7rem;
+}
+.sf-range {
+  display: flex;
+  align-items: center;
+  border: 1px solid #DCE3E1;
+  border-radius: 14px;
+  background: #F6F8F7;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sf-range:focus-within { border-color: #2F6B3F; box-shadow: 0 0 0 3px rgba(47, 107, 63, 0.15); background: #FFFFFF; }
+.sf-date, .sf-select { display: grid; gap: 0.1rem; padding: 0.45rem 0.85rem 0.5rem; }
+.sf-date > span, .sf-select > span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #68777A;
+}
+.sf-date input, .sf-select select {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  font: inherit;
+  font-size: 0.95rem !important;
+  font-weight: 700;
+  color: #142326 !important;
+  max-width: none !important;
+}
+.sf-range-sep { display: grid; place-items: center; width: 1.6rem; color: #93A09C; }
+.sf-range-sep svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.sf-select {
+  min-width: 10.5rem;
+  border: 1px solid #DCE3E1;
+  border-radius: 14px;
+  background: #F6F8F7;
+  cursor: pointer;
+}
+.sf-select:focus-within { border-color: #2F6B3F; box-shadow: 0 0 0 3px rgba(47, 107, 63, 0.15); background: #FFFFFF; }
+.sf-range { flex: 2 1 19rem; }
+.sf-range .sf-date { flex: 1; }
+.sf-select { flex: 1 1 11rem; }
+.sf-actions { display: flex; align-items: center; gap: 0.8rem; margin-inline-start: auto; }
+.sf-clear { font-size: 0.8rem; font-weight: 700; color: #B42318; text-decoration: none; white-space: nowrap; }
+.sf-clear:hover { text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .sf-chip, .sf-range { transition: none; } }
+
+/* المبيعات اليومية: يوماً بيوم بشريط نسبي لأعلى يوم، وسوم لليوم والأعلى، وعطلة نهاية الأسبوع بلون خافت */
+.dly-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 1rem 0.2rem;
+  max-height: 27rem;
+  overflow-y: auto;
+  display: grid;
+}
+.dly-row {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid #EEF1F2;
+}
+.dly-row:last-child { border-bottom: 0; }
+.dly-date {
+  display: grid;
+  justify-items: center;
+  gap: 0.05rem;
+  padding: 0.35rem 0;
+  border-radius: 12px;
+  background: #F3F6F4;
+  color: #4B5B5E;
+}
+.dly-date strong { font-size: 1.25rem; font-weight: 800; line-height: 1.1; color: #12301C; }
+.dly-date span { font-size: 0.66rem; font-weight: 700; }
+.dly-row.is-weekend .dly-date { background: #FBF1E8; }
+.dly-row.is-weekend .dly-date strong { color: #B8501A; }
+.dly-row.is-today .dly-date { background: #117C77; color: #E4F3F1; }
+.dly-row.is-today .dly-date strong { color: #FFFFFF; }
+.dly-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.dly-amt { font-size: 1.02rem; font-weight: 800; color: #142326; font-variant-numeric: tabular-nums; }
+.dly-row.is-zero .dly-amt { color: #93A09C; }
+.dly-tags { display: flex; gap: 0.3rem; }
+.dly-tag {
+  padding: 0.08rem 0.55rem;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+.dly-tag.is-today { background: #E4F3F1; color: #117C77; }
+.dly-tag.is-best { background: #FDEEE3; color: #B8501A; }
+.dly-bar { height: 6px; margin: 0.4rem 0 0.35rem; border-radius: 999px; background: #EEF1EE; overflow: hidden; }
+.dly-bar i { display: block; height: 100%; min-width: 3px; border-radius: inherit; background: #5E8F69; }
+.dly-row.is-weekend .dly-bar i { background: #E8762B; }
+.dly-row.is-best .dly-bar i { background: linear-gradient(90deg, #2F6B3F, #E8762B); }
+.dly-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.9rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #68777A;
+}
+.dly-meta .has-return { color: #B42318; }
+.dly-share { margin-inline-start: auto; color: #117C77; font-weight: 800; }
+@media (max-width: 600px) {
+  .dly-row { grid-template-columns: 3rem minmax(0, 1fr); gap: 0.65rem; }
+  .dly-list { max-height: 30rem; }
+}
+
+/* مبيعات المجموعات بنفس قائمة المبيعات اليومية: مربع ترتيب بدل مربع التاريخ */
+.grp-list { max-height: 28rem; }
+.grp-rank strong { font-size: 1.15rem; }
+.grp-row.is-best .grp-rank { background: #E8762B; }
+.grp-row.is-best .grp-rank strong { color: #FFFFFF; }
+.grp-row .brk-name { font-size: 0.95rem; }
+
+.sf-note { flex: 1 1 100%; margin: 0; font-size: 0.78rem; font-weight: 600; color: #68777A; }

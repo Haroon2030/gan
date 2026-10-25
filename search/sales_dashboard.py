@@ -812,6 +812,8 @@ def build_sales_daily(date_from, date_to, *, branch_code: str = "") -> dict[str,
     selling_days = sum(1 for r in raw if r["invoice_count"] > 0)
     today = date.today().isoformat()
 
+    peak = max((float(r["sales_total"]) for r in raw), default=0.0)
+    best_date = next((r["date"] for r in raw if peak > 0 and float(r["sales_total"]) == peak), "")
     rows: list[dict] = []
     for r in reversed(raw):
         day = date.fromisoformat(r["date"])
@@ -819,7 +821,14 @@ def build_sales_daily(date_from, date_to, *, branch_code: str = "") -> dict[str,
         rows.append(
             {
                 "date": r["date"],
+                "day_num": day.day,
+                "md": f"{day.day}/{day.month}",
                 "weekday": _WEEKDAYS_AR[day.weekday()],
+                # الجمعة والسبت عطلة نهاية الأسبوع (Python: الاثنين=0)
+                "is_weekend": day.weekday() in (4, 5),
+                "is_best": r["date"] == best_date,
+                # عرض الشريط نسبة إلى أعلى يوم، نصاً حتى لا تفسده فاصلة الأرقام
+                "bar_width": f"{(max(float(r['sales_total']), 0.0) / peak * 100) if peak else 0:.1f}%",
                 "is_today": r["date"] == today,
                 "no_sales": r["invoice_count"] == 0,
                 "invoice_count_display": f"{r['invoice_count']:,}",
